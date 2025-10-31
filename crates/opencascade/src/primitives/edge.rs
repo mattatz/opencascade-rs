@@ -45,7 +45,7 @@ pub struct BSplineCurveProfile {
 pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
     pub poles: Vec<DVec3>,
-    pub weights: Vec<f64>,
+    pub weights: Option<Vec<f64>>,
 }
 
 /// A Bezier curve profile
@@ -60,7 +60,7 @@ pub struct BezierCurveProfile {
 pub struct BezierCurve {
     pub profile: BezierCurveProfile,
     pub poles: Vec<DVec3>,
-    pub weights: Vec<f64>,
+    pub weights: Option<Vec<f64>>,
 }
 
 /// A hyperbola
@@ -372,19 +372,26 @@ impl Edge {
 
                     for i in 1..=nb_knots {
                         knots.push(ffi::geom_bspline_curve_knot(&bspline, i));
-                        multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline, i) as usize);
+                        multiplicities
+                            .push(ffi::geom_bspline_curve_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract poles (control points) and weights
-                    let mut poles = Vec::with_capacity(nb_poles);
-                    let mut weights = Vec::with_capacity(if is_rational { nb_poles } else { 0 });
-                    for i in 1..=nb_poles as i32 {
-                        let pole = ffi::geom_bspline_curve_pole(&bspline, i);
-                        poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
-                        if is_rational {
-                            weights.push(ffi::geom_bspline_curve_weight(&bspline, i));
-                        }
-                    }
+                    let poles = (1..=nb_poles as i32)
+                        .map(|i| {
+                            let pole = ffi::geom_bspline_curve_pole(&bspline, i);
+                            dvec3(pole.X(), pole.Y(), pole.Z())
+                        })
+                        .collect();
+                    let weights = if is_rational {
+                        Some(
+                            (1..=nb_poles as i32)
+                                .map(|i| ffi::geom_bspline_curve_weight(&bspline, i))
+                                .collect(),
+                        )
+                    } else {
+                        None
+                    };
 
                     CurveDetails::BSplineCurve(BSplineCurve {
                         profile: BSplineCurveProfile {
@@ -407,15 +414,25 @@ impl Edge {
                 if !bezier.IsNull() {
                     let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier) as usize;
                     let degree = ffi::geom_bezier_curve_degree(&bezier) as usize;
+                    let is_rational = ffi::geom_bezier_curve_is_rational(&bezier);
 
                     // Extract poles (control points) and weights
-                    let mut poles = Vec::with_capacity(nb_poles);
-                    let mut weights = Vec::with_capacity(nb_poles);
-                    for i in 1..=nb_poles as i32 {
-                        let pole = ffi::geom_bezier_curve_pole(&bezier, i);
-                        poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
-                        weights.push(ffi::geom_bezier_curve_weight(&bezier, i));
-                    }
+                    let poles = (1..=nb_poles as i32)
+                        .map(|i| {
+                            let pole = ffi::geom_bezier_curve_pole(&bezier, i);
+                            dvec3(pole.X(), pole.Y(), pole.Z())
+                        })
+                        .collect();
+
+                    let weights = if is_rational {
+                        Some(
+                            (1..=nb_poles as i32)
+                                .map(|i| ffi::geom_bezier_curve_weight(&bezier, i))
+                                .collect(),
+                        )
+                    } else {
+                        None
+                    };
 
                     CurveDetails::BezierCurve(BezierCurve {
                         profile: BezierCurveProfile { nb_poles, degree },

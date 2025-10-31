@@ -470,6 +470,7 @@ pub mod ffi {
         // Bezier curve properties
         pub fn geom_bezier_curve_nb_poles(bezier: &HandleGeomBezierCurve) -> i32;
         pub fn geom_bezier_curve_degree(bezier: &HandleGeomBezierCurve) -> i32;
+        pub fn geom_bezier_curve_is_rational(bezier: &HandleGeomBezierCurve) -> bool;
 
         // Bezier curve poles (control points)
         pub fn geom_bezier_curve_pole(bezier: &HandleGeomBezierCurve, index: i32) -> &gp_Pnt;

@@ -401,6 +401,7 @@ inline double geom_bspline_curve_weight(const HandleGeomBSplineCurve &bspline, i
 // Bezier curve properties
 inline int geom_bezier_curve_nb_poles(const HandleGeomBezierCurve &bezier) { return bezier->NbPoles(); }
 inline int geom_bezier_curve_degree(const HandleGeomBezierCurve &bezier) { return bezier->Degree(); }
+inline bool geom_bezier_curve_is_rational(const HandleGeomBezierCurve &bezier) { return bezier->IsRational(); }
 
 // Bezier curve poles (control points)
 inline const gp_Pnt &geom_bezier_curve_pole(const HandleGeomBezierCurve &bezier, int index) { return bezier->Pole(index); }
