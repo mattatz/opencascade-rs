@@ -385,9 +385,15 @@ inline int geom_bspline_curve_nb_knots(const HandleGeomBSplineCurve &bspline) { 
 inline double geom_bspline_curve_knot(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Knot(index); }
 inline int geom_bspline_curve_multiplicity(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Multiplicity(index); }
 
+// BSpline curve poles (control points)
+inline const gp_Pnt &geom_bspline_curve_pole(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Pole(index); }
+
 // Bezier curve properties
 inline int geom_bezier_curve_nb_poles(const HandleGeomBezierCurve &bezier) { return bezier->NbPoles(); }
 inline int geom_bezier_curve_degree(const HandleGeomBezierCurve &bezier) { return bezier->Degree(); }
+
+// Bezier curve poles (control points)
+inline const gp_Pnt &geom_bezier_curve_pole(const HandleGeomBezierCurve &bezier, int index) { return bezier->Pole(index); }
 
 // Hyperbola properties
 inline const gp_Pnt &geom_hyperbola_location(const HandleGeom_Hyperbola &hyperbola) { return hyperbola->Location(); }

@@ -448,9 +448,15 @@ pub mod ffi {
         pub fn geom_bspline_curve_knot(bspline: &HandleGeomBSplineCurve, index: i32) -> f64;
         pub fn geom_bspline_curve_multiplicity(bspline: &HandleGeomBSplineCurve, index: i32) -> i32;
 
+        // BSpline curve poles (control points)
+        pub fn geom_bspline_curve_pole(bspline: &HandleGeomBSplineCurve, index: i32) -> &gp_Pnt;
+
         // Bezier curve properties
         pub fn geom_bezier_curve_nb_poles(bezier: &HandleGeomBezierCurve) -> i32;
         pub fn geom_bezier_curve_degree(bezier: &HandleGeomBezierCurve) -> i32;
+
+        // Bezier curve poles (control points)
+        pub fn geom_bezier_curve_pole(bezier: &HandleGeomBezierCurve, index: i32) -> &gp_Pnt;
 
         // Hyperbola properties
         pub fn geom_hyperbola_location(hyperbola: &HandleGeom_Hyperbola) -> &gp_Pnt;
