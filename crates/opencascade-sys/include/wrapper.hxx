@@ -272,6 +272,8 @@ inline int geom_bezier_surface_nb_u_poles(const HandleGeomBezierSurface &bezier)
 inline int geom_bezier_surface_nb_v_poles(const HandleGeomBezierSurface &bezier) { return bezier->NbVPoles(); }
 inline int geom_bezier_surface_u_degree(const HandleGeomBezierSurface &bezier) { return bezier->UDegree(); }
 inline int geom_bezier_surface_v_degree(const HandleGeomBezierSurface &bezier) { return bezier->VDegree(); }
+inline bool geom_bezier_surface_is_u_rational(const HandleGeomBezierSurface &bezier) { return bezier->IsURational(); }
+inline bool geom_bezier_surface_is_v_rational(const HandleGeomBezierSurface &bezier) { return bezier->IsVRational(); }
 inline const gp_Pnt &geom_bezier_surface_pole(const HandleGeomBezierSurface &bezier, int u_index, int v_index) {
   return bezier->Pole(u_index, v_index);
 }

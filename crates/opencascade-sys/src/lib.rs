@@ -391,6 +391,8 @@ pub mod ffi {
         pub fn geom_bezier_surface_nb_v_poles(bezier: &HandleGeomBezierSurface) -> i32;
         pub fn geom_bezier_surface_u_degree(bezier: &HandleGeomBezierSurface) -> i32;
         pub fn geom_bezier_surface_v_degree(bezier: &HandleGeomBezierSurface) -> i32;
+        pub fn geom_bezier_surface_is_u_rational(bezier: &HandleGeomBezierSurface) -> bool;
+        pub fn geom_bezier_surface_is_v_rational(bezier: &HandleGeomBezierSurface) -> bool;
         pub fn geom_bezier_surface_pole(
             bezier: &HandleGeomBezierSurface,
             u_index: i32,

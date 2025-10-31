@@ -3,7 +3,8 @@ use crate::{
     law_function::law_function_from_graph,
     make_pipe_shell::make_pipe_shell_with_law_function,
     primitives::{
-        BSplineCurveProfile, BezierCurveProfile, EdgeIterator, JoinType, Shape, Solid, Surface, Wire, WireIterator, make_axis_1, make_point, make_vec
+        make_axis_1, make_point, make_vec, BSplineCurveProfile, BezierCurveProfile, EdgeIterator,
+        JoinType, Shape, Solid, Surface, Wire, WireIterator,
     },
     workplane::Workplane,
 };
@@ -63,7 +64,7 @@ pub struct BSplineSurface {
     pub u_profile: BSplineCurveProfile,
     pub v_profile: BSplineCurveProfile,
     pub poles: Vec<Vec<DVec3>>,
-    pub weights: Vec<Vec<f64>>,
+    pub weights: Option<Vec<Vec<f64>>>,
 }
 
 /// A Bezier surface
@@ -72,7 +73,7 @@ pub struct BezierSurface {
     pub u_profile: BezierCurveProfile,
     pub v_profile: BezierCurveProfile,
     pub poles: Vec<Vec<DVec3>>,
-    pub weights: Vec<Vec<f64>>,
+    pub weights: Option<Vec<Vec<f64>>>,
 }
 
 /// Detailed information about a surface's geometric properties
@@ -476,8 +477,16 @@ impl Face {
 
                     SurfaceDetails::Plane(Plane {
                         location: dvec3(location.X(), location.Y(), location.Z()),
-                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
-                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        axis_location: dvec3(
+                            axis_location.X(),
+                            axis_location.Y(),
+                            axis_location.Z(),
+                        ),
+                        axis_direction: dvec3(
+                            axis_direction.X(),
+                            axis_direction.Y(),
+                            axis_direction.Z(),
+                        ),
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
@@ -494,8 +503,16 @@ impl Face {
 
                     SurfaceDetails::Cylinder(Cylinder {
                         location: dvec3(location.X(), location.Y(), location.Z()),
-                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
-                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        axis_location: dvec3(
+                            axis_location.X(),
+                            axis_location.Y(),
+                            axis_location.Z(),
+                        ),
+                        axis_direction: dvec3(
+                            axis_direction.X(),
+                            axis_direction.Y(),
+                            axis_direction.Z(),
+                        ),
                         radius,
                     })
                 } else {
@@ -514,8 +531,16 @@ impl Face {
 
                     SurfaceDetails::Cone(Cone {
                         location: dvec3(location.X(), location.Y(), location.Z()),
-                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
-                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        axis_location: dvec3(
+                            axis_location.X(),
+                            axis_location.Y(),
+                            axis_location.Z(),
+                        ),
+                        axis_direction: dvec3(
+                            axis_direction.X(),
+                            axis_direction.Y(),
+                            axis_direction.Z(),
+                        ),
                         ref_radius,
                         semi_angle,
                     })
@@ -534,8 +559,16 @@ impl Face {
 
                     SurfaceDetails::Sphere(Sphere {
                         location: dvec3(location.X(), location.Y(), location.Z()),
-                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
-                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        axis_location: dvec3(
+                            axis_location.X(),
+                            axis_location.Y(),
+                            axis_location.Z(),
+                        ),
+                        axis_direction: dvec3(
+                            axis_direction.X(),
+                            axis_direction.Y(),
+                            axis_direction.Z(),
+                        ),
                         radius,
                     })
                 } else {
@@ -554,8 +587,16 @@ impl Face {
 
                     SurfaceDetails::Torus(Torus {
                         location: dvec3(location.X(), location.Y(), location.Z()),
-                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
-                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        axis_location: dvec3(
+                            axis_location.X(),
+                            axis_location.Y(),
+                            axis_location.Z(),
+                        ),
+                        axis_direction: dvec3(
+                            axis_direction.X(),
+                            axis_direction.Y(),
+                            axis_direction.Z(),
+                        ),
                         major_radius,
                         minor_radius,
                     })
@@ -582,7 +623,8 @@ impl Face {
 
                     for i in 1..=nb_u_knots {
                         u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
-                        u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as usize);
+                        u_multiplicities
+                            .push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract knot vectors for V direction
@@ -592,31 +634,38 @@ impl Face {
 
                     for i in 1..=nb_v_knots {
                         v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
-                        v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
+                        v_multiplicities
+                            .push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract poles (control points) and weights - 2D grid [u][v]
-                    let mut poles = Vec::with_capacity(nb_u_poles);
-                    let mut weights = Vec::with_capacity(if is_u_rational || is_v_rational { nb_u_poles } else { 0 });
+                    let poles = (1..=nb_u_poles as i32)
+                        .map(|u| {
+                            (1..=nb_v_poles as i32)
+                                .map(|v| {
+                                    let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
+                                    dvec3(pole.X(), pole.Y(), pole.Z())
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .collect();
 
-                    for u in 1..=nb_u_poles as i32 {
-                        let mut v_poles = Vec::with_capacity(nb_v_poles);
-                        let mut v_weights = Vec::with_capacity(if is_u_rational || is_v_rational { nb_v_poles } else { 0 });
-                        for v in 1..=nb_v_poles as i32 {
-                            let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
-                            v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
-                            if is_u_rational || is_v_rational {
-                                v_weights.push(ffi::geom_bspline_surface_weight(&bspline, u, v));
-                            }
-                        }
-                        poles.push(v_poles);
-                        if is_u_rational || is_v_rational {
-                            weights.push(v_weights);
-                        }
-                    }
+                    let weights = if is_u_rational || is_v_rational {
+                        Some(
+                            (1..=nb_u_poles as i32)
+                                .map(|u| {
+                                    (1..=nb_v_poles as i32)
+                                        .map(|v| ffi::geom_bspline_surface_weight(&bspline, u, v))
+                                        .collect()
+                                })
+                                .collect(),
+                        )
+                    } else {
+                        None
+                    };
 
                     SurfaceDetails::BSpline(BSplineSurface {
-                        u_profile: super::BSplineCurveProfile {
+                        u_profile: BSplineCurveProfile {
                             nb_poles: nb_u_poles,
                             degree: u_degree,
                             is_rational: is_u_rational,
@@ -624,7 +673,7 @@ impl Face {
                             knots: u_knots,
                             multiplicities: u_multiplicities,
                         },
-                        v_profile: super::BSplineCurveProfile {
+                        v_profile: BSplineCurveProfile {
                             nb_poles: nb_v_poles,
                             degree: v_degree,
                             is_rational: is_v_rational,
@@ -646,32 +695,38 @@ impl Face {
                     let nb_v_poles = ffi::geom_bezier_surface_nb_v_poles(&bezier) as usize;
                     let u_degree = ffi::geom_bezier_surface_u_degree(&bezier) as usize;
                     let v_degree = ffi::geom_bezier_surface_v_degree(&bezier) as usize;
+                    let is_u_rational = ffi::geom_bezier_surface_is_u_rational(&bezier);
+                    let is_v_rational = ffi::geom_bezier_surface_is_v_rational(&bezier);
 
                     // Extract poles (control points) and weights - 2D grid [u][v]
-                    let mut poles = Vec::with_capacity(nb_u_poles);
-                    let mut weights = Vec::with_capacity(nb_u_poles);
+                    let poles = (1..=nb_u_poles as i32)
+                        .map(|u| {
+                            (1..=nb_v_poles as i32)
+                                .map(|v| {
+                                    let pole = ffi::geom_bezier_surface_pole(&bezier, u, v);
+                                    dvec3(pole.X(), pole.Y(), pole.Z())
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .collect();
 
-                    for u in 1..=nb_u_poles as i32 {
-                        let mut v_poles = Vec::with_capacity(nb_v_poles);
-                        let mut v_weights = Vec::with_capacity(nb_v_poles);
-                        for v in 1..=nb_v_poles as i32 {
-                            let pole = ffi::geom_bezier_surface_pole(&bezier, u, v);
-                            v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
-                            v_weights.push(ffi::geom_bezier_surface_weight(&bezier, u, v));
-                        }
-                        poles.push(v_poles);
-                        weights.push(v_weights);
-                    }
+                    let weights = if is_u_rational || is_v_rational {
+                        Some(
+                            (1..=nb_u_poles as i32)
+                                .map(|u| {
+                                    (1..=nb_v_poles as i32)
+                                        .map(|v| ffi::geom_bezier_surface_weight(&bezier, u, v))
+                                        .collect()
+                                })
+                                .collect(),
+                        )
+                    } else {
+                        None
+                    };
 
                     SurfaceDetails::Bezier(BezierSurface {
-                        u_profile: super::BezierCurveProfile {
-                            nb_poles: nb_u_poles,
-                            degree: u_degree,
-                        },
-                        v_profile: super::BezierCurveProfile {
-                            nb_poles: nb_v_poles,
-                            degree: v_degree,
-                        },
+                        u_profile: BezierCurveProfile { nb_poles: nb_u_poles, degree: u_degree },
+                        v_profile: BezierCurveProfile { nb_poles: nb_v_poles, degree: v_degree },
                         poles,
                         weights,
                     })
