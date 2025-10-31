@@ -263,86 +263,63 @@ impl GameApp for ViewerApp {
 
                 // Curve詳細情報を表示
                 match edge.curve_details() {
-                    opencascade::primitives::CurveDetails::Line { origin, direction } => {
+                    opencascade::primitives::CurveDetails::Line(line) => {
                         println!("  Line Details:");
-                        println!("    Origin: {:?}", origin);
-                        println!("    Direction: {:?}", direction);
+                        println!("    Origin: {:?}", line.origin);
+                        println!("    Direction: {:?}", line.direction);
                     },
-                    opencascade::primitives::CurveDetails::Circle { center, axis, radius } => {
+                    opencascade::primitives::CurveDetails::Circle(circle) => {
                         println!("  Circle Details:");
-                        println!("    Center: {:?}", center);
-                        println!("    Axis: {:?}", axis);
-                        println!("    Radius: {:.6}", radius);
+                        println!("    Center: {:?}", circle.center);
+                        println!("    Axis: {:?}", circle.axis);
+                        println!("    Radius: {:.6}", circle.radius);
                     },
-                    opencascade::primitives::CurveDetails::Ellipse {
-                        center,
-                        axis,
-                        major_radius,
-                        minor_radius,
-                    } => {
+                    opencascade::primitives::CurveDetails::Ellipse(ellipse) => {
                         println!("  Ellipse Details:");
-                        println!("    Center: {:?}", center);
-                        println!("    Axis: {:?}", axis);
-                        println!("    Major Radius: {:.6}", major_radius);
-                        println!("    Minor Radius: {:.6}", minor_radius);
+                        println!("    Center: {:?}", ellipse.center);
+                        println!("    Axis: {:?}", ellipse.axis);
+                        println!("    Major Radius: {:.6}", ellipse.major_radius);
+                        println!("    Minor Radius: {:.6}", ellipse.minor_radius);
                     },
-                    opencascade::primitives::CurveDetails::BSplineCurve {
-                        nb_poles,
-                        degree,
-                        is_rational,
-                        is_periodic,
-                    } => {
+                    opencascade::primitives::CurveDetails::BSplineCurve(bspline) => {
                         println!("  BSpline Curve Details:");
-                        println!("    Control Points: {}", nb_poles);
-                        println!("    Degree: {}", degree);
-                        println!("    Rational: {}", is_rational);
-                        println!("    Periodic: {}", is_periodic);
+                        println!("    Control Points: {}", bspline.nb_poles);
+                        println!("    Degree: {}", bspline.degree);
+                        println!("    Rational: {}", bspline.is_rational);
+                        println!("    Periodic: {}", bspline.is_periodic);
                     },
-                    opencascade::primitives::CurveDetails::BezierCurve { nb_poles, degree } => {
+                    opencascade::primitives::CurveDetails::BezierCurve(bezier) => {
                         println!("  Bezier Curve Details:");
-                        println!("    Control Points: {}", nb_poles);
-                        println!("    Degree: {}", degree);
+                        println!("    Control Points: {}", bezier.nb_poles);
+                        println!("    Degree: {}", bezier.degree);
                     },
-                    opencascade::primitives::CurveDetails::Hyperbola {
-                        center,
-                        axis,
-                        major_radius,
-                        minor_radius,
-                    } => {
+                    opencascade::primitives::CurveDetails::Hyperbola(hyperbola) => {
                         println!("  Hyperbola Details:");
-                        println!("    Center: {:?}", center);
-                        println!("    Axis: {:?}", axis);
-                        println!("    Major Radius: {:.6}", major_radius);
-                        println!("    Minor Radius: {:.6}", minor_radius);
+                        println!("    Center: {:?}", hyperbola.center);
+                        println!("    Axis: {:?}", hyperbola.axis);
+                        println!("    Major Radius: {:.6}", hyperbola.major_radius);
+                        println!("    Minor Radius: {:.6}", hyperbola.minor_radius);
                     },
-                    opencascade::primitives::CurveDetails::Parabola { vertex, axis, focal } => {
+                    opencascade::primitives::CurveDetails::Parabola(parabola) => {
                         println!("  Parabola Details:");
-                        println!("    Vertex: {:?}", vertex);
-                        println!("    Axis: {:?}", axis);
-                        println!("    Focal: {:.6}", focal);
+                        println!("    Vertex: {:?}", parabola.vertex);
+                        println!("    Axis: {:?}", parabola.axis);
+                        println!("    Focal: {:.6}", parabola.focal);
                     },
-                    opencascade::primitives::CurveDetails::OffsetCurve {
-                        basis_curve_type,
-                        offset,
-                    } => {
+                    opencascade::primitives::CurveDetails::OffsetCurve(offset_curve) => {
                         println!("  Offset Curve Details:");
-                        println!("    Basis Curve Type: {}", basis_curve_type);
-                        println!("    Offset: {:.6}", offset);
+                        println!("    Basis Curve Type: {}", offset_curve.basis_curve_type);
+                        println!("    Offset: {:.6}", offset_curve.offset);
                     },
-                    opencascade::primitives::CurveDetails::TrimmedCurve {
-                        basis_curve_type,
-                        first_parameter,
-                        last_parameter,
-                    } => {
+                    opencascade::primitives::CurveDetails::TrimmedCurve(trimmed_curve) => {
                         println!("  Trimmed Curve Details:");
-                        println!("    Basis Curve Type: {}", basis_curve_type);
-                        println!("    First Parameter: {:.6}", first_parameter);
-                        println!("    Last Parameter: {:.6}", last_parameter);
+                        println!("    Basis Curve Type: {}", trimmed_curve.basis_curve_type);
+                        println!("    First Parameter: {:.6}", trimmed_curve.first_parameter);
+                        println!("    Last Parameter: {:.6}", trimmed_curve.last_parameter);
                     },
                     opencascade::primitives::CurveDetails::Unknown(type_name) => {
                         println!("  Details: Not available for {}", type_name);
                     },
-                    _ => {},
                 }
             }
             // println!("Total Edges: {}\n", s.edges().count());

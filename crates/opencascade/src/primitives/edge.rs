@@ -5,63 +5,99 @@ use opencascade_sys::ffi;
 
 use super::make_vec;
 
+/// A line
+#[derive(Debug, Clone)]
+pub struct Line {
+    pub origin: DVec3,
+    pub direction: DVec3,
+}
+
+/// A circle
+#[derive(Debug, Clone)]
+pub struct Circle {
+    pub center: DVec3,
+    pub axis: DVec3,
+    pub radius: f64,
+}
+
+/// An ellipse
+#[derive(Debug, Clone)]
+pub struct Ellipse {
+    pub center: DVec3,
+    pub axis: DVec3,
+    pub major_radius: f64,
+    pub minor_radius: f64,
+}
+
+/// A B-Spline curve
+#[derive(Debug, Clone)]
+pub struct BSplineCurve {
+    pub nb_poles: i32,
+    pub degree: i32,
+    pub is_rational: bool,
+    pub is_periodic: bool,
+}
+
+/// A Bezier curve
+#[derive(Debug, Clone)]
+pub struct BezierCurve {
+    pub nb_poles: i32,
+    pub degree: i32,
+}
+
+/// A hyperbola
+#[derive(Debug, Clone)]
+pub struct Hyperbola {
+    pub center: DVec3,
+    pub axis: DVec3,
+    pub major_radius: f64,
+    pub minor_radius: f64,
+}
+
+/// A parabola
+#[derive(Debug, Clone)]
+pub struct Parabola {
+    pub vertex: DVec3,
+    pub axis: DVec3,
+    pub focal: f64,
+}
+
+/// An offset curve
+#[derive(Debug, Clone)]
+pub struct OffsetCurve {
+    pub basis_curve_type: String,
+    pub offset: f64,
+}
+
+/// A trimmed curve
+#[derive(Debug, Clone)]
+pub struct TrimmedCurve {
+    pub basis_curve_type: String,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
+}
+
 /// Detailed information about a curve's geometric properties
 #[derive(Debug, Clone)]
 pub enum CurveDetails {
     /// A line
-    Line {
-        origin: DVec3,
-        direction: DVec3,
-    },
+    Line(Line),
     /// A circle
-    Circle {
-        center: DVec3,
-        axis: DVec3,
-        radius: f64,
-    },
+    Circle(Circle),
     /// An ellipse
-    Ellipse {
-        center: DVec3,
-        axis: DVec3,
-        major_radius: f64,
-        minor_radius: f64,
-    },
+    Ellipse(Ellipse),
     /// A B-Spline curve
-    BSplineCurve {
-        nb_poles: i32,
-        degree: i32,
-        is_rational: bool,
-        is_periodic: bool,
-    },
+    BSplineCurve(BSplineCurve),
     /// A Bezier curve
-    BezierCurve {
-        nb_poles: i32,
-        degree: i32,
-    },
+    BezierCurve(BezierCurve),
     /// A hyperbola
-    Hyperbola {
-        center: DVec3,
-        axis: DVec3,
-        major_radius: f64,
-        minor_radius: f64,
-    },
+    Hyperbola(Hyperbola),
     /// A parabola
-    Parabola {
-        vertex: DVec3,
-        axis: DVec3,
-        focal: f64,
-    },
+    Parabola(Parabola),
     /// An offset curve
-    OffsetCurve {
-        basis_curve_type: String,
-        offset: f64,
-    },
+    OffsetCurve(OffsetCurve),
     /// A trimmed curve
-    TrimmedCurve {
-        basis_curve_type: String,
-        first_parameter: f64,
-        last_parameter: f64,
-    },
+    TrimmedCurve(TrimmedCurve),
     /// Unknown or unsupported curve type
     Unknown(String),
 }
@@ -259,10 +295,10 @@ impl Edge {
                     let origin = ffi::gp_Ax1_location(&position);
                     let direction = ffi::gp_Ax1_direction(&position);
 
-                    CurveDetails::Line {
+                    CurveDetails::Line(Line {
                         origin: dvec3(origin.X(), origin.Y(), origin.Z()),
                         direction: dvec3(direction.X(), direction.Y(), direction.Z()),
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -275,11 +311,11 @@ impl Edge {
                     let axis_dir = ffi::gp_Ax1_direction(&axis);
                     let radius = ffi::geom_circle_radius(&circle);
 
-                    CurveDetails::Circle {
+                    CurveDetails::Circle(Circle {
                         center: dvec3(center.X(), center.Y(), center.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
                         radius,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -293,12 +329,12 @@ impl Edge {
                     let major_radius = ffi::geom_ellipse_major_radius(&ellipse);
                     let minor_radius = ffi::geom_ellipse_minor_radius(&ellipse);
 
-                    CurveDetails::Ellipse {
+                    CurveDetails::Ellipse(Ellipse {
                         center: dvec3(center.X(), center.Y(), center.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
                         major_radius,
                         minor_radius,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -311,12 +347,12 @@ impl Edge {
                     let is_rational = ffi::geom_bspline_curve_is_rational(&bspline);
                     let is_periodic = ffi::geom_bspline_curve_is_periodic(&bspline);
 
-                    CurveDetails::BSplineCurve {
+                    CurveDetails::BSplineCurve(BSplineCurve {
                         nb_poles,
                         degree,
                         is_rational,
                         is_periodic,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -327,10 +363,10 @@ impl Edge {
                     let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier);
                     let degree = ffi::geom_bezier_curve_degree(&bezier);
 
-                    CurveDetails::BezierCurve {
+                    CurveDetails::BezierCurve(BezierCurve {
                         nb_poles,
                         degree,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -344,12 +380,12 @@ impl Edge {
                     let major_radius = ffi::geom_hyperbola_major_radius(&hyperbola);
                     let minor_radius = ffi::geom_hyperbola_minor_radius(&hyperbola);
 
-                    CurveDetails::Hyperbola {
+                    CurveDetails::Hyperbola(Hyperbola {
                         center: dvec3(center.X(), center.Y(), center.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
                         major_radius,
                         minor_radius,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -362,11 +398,11 @@ impl Edge {
                     let axis_dir = ffi::gp_Ax1_direction(&axis);
                     let focal = ffi::geom_parabola_focal(&parabola);
 
-                    CurveDetails::Parabola {
+                    CurveDetails::Parabola(Parabola {
                         vertex: dvec3(vertex.X(), vertex.Y(), vertex.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
                         focal,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -384,10 +420,10 @@ impl Edge {
                         ffi::type_name(&dynamic_type)
                     };
 
-                    CurveDetails::OffsetCurve {
+                    CurveDetails::OffsetCurve(OffsetCurve {
                         basis_curve_type,
                         offset: offset_value,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
@@ -406,11 +442,11 @@ impl Edge {
                         ffi::type_name(&dynamic_type)
                     };
 
-                    CurveDetails::TrimmedCurve {
+                    CurveDetails::TrimmedCurve(TrimmedCurve {
                         basis_curve_type,
                         first_parameter,
                         last_parameter,
-                    }
+                    })
                 } else {
                     CurveDetails::Unknown(curve_type)
                 }
