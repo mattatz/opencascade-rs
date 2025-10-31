@@ -5,6 +5,43 @@ use opencascade_sys::ffi;
 
 use super::make_vec;
 
+/// Detailed information about a curve's geometric properties
+#[derive(Debug, Clone)]
+pub enum CurveDetails {
+    /// A line
+    Line {
+        origin: DVec3,
+        direction: DVec3,
+    },
+    /// A circle
+    Circle {
+        center: DVec3,
+        axis: DVec3,
+        radius: f64,
+    },
+    /// An ellipse
+    Ellipse {
+        center: DVec3,
+        axis: DVec3,
+        major_radius: f64,
+        minor_radius: f64,
+    },
+    /// A B-Spline curve
+    BSplineCurve {
+        nb_poles: i32,
+        degree: i32,
+        is_rational: bool,
+        is_periodic: bool,
+    },
+    /// A Bezier curve
+    BezierCurve {
+        nb_poles: i32,
+        degree: i32,
+    },
+    /// Unknown or unsupported curve type
+    Unknown(String),
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum EdgeType {
     Line,
@@ -162,6 +199,120 @@ impl Edge {
         let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
 
         EdgeType::from(curve.GetType())
+    }
+
+    /// Get the type name of the underlying curve (e.g., "Geom_Line", "Geom_Circle")
+    pub fn curve_type(&self) -> String {
+        let mut first = 0.0;
+        let mut last = 0.0;
+        let curve = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
+
+        if curve.IsNull() {
+            return "Unknown".to_string();
+        }
+
+        let dynamic_type = ffi::DynamicTypeCurve(&curve);
+        ffi::type_name(&dynamic_type)
+    }
+
+    /// Get detailed information about the underlying curve
+    pub fn curve_details(&self) -> CurveDetails {
+        let mut first = 0.0;
+        let mut last = 0.0;
+        let curve = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
+
+        if curve.IsNull() {
+            return CurveDetails::Unknown("Null curve".to_string());
+        }
+
+        let curve_type = self.curve_type();
+
+        match curve_type.as_str() {
+            "Geom_Line" => {
+                let line = ffi::cast_curve_to_line(&curve);
+                if !line.IsNull() {
+                    let position = ffi::geom_line_position(&line);
+                    let origin = ffi::gp_Ax1_location(&position);
+                    let direction = ffi::gp_Ax1_direction(&position);
+
+                    CurveDetails::Line {
+                        origin: dvec3(origin.X(), origin.Y(), origin.Z()),
+                        direction: dvec3(direction.X(), direction.Y(), direction.Z()),
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_Circle" => {
+                let circle = ffi::cast_curve_to_circle(&curve);
+                if !circle.IsNull() {
+                    let center = ffi::geom_circle_location(&circle);
+                    let axis = ffi::geom_circle_axis(&circle);
+                    let axis_dir = ffi::gp_Ax1_direction(&axis);
+                    let radius = ffi::geom_circle_radius(&circle);
+
+                    CurveDetails::Circle {
+                        center: dvec3(center.X(), center.Y(), center.Z()),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        radius,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_Ellipse" => {
+                let ellipse = ffi::cast_curve_to_ellipse(&curve);
+                if !ellipse.IsNull() {
+                    let center = ffi::geom_ellipse_location(&ellipse);
+                    let axis = ffi::geom_ellipse_axis(&ellipse);
+                    let axis_dir = ffi::gp_Ax1_direction(&axis);
+                    let major_radius = ffi::geom_ellipse_major_radius(&ellipse);
+                    let minor_radius = ffi::geom_ellipse_minor_radius(&ellipse);
+
+                    CurveDetails::Ellipse {
+                        center: dvec3(center.X(), center.Y(), center.Z()),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        major_radius,
+                        minor_radius,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_BSplineCurve" => {
+                let bspline = ffi::cast_curve_to_bspline_curve(&curve);
+                if !bspline.IsNull() {
+                    let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline);
+                    let degree = ffi::geom_bspline_curve_degree(&bspline);
+                    let is_rational = ffi::geom_bspline_curve_is_rational(&bspline);
+                    let is_periodic = ffi::geom_bspline_curve_is_periodic(&bspline);
+
+                    CurveDetails::BSplineCurve {
+                        nb_poles,
+                        degree,
+                        is_rational,
+                        is_periodic,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_BezierCurve" => {
+                let bezier = ffi::cast_curve_to_bezier_curve(&curve);
+                if !bezier.IsNull() {
+                    let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier);
+                    let degree = ffi::geom_bezier_curve_degree(&bezier);
+
+                    CurveDetails::BezierCurve {
+                        nb_poles,
+                        degree,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            _ => CurveDetails::Unknown(curve_type),
+        }
     }
 }
 

@@ -80,6 +80,9 @@ pub mod ffi {
         type HandleGeomBSplineCurve;
         type HandleGeomBezierCurve;
         type HandleGeomTrimmedCurve;
+        type HandleGeom_Line;
+        type HandleGeom_Circle;
+        type HandleGeom_Ellipse;
         type HandleGeomSurface;
         type HandleGeomBezierSurface;
         type HandleGeom_BSplineSurface;
@@ -100,6 +103,7 @@ pub mod ffi {
         ) -> UniquePtr<Handle_TColgpHArray1OfPnt>;
 
         pub fn DynamicType(surface: &HandleGeomSurface) -> &HandleStandardType;
+        pub fn DynamicTypeCurve(curve: &HandleGeomCurve) -> &HandleStandardType;
         pub fn type_name(handle: &HandleStandardType) -> String;
 
         #[cxx_name = "construct_unique"]
@@ -123,7 +127,12 @@ pub mod ffi {
 
         pub fn IsNull(self: &HandleStandardType) -> bool;
         pub fn IsNull(self: &HandleGeomCurve) -> bool;
+        pub fn IsNull(self: &HandleGeomBSplineCurve) -> bool;
+        pub fn IsNull(self: &HandleGeomBezierCurve) -> bool;
         pub fn IsNull(self: &HandleGeomTrimmedCurve) -> bool;
+        pub fn IsNull(self: &HandleGeom_Line) -> bool;
+        pub fn IsNull(self: &HandleGeom_Circle) -> bool;
+        pub fn IsNull(self: &HandleGeom_Ellipse) -> bool;
         pub fn IsNull(self: &HandleGeomSurface) -> bool;
         pub fn IsNull(self: &HandleGeomBezierSurface) -> bool;
         pub fn IsNull(self: &HandleGeom_BSplineSurface) -> bool;
@@ -289,6 +298,9 @@ pub mod ffi {
 
         // Geometry
         type Geom_TrimmedCurve;
+        type Geom_Line;
+        type Geom_Circle;
+        type Geom_Ellipse;
         type Geom_BezierSurface;
         type Geom_BSplineSurface;
         type Geom_ConicalSurface;
@@ -370,6 +382,41 @@ pub mod ffi {
         pub fn geom_torus_axis(torus: &HandleGeom_ToroidalSurface) -> &gp_Ax1;
         pub fn geom_torus_major_radius(torus: &HandleGeom_ToroidalSurface) -> f64;
         pub fn geom_torus_minor_radius(torus: &HandleGeom_ToroidalSurface) -> f64;
+
+        // Cast curve to specific types
+        pub fn cast_curve_to_line(curve: &HandleGeomCurve) -> UniquePtr<HandleGeom_Line>;
+        pub fn cast_curve_to_circle(curve: &HandleGeomCurve) -> UniquePtr<HandleGeom_Circle>;
+        pub fn cast_curve_to_ellipse(curve: &HandleGeomCurve) -> UniquePtr<HandleGeom_Ellipse>;
+        pub fn cast_curve_to_bspline_curve(
+            curve: &HandleGeomCurve,
+        ) -> UniquePtr<HandleGeomBSplineCurve>;
+        pub fn cast_curve_to_bezier_curve(
+            curve: &HandleGeomCurve,
+        ) -> UniquePtr<HandleGeomBezierCurve>;
+
+        // Line properties
+        pub fn geom_line_position(line: &HandleGeom_Line) -> &gp_Ax1;
+
+        // Circle properties
+        pub fn geom_circle_location(circle: &HandleGeom_Circle) -> &gp_Pnt;
+        pub fn geom_circle_axis(circle: &HandleGeom_Circle) -> &gp_Ax1;
+        pub fn geom_circle_radius(circle: &HandleGeom_Circle) -> f64;
+
+        // Ellipse properties
+        pub fn geom_ellipse_location(ellipse: &HandleGeom_Ellipse) -> &gp_Pnt;
+        pub fn geom_ellipse_axis(ellipse: &HandleGeom_Ellipse) -> &gp_Ax1;
+        pub fn geom_ellipse_major_radius(ellipse: &HandleGeom_Ellipse) -> f64;
+        pub fn geom_ellipse_minor_radius(ellipse: &HandleGeom_Ellipse) -> f64;
+
+        // BSpline curve properties
+        pub fn geom_bspline_curve_nb_poles(bspline: &HandleGeomBSplineCurve) -> i32;
+        pub fn geom_bspline_curve_degree(bspline: &HandleGeomBSplineCurve) -> i32;
+        pub fn geom_bspline_curve_is_rational(bspline: &HandleGeomBSplineCurve) -> bool;
+        pub fn geom_bspline_curve_is_periodic(bspline: &HandleGeomBSplineCurve) -> bool;
+
+        // Bezier curve properties
+        pub fn geom_bezier_curve_nb_poles(bezier: &HandleGeomBezierCurve) -> i32;
+        pub fn geom_bezier_curve_degree(bezier: &HandleGeomBezierCurve) -> i32;
 
         pub fn Geom_CylindricalSurface_ctor(
             axis: &gp_Ax3,

@@ -51,6 +51,9 @@
 #include <GeomAbs_JoinType.hxx>
 #include <Geom_BezierCurve.hxx>
 #include <Geom_BezierSurface.hxx>
+#include <Geom_Circle.hxx>
+#include <Geom_Ellipse.hxx>
+#include <Geom_Line.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_ConicalSurface.hxx>
 #include <Geom_CylindricalSurface.hxx>
@@ -106,6 +109,9 @@ typedef opencascade::handle<Geom_Curve> HandleGeomCurve;
 typedef opencascade::handle<Geom_BSplineCurve> HandleGeomBSplineCurve;
 typedef opencascade::handle<Geom_BezierCurve> HandleGeomBezierCurve;
 typedef opencascade::handle<Geom_TrimmedCurve> HandleGeomTrimmedCurve;
+typedef opencascade::handle<Geom_Line> HandleGeom_Line;
+typedef opencascade::handle<Geom_Circle> HandleGeom_Circle;
+typedef opencascade::handle<Geom_Ellipse> HandleGeom_Ellipse;
 typedef opencascade::handle<Geom_Surface> HandleGeomSurface;
 typedef opencascade::handle<Geom_BezierSurface> HandleGeomBezierSurface;
 typedef opencascade::handle<Geom_BSplineSurface> HandleGeom_BSplineSurface;
@@ -137,6 +143,8 @@ template <typename T> const T &handle_try_deref(const opencascade::handle<T> &ha
 }
 
 inline const HandleStandardType &DynamicType(const HandleGeomSurface &surface) { return surface->DynamicType(); }
+
+inline const HandleStandardType &DynamicTypeCurve(const HandleGeomCurve &curve) { return curve->DynamicType(); }
 
 inline rust::String type_name(const HandleStandardType &handle) { return std::string(handle->Name()); }
 
@@ -262,6 +270,71 @@ inline const gp_Pnt &geom_torus_location(const HandleGeom_ToroidalSurface &torus
 inline const gp_Ax1 &geom_torus_axis(const HandleGeom_ToroidalSurface &torus) { return torus->Axis(); }
 inline double geom_torus_major_radius(const HandleGeom_ToroidalSurface &torus) { return torus->MajorRadius(); }
 inline double geom_torus_minor_radius(const HandleGeom_ToroidalSurface &torus) { return torus->MinorRadius(); }
+
+// Cast curve to specific types
+inline std::unique_ptr<HandleGeom_Line> cast_curve_to_line(const HandleGeomCurve &curve) {
+  Handle(Geom_Line) line = Handle(Geom_Line)::DownCast(curve);
+  if (line.IsNull()) {
+    return std::unique_ptr<HandleGeom_Line>();
+  }
+  return std::unique_ptr<HandleGeom_Line>(new HandleGeom_Line(line));
+}
+
+inline std::unique_ptr<HandleGeom_Circle> cast_curve_to_circle(const HandleGeomCurve &curve) {
+  Handle(Geom_Circle) circle = Handle(Geom_Circle)::DownCast(curve);
+  if (circle.IsNull()) {
+    return std::unique_ptr<HandleGeom_Circle>();
+  }
+  return std::unique_ptr<HandleGeom_Circle>(new HandleGeom_Circle(circle));
+}
+
+inline std::unique_ptr<HandleGeom_Ellipse> cast_curve_to_ellipse(const HandleGeomCurve &curve) {
+  Handle(Geom_Ellipse) ellipse = Handle(Geom_Ellipse)::DownCast(curve);
+  if (ellipse.IsNull()) {
+    return std::unique_ptr<HandleGeom_Ellipse>();
+  }
+  return std::unique_ptr<HandleGeom_Ellipse>(new HandleGeom_Ellipse(ellipse));
+}
+
+inline std::unique_ptr<HandleGeomBSplineCurve> cast_curve_to_bspline_curve(const HandleGeomCurve &curve) {
+  Handle(Geom_BSplineCurve) bspline = Handle(Geom_BSplineCurve)::DownCast(curve);
+  if (bspline.IsNull()) {
+    return std::unique_ptr<HandleGeomBSplineCurve>();
+  }
+  return std::unique_ptr<HandleGeomBSplineCurve>(new HandleGeomBSplineCurve(bspline));
+}
+
+inline std::unique_ptr<HandleGeomBezierCurve> cast_curve_to_bezier_curve(const HandleGeomCurve &curve) {
+  Handle(Geom_BezierCurve) bezier = Handle(Geom_BezierCurve)::DownCast(curve);
+  if (bezier.IsNull()) {
+    return std::unique_ptr<HandleGeomBezierCurve>();
+  }
+  return std::unique_ptr<HandleGeomBezierCurve>(new HandleGeomBezierCurve(bezier));
+}
+
+// Line properties
+inline const gp_Ax1 &geom_line_position(const HandleGeom_Line &line) { return line->Position(); }
+
+// Circle properties
+inline const gp_Pnt &geom_circle_location(const HandleGeom_Circle &circle) { return circle->Location(); }
+inline const gp_Ax1 &geom_circle_axis(const HandleGeom_Circle &circle) { return circle->Axis(); }
+inline double geom_circle_radius(const HandleGeom_Circle &circle) { return circle->Radius(); }
+
+// Ellipse properties
+inline const gp_Pnt &geom_ellipse_location(const HandleGeom_Ellipse &ellipse) { return ellipse->Location(); }
+inline const gp_Ax1 &geom_ellipse_axis(const HandleGeom_Ellipse &ellipse) { return ellipse->Axis(); }
+inline double geom_ellipse_major_radius(const HandleGeom_Ellipse &ellipse) { return ellipse->MajorRadius(); }
+inline double geom_ellipse_minor_radius(const HandleGeom_Ellipse &ellipse) { return ellipse->MinorRadius(); }
+
+// BSpline curve properties
+inline int geom_bspline_curve_nb_poles(const HandleGeomBSplineCurve &bspline) { return bspline->NbPoles(); }
+inline int geom_bspline_curve_degree(const HandleGeomBSplineCurve &bspline) { return bspline->Degree(); }
+inline bool geom_bspline_curve_is_rational(const HandleGeomBSplineCurve &bspline) { return bspline->IsRational(); }
+inline bool geom_bspline_curve_is_periodic(const HandleGeomBSplineCurve &bspline) { return bspline->IsPeriodic(); }
+
+// Bezier curve properties
+inline int geom_bezier_curve_nb_poles(const HandleGeomBezierCurve &bezier) { return bezier->NbPoles(); }
+inline int geom_bezier_curve_degree(const HandleGeomBezierCurve &bezier) { return bezier->Degree(); }
 
 inline std::unique_ptr<HandleGeom_CylindricalSurface> Geom_CylindricalSurface_ctor(const gp_Ax3 &axis, double radius) {
   return std::unique_ptr<HandleGeom_CylindricalSurface>(
