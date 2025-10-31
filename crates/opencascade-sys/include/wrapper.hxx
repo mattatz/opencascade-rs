@@ -251,6 +251,15 @@ inline bool geom_bspline_surface_is_u_rational(const HandleGeom_BSplineSurface &
 inline bool geom_bspline_surface_is_v_rational(const HandleGeom_BSplineSurface &bspline) { return bspline->IsVRational(); }
 inline bool geom_bspline_surface_is_u_periodic(const HandleGeom_BSplineSurface &bspline) { return bspline->IsUPeriodic(); }
 inline bool geom_bspline_surface_is_v_periodic(const HandleGeom_BSplineSurface &bspline) { return bspline->IsVPeriodic(); }
+
+// BSpline surface knots and multiplicities
+inline int geom_bspline_surface_nb_u_knots(const HandleGeom_BSplineSurface &bspline) { return bspline->NbUKnots(); }
+inline int geom_bspline_surface_nb_v_knots(const HandleGeom_BSplineSurface &bspline) { return bspline->NbVKnots(); }
+inline double geom_bspline_surface_u_knot(const HandleGeom_BSplineSurface &bspline, int index) { return bspline->UKnot(index); }
+inline double geom_bspline_surface_v_knot(const HandleGeom_BSplineSurface &bspline, int index) { return bspline->VKnot(index); }
+inline int geom_bspline_surface_u_multiplicity(const HandleGeom_BSplineSurface &bspline, int index) { return bspline->UMultiplicity(index); }
+inline int geom_bspline_surface_v_multiplicity(const HandleGeom_BSplineSurface &bspline, int index) { return bspline->VMultiplicity(index); }
+
 inline const gp_Pnt &geom_bspline_surface_pole(const HandleGeom_BSplineSurface &bspline, int u_index, int v_index) {
   return bspline->Pole(u_index, v_index);
 }

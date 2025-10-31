@@ -61,6 +61,10 @@ pub enum SurfaceDetails {
         is_v_rational: bool,
         is_u_periodic: bool,
         is_v_periodic: bool,
+        u_knots: Vec<f64>,
+        v_knots: Vec<f64>,
+        u_multiplicities: Vec<i32>,
+        v_multiplicities: Vec<i32>,
     },
     /// A Bezier surface
     Bezier {
@@ -552,6 +556,25 @@ impl Face {
                     let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
                     let is_v_periodic = ffi::geom_bspline_surface_is_v_periodic(&bspline);
 
+                    // Extract knot vectors
+                    let nb_u_knots = ffi::geom_bspline_surface_nb_u_knots(&bspline);
+                    let nb_v_knots = ffi::geom_bspline_surface_nb_v_knots(&bspline);
+
+                    let mut u_knots = Vec::with_capacity(nb_u_knots as usize);
+                    let mut v_knots = Vec::with_capacity(nb_v_knots as usize);
+                    let mut u_multiplicities = Vec::with_capacity(nb_u_knots as usize);
+                    let mut v_multiplicities = Vec::with_capacity(nb_v_knots as usize);
+
+                    for i in 1..=nb_u_knots {
+                        u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
+                        u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i));
+                    }
+
+                    for i in 1..=nb_v_knots {
+                        v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
+                        v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i));
+                    }
+
                     SurfaceDetails::BSpline {
                         nb_u_poles,
                         nb_v_poles,
@@ -561,6 +584,10 @@ impl Face {
                         is_v_rational,
                         is_u_periodic,
                         is_v_periodic,
+                        u_knots,
+                        v_knots,
+                        u_multiplicities,
+                        v_multiplicities,
                     }
                 } else {
                     SurfaceDetails::Unknown(surface_type)

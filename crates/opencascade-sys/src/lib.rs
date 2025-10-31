@@ -360,6 +360,21 @@ pub mod ffi {
         pub fn geom_bspline_surface_is_v_rational(bspline: &HandleGeom_BSplineSurface) -> bool;
         pub fn geom_bspline_surface_is_u_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
         pub fn geom_bspline_surface_is_v_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
+
+        // BSpline surface knots and multiplicities
+        pub fn geom_bspline_surface_nb_u_knots(bspline: &HandleGeom_BSplineSurface) -> i32;
+        pub fn geom_bspline_surface_nb_v_knots(bspline: &HandleGeom_BSplineSurface) -> i32;
+        pub fn geom_bspline_surface_u_knot(bspline: &HandleGeom_BSplineSurface, index: i32) -> f64;
+        pub fn geom_bspline_surface_v_knot(bspline: &HandleGeom_BSplineSurface, index: i32) -> f64;
+        pub fn geom_bspline_surface_u_multiplicity(
+            bspline: &HandleGeom_BSplineSurface,
+            index: i32,
+        ) -> i32;
+        pub fn geom_bspline_surface_v_multiplicity(
+            bspline: &HandleGeom_BSplineSurface,
+            index: i32,
+        ) -> i32;
+
         pub fn geom_bspline_surface_pole(
             bspline: &HandleGeom_BSplineSurface,
             u_index: i32,
