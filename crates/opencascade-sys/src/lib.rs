@@ -386,6 +386,11 @@ pub mod ffi {
         pub fn geom_bezier_surface_nb_v_poles(bezier: &HandleGeomBezierSurface) -> i32;
         pub fn geom_bezier_surface_u_degree(bezier: &HandleGeomBezierSurface) -> i32;
         pub fn geom_bezier_surface_v_degree(bezier: &HandleGeomBezierSurface) -> i32;
+        pub fn geom_bezier_surface_pole(
+            bezier: &HandleGeomBezierSurface,
+            u_index: i32,
+            v_index: i32,
+        ) -> &gp_Pnt;
 
         // Cone properties
         pub fn geom_cone_location(cone: &HandleGeom_ConicalSurface) -> &gp_Pnt;

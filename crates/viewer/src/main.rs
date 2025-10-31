@@ -233,6 +233,12 @@ impl GameApp for ViewerApp {
                             "      {} unique knots, sum(multiplicities) = {}",
                             v_knot_count, v_mult_sum
                         );
+
+                        println!("    Poles ({}x{} grid): {:?}",
+                            bspline.poles.len(),
+                            bspline.poles.first().map(|v| v.len()).unwrap_or(0),
+                            bspline.poles
+                        );
                     },
                     opencascade::primitives::SurfaceDetails::Bezier(bezier) => {
                         println!("  Bezier Surface Details:");
@@ -242,6 +248,11 @@ impl GameApp for ViewerApp {
                         println!("    V Direction:");
                         println!("      Control Points: {}", bezier.v_direction.nb_poles);
                         println!("      Degree: {}", bezier.v_direction.degree);
+                        println!("    Poles ({}x{} grid): {:?}",
+                            bezier.poles.len(),
+                            bezier.poles.first().map(|v| v.len()).unwrap_or(0),
+                            bezier.poles
+                        );
                     },
                     opencascade::primitives::SurfaceDetails::Unknown(_type_name) => {
                         // println!("  Details: Not available for {}", type_name);

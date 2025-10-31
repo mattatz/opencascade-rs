@@ -269,6 +269,9 @@ inline int geom_bezier_surface_nb_u_poles(const HandleGeomBezierSurface &bezier)
 inline int geom_bezier_surface_nb_v_poles(const HandleGeomBezierSurface &bezier) { return bezier->NbVPoles(); }
 inline int geom_bezier_surface_u_degree(const HandleGeomBezierSurface &bezier) { return bezier->UDegree(); }
 inline int geom_bezier_surface_v_degree(const HandleGeomBezierSurface &bezier) { return bezier->VDegree(); }
+inline const gp_Pnt &geom_bezier_surface_pole(const HandleGeomBezierSurface &bezier, int u_index, int v_index) {
+  return bezier->Pole(u_index, v_index);
+}
 
 // Cone properties
 inline const gp_Pnt &geom_cone_location(const HandleGeom_ConicalSurface &cone) { return cone->Location(); }

@@ -62,6 +62,7 @@ pub struct Torus {
 pub struct BSplineSurface {
     pub u_direction: BSplineCurveProfile,
     pub v_direction: BSplineCurveProfile,
+    pub poles: Vec<Vec<DVec3>>,
 }
 
 /// A Bezier surface
@@ -69,6 +70,7 @@ pub struct BSplineSurface {
 pub struct BezierSurface {
     pub u_direction: BezierCurveProfile,
     pub v_direction: BezierCurveProfile,
+    pub poles: Vec<Vec<DVec3>>,
 }
 
 /// Detailed information about a surface's geometric properties
@@ -591,6 +593,17 @@ impl Face {
                         v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i));
                     }
 
+                    // Extract poles (control points) - 2D grid [u][v]
+                    let mut poles = Vec::with_capacity(nb_u_poles as usize);
+                    for u in 1..=nb_u_poles {
+                        let mut v_poles = Vec::with_capacity(nb_v_poles as usize);
+                        for v in 1..=nb_v_poles {
+                            let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
+                            v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                        }
+                        poles.push(v_poles);
+                    }
+
                     SurfaceDetails::BSpline(BSplineSurface {
                         u_direction: super::BSplineCurveProfile {
                             nb_poles: nb_u_poles,
@@ -608,6 +621,7 @@ impl Face {
                             knots: v_knots,
                             multiplicities: v_multiplicities,
                         },
+                        poles,
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
@@ -621,6 +635,17 @@ impl Face {
                     let u_degree = ffi::geom_bezier_surface_u_degree(&bezier);
                     let v_degree = ffi::geom_bezier_surface_v_degree(&bezier);
 
+                    // Extract poles (control points) - 2D grid [u][v]
+                    let mut poles = Vec::with_capacity(nb_u_poles as usize);
+                    for u in 1..=nb_u_poles {
+                        let mut v_poles = Vec::with_capacity(nb_v_poles as usize);
+                        for v in 1..=nb_v_poles {
+                            let pole = ffi::geom_bezier_surface_pole(&bezier, u, v);
+                            v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                        }
+                        poles.push(v_poles);
+                    }
+
                     SurfaceDetails::Bezier(BezierSurface {
                         u_direction: super::BezierCurveProfile {
                             nb_poles: nb_u_poles,
@@ -630,6 +655,7 @@ impl Face {
                             nb_poles: nb_v_poles,
                             degree: v_degree,
                         },
+                        poles,
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
