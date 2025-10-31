@@ -209,26 +209,26 @@ impl GameApp for ViewerApp {
                     opencascade::primitives::SurfaceDetails::BSpline(bspline) => {
                         println!("  BSpline Surface Details:");
                         println!("    U Direction:");
-                        println!("      Control Points: {}", bspline.u_direction.nb_poles);
-                        println!("      Degree: {}", bspline.u_direction.degree);
-                        println!("      Rational: {}", bspline.u_direction.is_rational);
-                        println!("      Periodic: {}", bspline.u_direction.is_periodic);
+                        println!("      Control Points: {}", bspline.u_profile.nb_poles);
+                        println!("      Degree: {}", bspline.u_profile.degree);
+                        println!("      Rational: {}", bspline.u_profile.is_rational);
+                        println!("      Periodic: {}", bspline.u_profile.is_periodic);
 
-                        let u_knot_count = bspline.u_direction.knots.len();
-                        let u_mult_sum: i32 = bspline.u_direction.multiplicities.iter().sum();
+                        let u_knot_count = bspline.u_profile.knots.len();
+                        let u_mult_sum: i32 = bspline.u_profile.multiplicities.iter().sum();
                         println!(
                             "      {} unique knots, sum(multiplicities) = {}",
                             u_knot_count, u_mult_sum
                         );
 
                         println!("    V Direction:");
-                        println!("      Control Points: {}", bspline.v_direction.nb_poles);
-                        println!("      Degree: {}", bspline.v_direction.degree);
-                        println!("      Rational: {}", bspline.v_direction.is_rational);
-                        println!("      Periodic: {}", bspline.v_direction.is_periodic);
+                        println!("      Control Points: {}", bspline.v_profile.nb_poles);
+                        println!("      Degree: {}", bspline.v_profile.degree);
+                        println!("      Rational: {}", bspline.v_profile.is_rational);
+                        println!("      Periodic: {}", bspline.v_profile.is_periodic);
 
-                        let v_knot_count = bspline.v_direction.knots.len();
-                        let v_mult_sum: i32 = bspline.v_direction.multiplicities.iter().sum();
+                        let v_knot_count = bspline.v_profile.knots.len();
+                        let v_mult_sum: i32 = bspline.v_profile.multiplicities.iter().sum();
                         println!(
                             "      {} unique knots, sum(multiplicities) = {}",
                             v_knot_count, v_mult_sum
@@ -243,11 +243,11 @@ impl GameApp for ViewerApp {
                     opencascade::primitives::SurfaceDetails::Bezier(bezier) => {
                         println!("  Bezier Surface Details:");
                         println!("    U Direction:");
-                        println!("      Control Points: {}", bezier.u_direction.nb_poles);
-                        println!("      Degree: {}", bezier.u_direction.degree);
+                        println!("      Control Points: {}", bezier.u_profile.nb_poles);
+                        println!("      Degree: {}", bezier.u_profile.degree);
                         println!("    V Direction:");
-                        println!("      Control Points: {}", bezier.v_direction.nb_poles);
-                        println!("      Degree: {}", bezier.v_direction.degree);
+                        println!("      Control Points: {}", bezier.v_profile.nb_poles);
+                        println!("      Degree: {}", bezier.v_profile.degree);
                         println!("    Poles ({}x{} grid): {:?}",
                             bezier.poles.len(),
                             bezier.poles.first().map(|v| v.len()).unwrap_or(0),

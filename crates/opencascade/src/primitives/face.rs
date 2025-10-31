@@ -60,16 +60,16 @@ pub struct Torus {
 /// A B-Spline surface
 #[derive(Debug, Clone)]
 pub struct BSplineSurface {
-    pub u_direction: BSplineCurveProfile,
-    pub v_direction: BSplineCurveProfile,
+    pub u_profile: BSplineCurveProfile,
+    pub v_profile: BSplineCurveProfile,
     pub poles: Vec<Vec<DVec3>>,
 }
 
 /// A Bezier surface
 #[derive(Debug, Clone)]
 pub struct BezierSurface {
-    pub u_direction: BezierCurveProfile,
-    pub v_direction: BezierCurveProfile,
+    pub u_profile: BezierCurveProfile,
+    pub v_profile: BezierCurveProfile,
     pub poles: Vec<Vec<DVec3>>,
 }
 
@@ -605,7 +605,7 @@ impl Face {
                     }
 
                     SurfaceDetails::BSpline(BSplineSurface {
-                        u_direction: super::BSplineCurveProfile {
+                        u_profile: super::BSplineCurveProfile {
                             nb_poles: nb_u_poles,
                             degree: u_degree,
                             is_rational: is_u_rational,
@@ -613,7 +613,7 @@ impl Face {
                             knots: u_knots,
                             multiplicities: u_multiplicities,
                         },
-                        v_direction: super::BSplineCurveProfile {
+                        v_profile: super::BSplineCurveProfile {
                             nb_poles: nb_v_poles,
                             degree: v_degree,
                             is_rational: is_v_rational,
@@ -647,11 +647,11 @@ impl Face {
                     }
 
                     SurfaceDetails::Bezier(BezierSurface {
-                        u_direction: super::BezierCurveProfile {
+                        u_profile: super::BezierCurveProfile {
                             nb_poles: nb_u_poles,
                             degree: u_degree,
                         },
-                        v_direction: super::BezierCurveProfile {
+                        v_profile: super::BezierCurveProfile {
                             nb_poles: nb_v_poles,
                             degree: v_degree,
                         },
