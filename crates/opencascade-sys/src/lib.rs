@@ -83,6 +83,9 @@ pub mod ffi {
         type HandleGeom_Line;
         type HandleGeom_Circle;
         type HandleGeom_Ellipse;
+        type HandleGeom_Hyperbola;
+        type HandleGeom_Parabola;
+        type HandleGeom_OffsetCurve;
         type HandleGeomSurface;
         type HandleGeomBezierSurface;
         type HandleGeom_BSplineSurface;
@@ -133,6 +136,9 @@ pub mod ffi {
         pub fn IsNull(self: &HandleGeom_Line) -> bool;
         pub fn IsNull(self: &HandleGeom_Circle) -> bool;
         pub fn IsNull(self: &HandleGeom_Ellipse) -> bool;
+        pub fn IsNull(self: &HandleGeom_Hyperbola) -> bool;
+        pub fn IsNull(self: &HandleGeom_Parabola) -> bool;
+        pub fn IsNull(self: &HandleGeom_OffsetCurve) -> bool;
         pub fn IsNull(self: &HandleGeomSurface) -> bool;
         pub fn IsNull(self: &HandleGeomBezierSurface) -> bool;
         pub fn IsNull(self: &HandleGeom_BSplineSurface) -> bool;
@@ -393,6 +399,14 @@ pub mod ffi {
         pub fn cast_curve_to_bezier_curve(
             curve: &HandleGeomCurve,
         ) -> UniquePtr<HandleGeomBezierCurve>;
+        pub fn cast_curve_to_hyperbola(curve: &HandleGeomCurve) -> UniquePtr<HandleGeom_Hyperbola>;
+        pub fn cast_curve_to_parabola(curve: &HandleGeomCurve) -> UniquePtr<HandleGeom_Parabola>;
+        pub fn cast_curve_to_offset_curve(
+            curve: &HandleGeomCurve,
+        ) -> UniquePtr<HandleGeom_OffsetCurve>;
+        pub fn cast_curve_to_trimmed_curve(
+            curve: &HandleGeomCurve,
+        ) -> UniquePtr<HandleGeomTrimmedCurve>;
 
         // Line properties
         pub fn geom_line_position(line: &HandleGeom_Line) -> &gp_Ax1;
@@ -417,6 +431,30 @@ pub mod ffi {
         // Bezier curve properties
         pub fn geom_bezier_curve_nb_poles(bezier: &HandleGeomBezierCurve) -> i32;
         pub fn geom_bezier_curve_degree(bezier: &HandleGeomBezierCurve) -> i32;
+
+        // Hyperbola properties
+        pub fn geom_hyperbola_location(hyperbola: &HandleGeom_Hyperbola) -> &gp_Pnt;
+        pub fn geom_hyperbola_axis(hyperbola: &HandleGeom_Hyperbola) -> &gp_Ax1;
+        pub fn geom_hyperbola_major_radius(hyperbola: &HandleGeom_Hyperbola) -> f64;
+        pub fn geom_hyperbola_minor_radius(hyperbola: &HandleGeom_Hyperbola) -> f64;
+
+        // Parabola properties
+        pub fn geom_parabola_location(parabola: &HandleGeom_Parabola) -> &gp_Pnt;
+        pub fn geom_parabola_axis(parabola: &HandleGeom_Parabola) -> &gp_Ax1;
+        pub fn geom_parabola_focal(parabola: &HandleGeom_Parabola) -> f64;
+
+        // OffsetCurve properties
+        pub fn geom_offset_curve_basis_curve(
+            offset: &HandleGeom_OffsetCurve,
+        ) -> UniquePtr<HandleGeomCurve>;
+        pub fn geom_offset_curve_offset(offset: &HandleGeom_OffsetCurve) -> f64;
+
+        // TrimmedCurve properties
+        pub fn geom_trimmed_curve_basis_curve(
+            trimmed: &HandleGeomTrimmedCurve,
+        ) -> UniquePtr<HandleGeomCurve>;
+        pub fn geom_trimmed_curve_first_parameter(trimmed: &HandleGeomTrimmedCurve) -> f64;
+        pub fn geom_trimmed_curve_last_parameter(trimmed: &HandleGeomTrimmedCurve) -> f64;
 
         pub fn Geom_CylindricalSurface_ctor(
             axis: &gp_Ax3,

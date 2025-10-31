@@ -53,7 +53,10 @@
 #include <Geom_BezierSurface.hxx>
 #include <Geom_Circle.hxx>
 #include <Geom_Ellipse.hxx>
+#include <Geom_Hyperbola.hxx>
 #include <Geom_Line.hxx>
+#include <Geom_OffsetCurve.hxx>
+#include <Geom_Parabola.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_ConicalSurface.hxx>
 #include <Geom_CylindricalSurface.hxx>
@@ -112,6 +115,9 @@ typedef opencascade::handle<Geom_TrimmedCurve> HandleGeomTrimmedCurve;
 typedef opencascade::handle<Geom_Line> HandleGeom_Line;
 typedef opencascade::handle<Geom_Circle> HandleGeom_Circle;
 typedef opencascade::handle<Geom_Ellipse> HandleGeom_Ellipse;
+typedef opencascade::handle<Geom_Hyperbola> HandleGeom_Hyperbola;
+typedef opencascade::handle<Geom_Parabola> HandleGeom_Parabola;
+typedef opencascade::handle<Geom_OffsetCurve> HandleGeom_OffsetCurve;
 typedef opencascade::handle<Geom_Surface> HandleGeomSurface;
 typedef opencascade::handle<Geom_BezierSurface> HandleGeomBezierSurface;
 typedef opencascade::handle<Geom_BSplineSurface> HandleGeom_BSplineSurface;
@@ -312,6 +318,38 @@ inline std::unique_ptr<HandleGeomBezierCurve> cast_curve_to_bezier_curve(const H
   return std::unique_ptr<HandleGeomBezierCurve>(new HandleGeomBezierCurve(bezier));
 }
 
+inline std::unique_ptr<HandleGeom_Hyperbola> cast_curve_to_hyperbola(const HandleGeomCurve &curve) {
+  Handle(Geom_Hyperbola) hyperbola = Handle(Geom_Hyperbola)::DownCast(curve);
+  if (hyperbola.IsNull()) {
+    return std::unique_ptr<HandleGeom_Hyperbola>();
+  }
+  return std::unique_ptr<HandleGeom_Hyperbola>(new HandleGeom_Hyperbola(hyperbola));
+}
+
+inline std::unique_ptr<HandleGeom_Parabola> cast_curve_to_parabola(const HandleGeomCurve &curve) {
+  Handle(Geom_Parabola) parabola = Handle(Geom_Parabola)::DownCast(curve);
+  if (parabola.IsNull()) {
+    return std::unique_ptr<HandleGeom_Parabola>();
+  }
+  return std::unique_ptr<HandleGeom_Parabola>(new HandleGeom_Parabola(parabola));
+}
+
+inline std::unique_ptr<HandleGeom_OffsetCurve> cast_curve_to_offset_curve(const HandleGeomCurve &curve) {
+  Handle(Geom_OffsetCurve) offset = Handle(Geom_OffsetCurve)::DownCast(curve);
+  if (offset.IsNull()) {
+    return std::unique_ptr<HandleGeom_OffsetCurve>();
+  }
+  return std::unique_ptr<HandleGeom_OffsetCurve>(new HandleGeom_OffsetCurve(offset));
+}
+
+inline std::unique_ptr<HandleGeomTrimmedCurve> cast_curve_to_trimmed_curve(const HandleGeomCurve &curve) {
+  Handle(Geom_TrimmedCurve) trimmed = Handle(Geom_TrimmedCurve)::DownCast(curve);
+  if (trimmed.IsNull()) {
+    return std::unique_ptr<HandleGeomTrimmedCurve>();
+  }
+  return std::unique_ptr<HandleGeomTrimmedCurve>(new HandleGeomTrimmedCurve(trimmed));
+}
+
 // Line properties
 inline const gp_Ax1 &geom_line_position(const HandleGeom_Line &line) { return line->Position(); }
 
@@ -335,6 +373,30 @@ inline bool geom_bspline_curve_is_periodic(const HandleGeomBSplineCurve &bspline
 // Bezier curve properties
 inline int geom_bezier_curve_nb_poles(const HandleGeomBezierCurve &bezier) { return bezier->NbPoles(); }
 inline int geom_bezier_curve_degree(const HandleGeomBezierCurve &bezier) { return bezier->Degree(); }
+
+// Hyperbola properties
+inline const gp_Pnt &geom_hyperbola_location(const HandleGeom_Hyperbola &hyperbola) { return hyperbola->Location(); }
+inline const gp_Ax1 &geom_hyperbola_axis(const HandleGeom_Hyperbola &hyperbola) { return hyperbola->Axis(); }
+inline double geom_hyperbola_major_radius(const HandleGeom_Hyperbola &hyperbola) { return hyperbola->MajorRadius(); }
+inline double geom_hyperbola_minor_radius(const HandleGeom_Hyperbola &hyperbola) { return hyperbola->MinorRadius(); }
+
+// Parabola properties
+inline const gp_Pnt &geom_parabola_location(const HandleGeom_Parabola &parabola) { return parabola->Location(); }
+inline const gp_Ax1 &geom_parabola_axis(const HandleGeom_Parabola &parabola) { return parabola->Axis(); }
+inline double geom_parabola_focal(const HandleGeom_Parabola &parabola) { return parabola->Focal(); }
+
+// OffsetCurve properties
+inline std::unique_ptr<HandleGeomCurve> geom_offset_curve_basis_curve(const HandleGeom_OffsetCurve &offset) {
+  return std::unique_ptr<HandleGeomCurve>(new HandleGeomCurve(offset->BasisCurve()));
+}
+inline double geom_offset_curve_offset(const HandleGeom_OffsetCurve &offset) { return offset->Offset(); }
+
+// TrimmedCurve properties
+inline std::unique_ptr<HandleGeomCurve> geom_trimmed_curve_basis_curve(const HandleGeomTrimmedCurve &trimmed) {
+  return std::unique_ptr<HandleGeomCurve>(new HandleGeomCurve(trimmed->BasisCurve()));
+}
+inline double geom_trimmed_curve_first_parameter(const HandleGeomTrimmedCurve &trimmed) { return trimmed->FirstParameter(); }
+inline double geom_trimmed_curve_last_parameter(const HandleGeomTrimmedCurve &trimmed) { return trimmed->LastParameter(); }
 
 inline std::unique_ptr<HandleGeom_CylindricalSurface> Geom_CylindricalSurface_ctor(const gp_Ax3 &axis, double radius) {
   return std::unique_ptr<HandleGeom_CylindricalSurface>(

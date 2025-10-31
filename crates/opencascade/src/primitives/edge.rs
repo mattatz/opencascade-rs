@@ -38,6 +38,30 @@ pub enum CurveDetails {
         nb_poles: i32,
         degree: i32,
     },
+    /// A hyperbola
+    Hyperbola {
+        center: DVec3,
+        axis: DVec3,
+        major_radius: f64,
+        minor_radius: f64,
+    },
+    /// A parabola
+    Parabola {
+        vertex: DVec3,
+        axis: DVec3,
+        focal: f64,
+    },
+    /// An offset curve
+    OffsetCurve {
+        basis_curve_type: String,
+        offset: f64,
+    },
+    /// A trimmed curve
+    TrimmedCurve {
+        basis_curve_type: String,
+        first_parameter: f64,
+        last_parameter: f64,
+    },
     /// Unknown or unsupported curve type
     Unknown(String),
 }
@@ -306,6 +330,86 @@ impl Edge {
                     CurveDetails::BezierCurve {
                         nb_poles,
                         degree,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_Hyperbola" => {
+                let hyperbola = ffi::cast_curve_to_hyperbola(&curve);
+                if !hyperbola.IsNull() {
+                    let center = ffi::geom_hyperbola_location(&hyperbola);
+                    let axis = ffi::geom_hyperbola_axis(&hyperbola);
+                    let axis_dir = ffi::gp_Ax1_direction(&axis);
+                    let major_radius = ffi::geom_hyperbola_major_radius(&hyperbola);
+                    let minor_radius = ffi::geom_hyperbola_minor_radius(&hyperbola);
+
+                    CurveDetails::Hyperbola {
+                        center: dvec3(center.X(), center.Y(), center.Z()),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        major_radius,
+                        minor_radius,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_Parabola" => {
+                let parabola = ffi::cast_curve_to_parabola(&curve);
+                if !parabola.IsNull() {
+                    let vertex = ffi::geom_parabola_location(&parabola);
+                    let axis = ffi::geom_parabola_axis(&parabola);
+                    let axis_dir = ffi::gp_Ax1_direction(&axis);
+                    let focal = ffi::geom_parabola_focal(&parabola);
+
+                    CurveDetails::Parabola {
+                        vertex: dvec3(vertex.X(), vertex.Y(), vertex.Z()),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        focal,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_OffsetCurve" => {
+                let offset = ffi::cast_curve_to_offset_curve(&curve);
+                if !offset.IsNull() {
+                    let basis_curve = ffi::geom_offset_curve_basis_curve(&offset);
+                    let offset_value = ffi::geom_offset_curve_offset(&offset);
+
+                    let basis_curve_type = if basis_curve.is_null() {
+                        "Unknown".to_string()
+                    } else {
+                        let dynamic_type = ffi::DynamicTypeCurve(&basis_curve);
+                        ffi::type_name(&dynamic_type)
+                    };
+
+                    CurveDetails::OffsetCurve {
+                        basis_curve_type,
+                        offset: offset_value,
+                    }
+                } else {
+                    CurveDetails::Unknown(curve_type)
+                }
+            },
+            "Geom_TrimmedCurve" => {
+                let trimmed = ffi::cast_curve_to_trimmed_curve(&curve);
+                if !trimmed.IsNull() {
+                    let basis_curve = ffi::geom_trimmed_curve_basis_curve(&trimmed);
+                    let first_parameter = ffi::geom_trimmed_curve_first_parameter(&trimmed);
+                    let last_parameter = ffi::geom_trimmed_curve_last_parameter(&trimmed);
+
+                    let basis_curve_type = if basis_curve.is_null() {
+                        "Unknown".to_string()
+                    } else {
+                        let dynamic_type = ffi::DynamicTypeCurve(&basis_curve);
+                        ffi::type_name(&dynamic_type)
+                    };
+
+                    CurveDetails::TrimmedCurve {
+                        basis_curve_type,
+                        first_parameter,
+                        last_parameter,
                     }
                 } else {
                     CurveDetails::Unknown(curve_type)
