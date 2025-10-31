@@ -380,6 +380,11 @@ inline int geom_bspline_curve_degree(const HandleGeomBSplineCurve &bspline) { re
 inline bool geom_bspline_curve_is_rational(const HandleGeomBSplineCurve &bspline) { return bspline->IsRational(); }
 inline bool geom_bspline_curve_is_periodic(const HandleGeomBSplineCurve &bspline) { return bspline->IsPeriodic(); }
 
+// BSpline curve knots and multiplicities
+inline int geom_bspline_curve_nb_knots(const HandleGeomBSplineCurve &bspline) { return bspline->NbKnots(); }
+inline double geom_bspline_curve_knot(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Knot(index); }
+inline int geom_bspline_curve_multiplicity(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Multiplicity(index); }
+
 // Bezier curve properties
 inline int geom_bezier_curve_nb_poles(const HandleGeomBezierCurve &bezier) { return bezier->NbPoles(); }
 inline int geom_bezier_curve_degree(const HandleGeomBezierCurve &bezier) { return bezier->Degree(); }

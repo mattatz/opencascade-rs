@@ -36,6 +36,8 @@ pub struct BSplineCurve {
     pub degree: i32,
     pub is_rational: bool,
     pub is_periodic: bool,
+    pub knots: Vec<f64>,
+    pub multiplicities: Vec<i32>,
 }
 
 /// A Bezier curve
@@ -347,11 +349,23 @@ impl Edge {
                     let is_rational = ffi::geom_bspline_curve_is_rational(&bspline);
                     let is_periodic = ffi::geom_bspline_curve_is_periodic(&bspline);
 
+                    // Extract knot vectors
+                    let nb_knots = ffi::geom_bspline_curve_nb_knots(&bspline);
+                    let mut knots = Vec::with_capacity(nb_knots as usize);
+                    let mut multiplicities = Vec::with_capacity(nb_knots as usize);
+
+                    for i in 1..=nb_knots {
+                        knots.push(ffi::geom_bspline_curve_knot(&bspline, i));
+                        multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline, i));
+                    }
+
                     CurveDetails::BSplineCurve(BSplineCurve {
                         nb_poles,
                         degree,
                         is_rational,
                         is_periodic,
+                        knots,
+                        multiplicities,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)

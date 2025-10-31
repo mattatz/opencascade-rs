@@ -443,6 +443,11 @@ pub mod ffi {
         pub fn geom_bspline_curve_is_rational(bspline: &HandleGeomBSplineCurve) -> bool;
         pub fn geom_bspline_curve_is_periodic(bspline: &HandleGeomBSplineCurve) -> bool;
 
+        // BSpline curve knots and multiplicities
+        pub fn geom_bspline_curve_nb_knots(bspline: &HandleGeomBSplineCurve) -> i32;
+        pub fn geom_bspline_curve_knot(bspline: &HandleGeomBSplineCurve, index: i32) -> f64;
+        pub fn geom_bspline_curve_multiplicity(bspline: &HandleGeomBSplineCurve, index: i32) -> i32;
+
         // Bezier curve properties
         pub fn geom_bezier_curve_nb_poles(bezier: &HandleGeomBezierCurve) -> i32;
         pub fn geom_bezier_curve_degree(bezier: &HandleGeomBezierCurve) -> i32;

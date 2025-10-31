@@ -61,27 +61,15 @@ pub struct Torus {
 /// A B-Spline surface
 #[derive(Debug, Clone)]
 pub struct BSplineSurface {
-    pub nb_u_poles: i32,
-    pub nb_v_poles: i32,
-    pub u_degree: i32,
-    pub v_degree: i32,
-    pub is_u_rational: bool,
-    pub is_v_rational: bool,
-    pub is_u_periodic: bool,
-    pub is_v_periodic: bool,
-    pub u_knots: Vec<f64>,
-    pub v_knots: Vec<f64>,
-    pub u_multiplicities: Vec<i32>,
-    pub v_multiplicities: Vec<i32>,
+    pub u_direction: super::BSplineCurve,
+    pub v_direction: super::BSplineCurve,
 }
 
 /// A Bezier surface
 #[derive(Debug, Clone)]
 pub struct BezierSurface {
-    pub nb_u_poles: i32,
-    pub nb_v_poles: i32,
-    pub u_degree: i32,
-    pub v_degree: i32,
+    pub u_direction: super::BezierCurve,
+    pub v_direction: super::BezierCurve,
 }
 
 /// Detailed information about a surface's geometric properties
@@ -584,19 +572,20 @@ impl Face {
                     let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
                     let is_v_periodic = ffi::geom_bspline_surface_is_v_periodic(&bspline);
 
-                    // Extract knot vectors
+                    // Extract knot vectors for U direction
                     let nb_u_knots = ffi::geom_bspline_surface_nb_u_knots(&bspline);
-                    let nb_v_knots = ffi::geom_bspline_surface_nb_v_knots(&bspline);
-
                     let mut u_knots = Vec::with_capacity(nb_u_knots as usize);
-                    let mut v_knots = Vec::with_capacity(nb_v_knots as usize);
                     let mut u_multiplicities = Vec::with_capacity(nb_u_knots as usize);
-                    let mut v_multiplicities = Vec::with_capacity(nb_v_knots as usize);
 
                     for i in 1..=nb_u_knots {
                         u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
                         u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i));
                     }
+
+                    // Extract knot vectors for V direction
+                    let nb_v_knots = ffi::geom_bspline_surface_nb_v_knots(&bspline);
+                    let mut v_knots = Vec::with_capacity(nb_v_knots as usize);
+                    let mut v_multiplicities = Vec::with_capacity(nb_v_knots as usize);
 
                     for i in 1..=nb_v_knots {
                         v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
@@ -604,18 +593,22 @@ impl Face {
                     }
 
                     SurfaceDetails::BSpline(BSplineSurface {
-                        nb_u_poles,
-                        nb_v_poles,
-                        u_degree,
-                        v_degree,
-                        is_u_rational,
-                        is_v_rational,
-                        is_u_periodic,
-                        is_v_periodic,
-                        u_knots,
-                        v_knots,
-                        u_multiplicities,
-                        v_multiplicities,
+                        u_direction: super::BSplineCurve {
+                            nb_poles: nb_u_poles,
+                            degree: u_degree,
+                            is_rational: is_u_rational,
+                            is_periodic: is_u_periodic,
+                            knots: u_knots,
+                            multiplicities: u_multiplicities,
+                        },
+                        v_direction: super::BSplineCurve {
+                            nb_poles: nb_v_poles,
+                            degree: v_degree,
+                            is_rational: is_v_rational,
+                            is_periodic: is_v_periodic,
+                            knots: v_knots,
+                            multiplicities: v_multiplicities,
+                        },
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
@@ -630,10 +623,14 @@ impl Face {
                     let v_degree = ffi::geom_bezier_surface_v_degree(&bezier);
 
                     SurfaceDetails::Bezier(BezierSurface {
-                        nb_u_poles,
-                        nb_v_poles,
-                        u_degree,
-                        v_degree,
+                        u_direction: super::BezierCurve {
+                            nb_poles: nb_u_poles,
+                            degree: u_degree,
+                        },
+                        v_direction: super::BezierCurve {
+                            nb_poles: nb_v_poles,
+                            degree: v_degree,
+                        },
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)

@@ -207,37 +207,54 @@ impl GameApp for ViewerApp {
                     },
                     opencascade::primitives::SurfaceDetails::BSpline(bspline) => {
                         println!("  BSpline Surface Details:");
-                        println!("    Control Points: {}×{} (U×V)", bspline.nb_u_poles, bspline.nb_v_poles);
-                        println!("    Degree: {} (U), {} (V)", bspline.u_degree, bspline.v_degree);
-                        println!("    Rational: {} (U), {} (V)", bspline.is_u_rational, bspline.is_v_rational);
-                        println!("    Periodic: {} (U), {} (V)", bspline.is_u_periodic, bspline.is_v_periodic);
+                        println!("    U Direction:");
+                        println!("      Control Points: {}", bspline.u_direction.nb_poles);
+                        println!("      Degree: {}", bspline.u_direction.degree);
+                        println!("      Rational: {}", bspline.u_direction.is_rational);
+                        println!("      Periodic: {}", bspline.u_direction.is_periodic);
 
-                        let u_knot_count = bspline.u_knots.len();
-                        let v_knot_count = bspline.v_knots.len();
-                        let u_mult_sum: i32 = bspline.u_multiplicities.iter().sum();
-                        let v_mult_sum: i32 = bspline.v_multiplicities.iter().sum();
+                        let u_knot_count = bspline.u_direction.knots.len();
+                        let u_mult_sum: i32 = bspline.u_direction.multiplicities.iter().sum();
+                        println!("      {} unique knots, sum(multiplicities) = {}", u_knot_count, u_mult_sum);
+                        println!("      Expected knot vector length = {} + {} + 1 = {}",
+                            bspline.u_direction.nb_poles, bspline.u_direction.degree,
+                            bspline.u_direction.nb_poles + bspline.u_direction.degree + 1);
 
-                        println!("    U: {} unique knots, sum(multiplicities) = {}", u_knot_count, u_mult_sum);
-                        println!("       Expected knot vector length = {} + {} + 1 = {}", bspline.nb_u_poles, bspline.u_degree, bspline.nb_u_poles + bspline.u_degree + 1);
-                        println!("    V: {} unique knots, sum(multiplicities) = {}", v_knot_count, v_mult_sum);
-                        println!("       Expected knot vector length = {} + {} + 1 = {}", bspline.nb_v_poles, bspline.v_degree, bspline.nb_v_poles + bspline.v_degree + 1);
-
-                        if u_mult_sum == bspline.nb_u_poles + bspline.u_degree + 1 {
-                            println!("    ✓ U direction: Relationship verified!");
+                        if u_mult_sum == bspline.u_direction.nb_poles + bspline.u_direction.degree + 1 {
+                            println!("      ✓ Relationship verified!");
                         } else {
-                            println!("    ✗ U direction: Mismatch! {} ≠ {}", u_mult_sum, bspline.nb_u_poles + bspline.u_degree + 1);
+                            println!("      ✗ Mismatch! {} ≠ {}", u_mult_sum,
+                                bspline.u_direction.nb_poles + bspline.u_direction.degree + 1);
                         }
 
-                        if v_mult_sum == bspline.nb_v_poles + bspline.v_degree + 1 {
-                            println!("    ✓ V direction: Relationship verified!");
+                        println!("    V Direction:");
+                        println!("      Control Points: {}", bspline.v_direction.nb_poles);
+                        println!("      Degree: {}", bspline.v_direction.degree);
+                        println!("      Rational: {}", bspline.v_direction.is_rational);
+                        println!("      Periodic: {}", bspline.v_direction.is_periodic);
+
+                        let v_knot_count = bspline.v_direction.knots.len();
+                        let v_mult_sum: i32 = bspline.v_direction.multiplicities.iter().sum();
+                        println!("      {} unique knots, sum(multiplicities) = {}", v_knot_count, v_mult_sum);
+                        println!("      Expected knot vector length = {} + {} + 1 = {}",
+                            bspline.v_direction.nb_poles, bspline.v_direction.degree,
+                            bspline.v_direction.nb_poles + bspline.v_direction.degree + 1);
+
+                        if v_mult_sum == bspline.v_direction.nb_poles + bspline.v_direction.degree + 1 {
+                            println!("      ✓ Relationship verified!");
                         } else {
-                            println!("    ✗ V direction: Mismatch! {} ≠ {}", v_mult_sum, bspline.nb_v_poles + bspline.v_degree + 1);
+                            println!("      ✗ Mismatch! {} ≠ {}", v_mult_sum,
+                                bspline.v_direction.nb_poles + bspline.v_direction.degree + 1);
                         }
                     },
                     opencascade::primitives::SurfaceDetails::Bezier(bezier) => {
                         println!("  Bezier Surface Details:");
-                        println!("    Control Points: {}×{} (U×V)", bezier.nb_u_poles, bezier.nb_v_poles);
-                        println!("    Degree: {} (U), {} (V)", bezier.u_degree, bezier.v_degree);
+                        println!("    U Direction:");
+                        println!("      Control Points: {}", bezier.u_direction.nb_poles);
+                        println!("      Degree: {}", bezier.u_direction.degree);
+                        println!("    V Direction:");
+                        println!("      Control Points: {}", bezier.v_direction.nb_poles);
+                        println!("      Degree: {}", bezier.v_direction.degree);
                     },
                     opencascade::primitives::SurfaceDetails::Unknown(_type_name) => {
                         // println!("  Details: Not available for {}", type_name);
@@ -287,6 +304,18 @@ impl GameApp for ViewerApp {
                         println!("    Degree: {}", bspline.degree);
                         println!("    Rational: {}", bspline.is_rational);
                         println!("    Periodic: {}", bspline.is_periodic);
+
+                        let knot_count = bspline.knots.len();
+                        let mult_sum: i32 = bspline.multiplicities.iter().sum();
+                        println!("    {} unique knots, sum(multiplicities) = {}", knot_count, mult_sum);
+                        println!("    Expected knot vector length = {} + {} + 1 = {}",
+                            bspline.nb_poles, bspline.degree, bspline.nb_poles + bspline.degree + 1);
+
+                        if mult_sum == bspline.nb_poles + bspline.degree + 1 {
+                            println!("    ✓ Relationship verified!");
+                        } else {
+                            println!("    ✗ Mismatch! {} ≠ {}", mult_sum, bspline.nb_poles + bspline.degree + 1);
+                        }
                     },
                     opencascade::primitives::CurveDetails::BezierCurve(bezier) => {
                         println!("  Bezier Curve Details:");
