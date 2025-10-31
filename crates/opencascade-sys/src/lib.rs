@@ -84,10 +84,13 @@ pub mod ffi {
         type HandleGeomBezierSurface;
         type HandleGeom_BSplineSurface;
         type HandleGeomPlane;
+        type HandleGeom_ConicalSurface;
+        type HandleGeom_CylindricalSurface;
+        type HandleGeom_SphericalSurface;
+        type HandleGeom_ToroidalSurface;
         type HandleGeom2d_Curve;
         type HandleGeom2d_Ellipse;
         type HandleGeom2d_TrimmedCurve;
-        type HandleGeom_CylindricalSurface;
         type HandleTopTools_HSequenceOfShape;
         type HandleLawFunction;
 
@@ -125,10 +128,13 @@ pub mod ffi {
         pub fn IsNull(self: &HandleGeomBezierSurface) -> bool;
         pub fn IsNull(self: &HandleGeom_BSplineSurface) -> bool;
         pub fn IsNull(self: &HandleGeomPlane) -> bool;
+        pub fn IsNull(self: &HandleGeom_ConicalSurface) -> bool;
+        pub fn IsNull(self: &HandleGeom_CylindricalSurface) -> bool;
+        pub fn IsNull(self: &HandleGeom_SphericalSurface) -> bool;
+        pub fn IsNull(self: &HandleGeom_ToroidalSurface) -> bool;
         pub fn IsNull(self: &HandleGeom2d_Curve) -> bool;
         pub fn IsNull(self: &HandleGeom2d_Ellipse) -> bool;
         pub fn IsNull(self: &HandleGeom2d_TrimmedCurve) -> bool;
-        pub fn IsNull(self: &HandleGeom_CylindricalSurface) -> bool;
         pub fn IsNull(self: &HandleTopTools_HSequenceOfShape) -> bool;
 
         pub fn HandleGeomCurve_Value(curve: &HandleGeomCurve, u: f64) -> UniquePtr<gp_Pnt>;
@@ -283,9 +289,12 @@ pub mod ffi {
 
         // Geometry
         type Geom_TrimmedCurve;
-        type Geom_CylindricalSurface;
         type Geom_BezierSurface;
         type Geom_BSplineSurface;
+        type Geom_ConicalSurface;
+        type Geom_CylindricalSurface;
+        type Geom_SphericalSurface;
+        type Geom_ToroidalSurface;
         type Geom2d_Ellipse;
         type Geom2d_Curve;
         type Geom2d_TrimmedCurve;
@@ -302,6 +311,18 @@ pub mod ffi {
         pub fn cast_surface_to_bspline(
             surface: &HandleGeomSurface,
         ) -> UniquePtr<HandleGeom_BSplineSurface>;
+        pub fn cast_surface_to_bezier(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeomBezierSurface>;
+        pub fn cast_surface_to_cone(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeom_ConicalSurface>;
+        pub fn cast_surface_to_sphere(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeom_SphericalSurface>;
+        pub fn cast_surface_to_torus(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeom_ToroidalSurface>;
 
         // Plane properties
         pub fn geom_plane_location(plane: &HandleGeomPlane) -> &gp_Pnt;
@@ -326,6 +347,29 @@ pub mod ffi {
             u_index: i32,
             v_index: i32,
         ) -> &gp_Pnt;
+
+        // Bezier surface properties
+        pub fn geom_bezier_surface_nb_u_poles(bezier: &HandleGeomBezierSurface) -> i32;
+        pub fn geom_bezier_surface_nb_v_poles(bezier: &HandleGeomBezierSurface) -> i32;
+        pub fn geom_bezier_surface_u_degree(bezier: &HandleGeomBezierSurface) -> i32;
+        pub fn geom_bezier_surface_v_degree(bezier: &HandleGeomBezierSurface) -> i32;
+
+        // Cone properties
+        pub fn geom_cone_location(cone: &HandleGeom_ConicalSurface) -> &gp_Pnt;
+        pub fn geom_cone_axis(cone: &HandleGeom_ConicalSurface) -> &gp_Ax1;
+        pub fn geom_cone_ref_radius(cone: &HandleGeom_ConicalSurface) -> f64;
+        pub fn geom_cone_semi_angle(cone: &HandleGeom_ConicalSurface) -> f64;
+
+        // Sphere properties
+        pub fn geom_sphere_location(sphere: &HandleGeom_SphericalSurface) -> &gp_Pnt;
+        pub fn geom_sphere_axis(sphere: &HandleGeom_SphericalSurface) -> &gp_Ax1;
+        pub fn geom_sphere_radius(sphere: &HandleGeom_SphericalSurface) -> f64;
+
+        // Torus properties
+        pub fn geom_torus_location(torus: &HandleGeom_ToroidalSurface) -> &gp_Pnt;
+        pub fn geom_torus_axis(torus: &HandleGeom_ToroidalSurface) -> &gp_Ax1;
+        pub fn geom_torus_major_radius(torus: &HandleGeom_ToroidalSurface) -> f64;
+        pub fn geom_torus_minor_radius(torus: &HandleGeom_ToroidalSurface) -> f64;
 
         pub fn Geom_CylindricalSurface_ctor(
             axis: &gp_Ax3,

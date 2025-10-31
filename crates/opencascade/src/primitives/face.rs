@@ -27,6 +27,29 @@ pub enum SurfaceDetails {
         axis_direction: DVec3,
         radius: f64,
     },
+    /// A conical surface
+    Cone {
+        location: DVec3,
+        axis_location: DVec3,
+        axis_direction: DVec3,
+        ref_radius: f64,
+        semi_angle: f64,
+    },
+    /// A spherical surface
+    Sphere {
+        location: DVec3,
+        axis_location: DVec3,
+        axis_direction: DVec3,
+        radius: f64,
+    },
+    /// A toroidal surface
+    Torus {
+        location: DVec3,
+        axis_location: DVec3,
+        axis_direction: DVec3,
+        major_radius: f64,
+        minor_radius: f64,
+    },
     /// A B-Spline surface
     BSpline {
         nb_u_poles: i32,
@@ -37,6 +60,13 @@ pub enum SurfaceDetails {
         is_v_rational: bool,
         is_u_periodic: bool,
         is_v_periodic: bool,
+    },
+    /// A Bezier surface
+    Bezier {
+        nb_u_poles: i32,
+        nb_v_poles: i32,
+        u_degree: i32,
+        v_degree: i32,
     },
     /// Unknown or unsupported surface type
     Unknown(String),
@@ -438,6 +468,67 @@ impl Face {
                     SurfaceDetails::Unknown(surface_type)
                 }
             },
+            "Geom_ConicalSurface" => {
+                let cone = ffi::cast_surface_to_cone(&surface);
+                if !cone.IsNull() {
+                    let location = ffi::geom_cone_location(&cone);
+                    let axis = ffi::geom_cone_axis(&cone);
+                    let axis_location = ffi::gp_Ax1_location(&axis);
+                    let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let ref_radius = ffi::geom_cone_ref_radius(&cone);
+                    let semi_angle = ffi::geom_cone_semi_angle(&cone);
+
+                    SurfaceDetails::Cone {
+                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
+                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        ref_radius,
+                        semi_angle,
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
+            "Geom_SphericalSurface" => {
+                let sphere = ffi::cast_surface_to_sphere(&surface);
+                if !sphere.IsNull() {
+                    let location = ffi::geom_sphere_location(&sphere);
+                    let axis = ffi::geom_sphere_axis(&sphere);
+                    let axis_location = ffi::gp_Ax1_location(&axis);
+                    let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let radius = ffi::geom_sphere_radius(&sphere);
+
+                    SurfaceDetails::Sphere {
+                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
+                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        radius,
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
+            "Geom_ToroidalSurface" => {
+                let torus = ffi::cast_surface_to_torus(&surface);
+                if !torus.IsNull() {
+                    let location = ffi::geom_torus_location(&torus);
+                    let axis = ffi::geom_torus_axis(&torus);
+                    let axis_location = ffi::gp_Ax1_location(&axis);
+                    let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let major_radius = ffi::geom_torus_major_radius(&torus);
+                    let minor_radius = ffi::geom_torus_minor_radius(&torus);
+
+                    SurfaceDetails::Torus {
+                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
+                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        major_radius,
+                        minor_radius,
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
             "Geom_BSplineSurface" => {
                 let bspline = ffi::cast_surface_to_bspline(&surface);
                 if !bspline.IsNull() {
@@ -459,6 +550,24 @@ impl Face {
                         is_v_rational,
                         is_u_periodic,
                         is_v_periodic,
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
+            "Geom_BezierSurface" => {
+                let bezier = ffi::cast_surface_to_bezier(&surface);
+                if !bezier.IsNull() {
+                    let nb_u_poles = ffi::geom_bezier_surface_nb_u_poles(&bezier);
+                    let nb_v_poles = ffi::geom_bezier_surface_nb_v_poles(&bezier);
+                    let u_degree = ffi::geom_bezier_surface_u_degree(&bezier);
+                    let v_degree = ffi::geom_bezier_surface_v_degree(&bezier);
+
+                    SurfaceDetails::Bezier {
+                        nb_u_poles,
+                        nb_v_poles,
+                        u_degree,
+                        v_degree,
                     }
                 } else {
                     SurfaceDetails::Unknown(surface_type)
