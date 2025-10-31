@@ -32,12 +32,12 @@ pub struct Ellipse {
 /// A B-Spline curve profile
 #[derive(Debug, Clone)]
 pub struct BSplineCurveProfile {
-    pub nb_poles: i32,
-    pub degree: i32,
+    pub nb_poles: usize,
+    pub degree: usize,
     pub is_rational: bool,
     pub is_periodic: bool,
     pub knots: Vec<f64>,
-    pub multiplicities: Vec<i32>,
+    pub multiplicities: Vec<usize>,
 }
 
 /// A B-Spline curve profile
@@ -50,8 +50,8 @@ pub struct BSplineCurve {
 /// A Bezier curve profile
 #[derive(Debug, Clone)]
 pub struct BezierCurveProfile {
-    pub nb_poles: i32,
-    pub degree: i32,
+    pub nb_poles: usize,
+    pub degree: usize,
 }
 
 /// A Bezier curve
@@ -358,8 +358,8 @@ impl Edge {
             "Geom_BSplineCurve" => {
                 let bspline = ffi::cast_curve_to_bspline_curve(&curve);
                 if !bspline.IsNull() {
-                    let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline);
-                    let degree = ffi::geom_bspline_curve_degree(&bspline);
+                    let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline) as usize;
+                    let degree = ffi::geom_bspline_curve_degree(&bspline) as usize;
                     let is_rational = ffi::geom_bspline_curve_is_rational(&bspline);
                     let is_periodic = ffi::geom_bspline_curve_is_periodic(&bspline);
 
@@ -370,12 +370,12 @@ impl Edge {
 
                     for i in 1..=nb_knots {
                         knots.push(ffi::geom_bspline_curve_knot(&bspline, i));
-                        multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline, i));
+                        multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract poles (control points)
-                    let mut poles = Vec::with_capacity(nb_poles as usize);
-                    for i in 1..=nb_poles {
+                    let mut poles = Vec::with_capacity(nb_poles);
+                    for i in 1..=nb_poles as i32 {
                         let pole = ffi::geom_bspline_curve_pole(&bspline, i);
                         poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
                     }
@@ -398,12 +398,12 @@ impl Edge {
             "Geom_BezierCurve" => {
                 let bezier = ffi::cast_curve_to_bezier_curve(&curve);
                 if !bezier.IsNull() {
-                    let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier);
-                    let degree = ffi::geom_bezier_curve_degree(&bezier);
+                    let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier) as usize;
+                    let degree = ffi::geom_bezier_curve_degree(&bezier) as usize;
 
                     // Extract poles (control points)
-                    let mut poles = Vec::with_capacity(nb_poles as usize);
-                    for i in 1..=nb_poles {
+                    let mut poles = Vec::with_capacity(nb_poles);
+                    for i in 1..=nb_poles as i32 {
                         let pole = ffi::geom_bezier_curve_pole(&bezier, i);
                         poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
                     }

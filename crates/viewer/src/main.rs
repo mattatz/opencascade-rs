@@ -215,7 +215,7 @@ impl GameApp for ViewerApp {
                         println!("      Periodic: {}", bspline.u_profile.is_periodic);
 
                         let u_knot_count = bspline.u_profile.knots.len();
-                        let u_mult_sum: i32 = bspline.u_profile.multiplicities.iter().sum();
+                        let u_mult_sum: usize = bspline.u_profile.multiplicities.iter().sum();
                         println!(
                             "      {} unique knots, sum(multiplicities) = {}",
                             u_knot_count, u_mult_sum
@@ -228,7 +228,7 @@ impl GameApp for ViewerApp {
                         println!("      Periodic: {}", bspline.v_profile.is_periodic);
 
                         let v_knot_count = bspline.v_profile.knots.len();
-                        let v_mult_sum: i32 = bspline.v_profile.multiplicities.iter().sum();
+                        let v_mult_sum: usize = bspline.v_profile.multiplicities.iter().sum();
                         println!(
                             "      {} unique knots, sum(multiplicities) = {}",
                             v_knot_count, v_mult_sum
@@ -305,7 +305,7 @@ impl GameApp for ViewerApp {
                         println!("    Poles: {:?}", bspline.poles);
 
                         let knot_count = bspline.profile.knots.len();
-                        let mult_sum: i32 = bspline.profile.multiplicities.iter().sum();
+                        let mult_sum: usize = bspline.profile.multiplicities.iter().sum();
                         println!(
                             "    {} unique knots, sum(multiplicities) = {}",
                             knot_count, mult_sum

@@ -564,10 +564,10 @@ impl Face {
             "Geom_BSplineSurface" => {
                 let bspline = ffi::cast_surface_to_bspline(&surface);
                 if !bspline.IsNull() {
-                    let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline);
-                    let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline);
-                    let u_degree = ffi::geom_bspline_surface_u_degree(&bspline);
-                    let v_degree = ffi::geom_bspline_surface_v_degree(&bspline);
+                    let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline) as usize;
+                    let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline) as usize;
+                    let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as usize;
+                    let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as usize;
                     let is_u_rational = ffi::geom_bspline_surface_is_u_rational(&bspline);
                     let is_v_rational = ffi::geom_bspline_surface_is_v_rational(&bspline);
                     let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
@@ -580,7 +580,7 @@ impl Face {
 
                     for i in 1..=nb_u_knots {
                         u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
-                        u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i));
+                        u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract knot vectors for V direction
@@ -590,14 +590,14 @@ impl Face {
 
                     for i in 1..=nb_v_knots {
                         v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
-                        v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i));
+                        v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract poles (control points) - 2D grid [u][v]
-                    let mut poles = Vec::with_capacity(nb_u_poles as usize);
-                    for u in 1..=nb_u_poles {
-                        let mut v_poles = Vec::with_capacity(nb_v_poles as usize);
-                        for v in 1..=nb_v_poles {
+                    let mut poles = Vec::with_capacity(nb_u_poles);
+                    for u in 1..=nb_u_poles as i32 {
+                        let mut v_poles = Vec::with_capacity(nb_v_poles);
+                        for v in 1..=nb_v_poles as i32 {
                             let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
                             v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
                         }
@@ -630,16 +630,16 @@ impl Face {
             "Geom_BezierSurface" => {
                 let bezier = ffi::cast_surface_to_bezier(&surface);
                 if !bezier.IsNull() {
-                    let nb_u_poles = ffi::geom_bezier_surface_nb_u_poles(&bezier);
-                    let nb_v_poles = ffi::geom_bezier_surface_nb_v_poles(&bezier);
-                    let u_degree = ffi::geom_bezier_surface_u_degree(&bezier);
-                    let v_degree = ffi::geom_bezier_surface_v_degree(&bezier);
+                    let nb_u_poles = ffi::geom_bezier_surface_nb_u_poles(&bezier) as usize;
+                    let nb_v_poles = ffi::geom_bezier_surface_nb_v_poles(&bezier) as usize;
+                    let u_degree = ffi::geom_bezier_surface_u_degree(&bezier) as usize;
+                    let v_degree = ffi::geom_bezier_surface_v_degree(&bezier) as usize;
 
                     // Extract poles (control points) - 2D grid [u][v]
-                    let mut poles = Vec::with_capacity(nb_u_poles as usize);
-                    for u in 1..=nb_u_poles {
-                        let mut v_poles = Vec::with_capacity(nb_v_poles as usize);
-                        for v in 1..=nb_v_poles {
+                    let mut poles = Vec::with_capacity(nb_u_poles);
+                    for u in 1..=nb_u_poles as i32 {
+                        let mut v_poles = Vec::with_capacity(nb_v_poles);
+                        for v in 1..=nb_v_poles as i32 {
                             let pole = ffi::geom_bezier_surface_pole(&bezier, u, v);
                             v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
                         }
