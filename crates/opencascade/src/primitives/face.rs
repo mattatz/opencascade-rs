@@ -12,67 +12,95 @@ use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
 
+/// A planar surface
+#[derive(Debug, Clone)]
+pub struct Plane {
+    pub location: DVec3,
+    pub axis_location: DVec3,
+    pub axis_direction: DVec3,
+}
+
+/// A cylindrical surface
+#[derive(Debug, Clone)]
+pub struct Cylinder {
+    pub location: DVec3,
+    pub axis_location: DVec3,
+    pub axis_direction: DVec3,
+    pub radius: f64,
+}
+
+/// A conical surface
+#[derive(Debug, Clone)]
+pub struct Cone {
+    pub location: DVec3,
+    pub axis_location: DVec3,
+    pub axis_direction: DVec3,
+    pub ref_radius: f64,
+    pub semi_angle: f64,
+}
+
+/// A spherical surface
+#[derive(Debug, Clone)]
+pub struct Sphere {
+    pub location: DVec3,
+    pub axis_location: DVec3,
+    pub axis_direction: DVec3,
+    pub radius: f64,
+}
+
+/// A toroidal surface
+#[derive(Debug, Clone)]
+pub struct Torus {
+    pub location: DVec3,
+    pub axis_location: DVec3,
+    pub axis_direction: DVec3,
+    pub major_radius: f64,
+    pub minor_radius: f64,
+}
+
+/// A B-Spline surface
+#[derive(Debug, Clone)]
+pub struct BSplineSurface {
+    pub nb_u_poles: i32,
+    pub nb_v_poles: i32,
+    pub u_degree: i32,
+    pub v_degree: i32,
+    pub is_u_rational: bool,
+    pub is_v_rational: bool,
+    pub is_u_periodic: bool,
+    pub is_v_periodic: bool,
+    pub u_knots: Vec<f64>,
+    pub v_knots: Vec<f64>,
+    pub u_multiplicities: Vec<i32>,
+    pub v_multiplicities: Vec<i32>,
+}
+
+/// A Bezier surface
+#[derive(Debug, Clone)]
+pub struct BezierSurface {
+    pub nb_u_poles: i32,
+    pub nb_v_poles: i32,
+    pub u_degree: i32,
+    pub v_degree: i32,
+}
+
 /// Detailed information about a surface's geometric properties
 #[derive(Debug, Clone)]
 pub enum SurfaceDetails {
     /// A planar surface
-    Plane {
-        location: DVec3,
-        axis_location: DVec3,
-        axis_direction: DVec3,
-    },
+    Plane(Plane),
     /// A cylindrical surface
-    Cylinder {
-        location: DVec3,
-        axis_location: DVec3,
-        axis_direction: DVec3,
-        radius: f64,
-    },
+    Cylinder(Cylinder),
     /// A conical surface
-    Cone {
-        location: DVec3,
-        axis_location: DVec3,
-        axis_direction: DVec3,
-        ref_radius: f64,
-        semi_angle: f64,
-    },
+    Cone(Cone),
     /// A spherical surface
-    Sphere {
-        location: DVec3,
-        axis_location: DVec3,
-        axis_direction: DVec3,
-        radius: f64,
-    },
+    Sphere(Sphere),
     /// A toroidal surface
-    Torus {
-        location: DVec3,
-        axis_location: DVec3,
-        axis_direction: DVec3,
-        major_radius: f64,
-        minor_radius: f64,
-    },
+    Torus(Torus),
     /// A B-Spline surface
-    BSpline {
-        nb_u_poles: i32,
-        nb_v_poles: i32,
-        u_degree: i32,
-        v_degree: i32,
-        is_u_rational: bool,
-        is_v_rational: bool,
-        is_u_periodic: bool,
-        is_v_periodic: bool,
-        u_knots: Vec<f64>,
-        v_knots: Vec<f64>,
-        u_multiplicities: Vec<i32>,
-        v_multiplicities: Vec<i32>,
-    },
+    BSpline(BSplineSurface),
     /// A Bezier surface
-    Bezier {
-        nb_u_poles: i32,
-        nb_v_poles: i32,
-        u_degree: i32,
-        v_degree: i32,
-    },
+    Bezier(BezierSurface),
     /// Unknown or unsupported surface type
     Unknown(String),
 }
@@ -455,11 +483,11 @@ impl Face {
                     let axis_location = ffi::gp_Ax1_location(&axis);
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
 
-                    SurfaceDetails::Plane {
+                    SurfaceDetails::Plane(Plane {
                         location: dvec3(location.X(), location.Y(), location.Z()),
                         axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
                         axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }
@@ -473,12 +501,12 @@ impl Face {
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
                     let radius = ffi::geom_cylinder_radius(&cylinder);
 
-                    SurfaceDetails::Cylinder {
+                    SurfaceDetails::Cylinder(Cylinder {
                         location: dvec3(location.X(), location.Y(), location.Z()),
                         axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
                         axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
                         radius,
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }
@@ -493,13 +521,13 @@ impl Face {
                     let ref_radius = ffi::geom_cone_ref_radius(&cone);
                     let semi_angle = ffi::geom_cone_semi_angle(&cone);
 
-                    SurfaceDetails::Cone {
+                    SurfaceDetails::Cone(Cone {
                         location: dvec3(location.X(), location.Y(), location.Z()),
                         axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
                         axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
                         ref_radius,
                         semi_angle,
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }
@@ -513,12 +541,12 @@ impl Face {
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
                     let radius = ffi::geom_sphere_radius(&sphere);
 
-                    SurfaceDetails::Sphere {
+                    SurfaceDetails::Sphere(Sphere {
                         location: dvec3(location.X(), location.Y(), location.Z()),
                         axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
                         axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
                         radius,
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }
@@ -533,13 +561,13 @@ impl Face {
                     let major_radius = ffi::geom_torus_major_radius(&torus);
                     let minor_radius = ffi::geom_torus_minor_radius(&torus);
 
-                    SurfaceDetails::Torus {
+                    SurfaceDetails::Torus(Torus {
                         location: dvec3(location.X(), location.Y(), location.Z()),
                         axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
                         axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
                         major_radius,
                         minor_radius,
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }
@@ -575,7 +603,7 @@ impl Face {
                         v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i));
                     }
 
-                    SurfaceDetails::BSpline {
+                    SurfaceDetails::BSpline(BSplineSurface {
                         nb_u_poles,
                         nb_v_poles,
                         u_degree,
@@ -588,7 +616,7 @@ impl Face {
                         v_knots,
                         u_multiplicities,
                         v_multiplicities,
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }
@@ -601,12 +629,12 @@ impl Face {
                     let u_degree = ffi::geom_bezier_surface_u_degree(&bezier);
                     let v_degree = ffi::geom_bezier_surface_v_degree(&bezier);
 
-                    SurfaceDetails::Bezier {
+                    SurfaceDetails::Bezier(BezierSurface {
                         nb_u_poles,
                         nb_v_poles,
                         u_degree,
                         v_degree,
-                    }
+                    })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
                 }

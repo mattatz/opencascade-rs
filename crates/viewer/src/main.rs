@@ -152,7 +152,203 @@ impl GameApp for ViewerApp {
         let mut wasm_engine = None;
 
         let shape = if let Some(step_file) = args.step_file {
-            Shape::read_step(step_file).expect("Failed to read STEP file, {step_file}")
+            let bytes = std::fs::read(step_file).expect("Failed to read STEP file, {step_file}");
+            // let s = Shape::read_step(step_file).expect("Failed to read STEP file, {step_file}");
+            let s = Shape::read_step_from_bytes(&bytes).expect("Failed to read STEP file, {step_file}");
+            let faces = s.faces();
+
+            // println!("=== STEP File Information ===");
+
+            // Face情報の表示
+            println!("\n--- Face Information ---");
+            for (i, face) in faces.enumerate() {
+                println!("\nFace #{}", i + 1);
+                println!("  Surface Type: {}", face.surface_type());
+                println!("  Orientation: {:?}", face.orientation());
+
+                // Surface詳細情報を表示
+                match face.surface_details() {
+                    opencascade::primitives::SurfaceDetails::Plane(plane) => {
+                        println!("  Plane Details:");
+                        println!("    Location: {:?}", plane.location);
+                        println!("    Axis Location: {:?}", plane.axis_location);
+                        println!("    Axis Direction (Normal): {:?}", plane.axis_direction);
+                    },
+                    opencascade::primitives::SurfaceDetails::Cylinder(cylinder) => {
+                        println!("  Cylinder Details:");
+                        println!("    Location: {:?}", cylinder.location);
+                        println!("    Axis Location: {:?}", cylinder.axis_location);
+                        println!("    Axis Direction: {:?}", cylinder.axis_direction);
+                        println!("    Radius: {:.6}", cylinder.radius);
+                    },
+                    opencascade::primitives::SurfaceDetails::Cone(cone) => {
+                        println!("  Cone Details:");
+                        println!("    Location: {:?}", cone.location);
+                        println!("    Axis Location: {:?}", cone.axis_location);
+                        println!("    Axis Direction: {:?}", cone.axis_direction);
+                        println!("    Reference Radius: {:.6}", cone.ref_radius);
+                        println!("    Semi-Angle (radians): {:.6}", cone.semi_angle);
+                        println!("    Semi-Angle (degrees): {:.2}°", cone.semi_angle.to_degrees());
+                    },
+                    opencascade::primitives::SurfaceDetails::Sphere(sphere) => {
+                        println!("  Sphere Details:");
+                        println!("    Location (Center): {:?}", sphere.location);
+                        println!("    Axis Location: {:?}", sphere.axis_location);
+                        println!("    Axis Direction: {:?}", sphere.axis_direction);
+                        println!("    Radius: {:.6}", sphere.radius);
+                    },
+                    opencascade::primitives::SurfaceDetails::Torus(torus) => {
+                        println!("  Torus Details:");
+                        println!("    Location: {:?}", torus.location);
+                        println!("    Axis Location: {:?}", torus.axis_location);
+                        println!("    Axis Direction: {:?}", torus.axis_direction);
+                        println!("    Major Radius: {:.6}", torus.major_radius);
+                        println!("    Minor Radius: {:.6}", torus.minor_radius);
+                    },
+                    opencascade::primitives::SurfaceDetails::BSpline(bspline) => {
+                        println!("  BSpline Surface Details:");
+                        println!("    Control Points: {}×{} (U×V)", bspline.nb_u_poles, bspline.nb_v_poles);
+                        println!("    Degree: {} (U), {} (V)", bspline.u_degree, bspline.v_degree);
+                        println!("    Rational: {} (U), {} (V)", bspline.is_u_rational, bspline.is_v_rational);
+                        println!("    Periodic: {} (U), {} (V)", bspline.is_u_periodic, bspline.is_v_periodic);
+
+                        let u_knot_count = bspline.u_knots.len();
+                        let v_knot_count = bspline.v_knots.len();
+                        let u_mult_sum: i32 = bspline.u_multiplicities.iter().sum();
+                        let v_mult_sum: i32 = bspline.v_multiplicities.iter().sum();
+
+                        println!("    U: {} unique knots, sum(multiplicities) = {}", u_knot_count, u_mult_sum);
+                        println!("       Expected knot vector length = {} + {} + 1 = {}", bspline.nb_u_poles, bspline.u_degree, bspline.nb_u_poles + bspline.u_degree + 1);
+                        println!("    V: {} unique knots, sum(multiplicities) = {}", v_knot_count, v_mult_sum);
+                        println!("       Expected knot vector length = {} + {} + 1 = {}", bspline.nb_v_poles, bspline.v_degree, bspline.nb_v_poles + bspline.v_degree + 1);
+
+                        if u_mult_sum == bspline.nb_u_poles + bspline.u_degree + 1 {
+                            println!("    ✓ U direction: Relationship verified!");
+                        } else {
+                            println!("    ✗ U direction: Mismatch! {} ≠ {}", u_mult_sum, bspline.nb_u_poles + bspline.u_degree + 1);
+                        }
+
+                        if v_mult_sum == bspline.nb_v_poles + bspline.v_degree + 1 {
+                            println!("    ✓ V direction: Relationship verified!");
+                        } else {
+                            println!("    ✗ V direction: Mismatch! {} ≠ {}", v_mult_sum, bspline.nb_v_poles + bspline.v_degree + 1);
+                        }
+                    },
+                    opencascade::primitives::SurfaceDetails::Bezier(bezier) => {
+                        println!("  Bezier Surface Details:");
+                        println!("    Control Points: {}×{} (U×V)", bezier.nb_u_poles, bezier.nb_v_poles);
+                        println!("    Degree: {} (U), {} (V)", bezier.u_degree, bezier.v_degree);
+                    },
+                    opencascade::primitives::SurfaceDetails::Unknown(_type_name) => {
+                        // println!("  Details: Not available for {}", type_name);
+                    },
+                }
+
+                let edge_count = face.edges().count();
+                println!("  Number of Edges: {}", edge_count);
+
+                face.wires().for_each(|wire| {
+                    println!("  Wire: {:?}", wire.edges().count());
+                    wire.edges().for_each(|edge| {});
+                });
+            }
+            println!("Total Faces: {}\n", s.faces().count());
+
+            // Edge情報の表示
+            println!("--- Edge Information ---");
+            let edges = s.edges();
+            for (i, edge) in edges.enumerate() {
+                println!("\nEdge #{}", i + 1);
+                println!("  Curve Type: {}", edge.curve_type());
+
+                // Curve詳細情報を表示
+                match edge.curve_details() {
+                    opencascade::primitives::CurveDetails::Line { origin, direction } => {
+                        println!("  Line Details:");
+                        println!("    Origin: {:?}", origin);
+                        println!("    Direction: {:?}", direction);
+                    },
+                    opencascade::primitives::CurveDetails::Circle { center, axis, radius } => {
+                        println!("  Circle Details:");
+                        println!("    Center: {:?}", center);
+                        println!("    Axis: {:?}", axis);
+                        println!("    Radius: {:.6}", radius);
+                    },
+                    opencascade::primitives::CurveDetails::Ellipse {
+                        center,
+                        axis,
+                        major_radius,
+                        minor_radius,
+                    } => {
+                        println!("  Ellipse Details:");
+                        println!("    Center: {:?}", center);
+                        println!("    Axis: {:?}", axis);
+                        println!("    Major Radius: {:.6}", major_radius);
+                        println!("    Minor Radius: {:.6}", minor_radius);
+                    },
+                    opencascade::primitives::CurveDetails::BSplineCurve {
+                        nb_poles,
+                        degree,
+                        is_rational,
+                        is_periodic,
+                    } => {
+                        println!("  BSpline Curve Details:");
+                        println!("    Control Points: {}", nb_poles);
+                        println!("    Degree: {}", degree);
+                        println!("    Rational: {}", is_rational);
+                        println!("    Periodic: {}", is_periodic);
+                    },
+                    opencascade::primitives::CurveDetails::BezierCurve { nb_poles, degree } => {
+                        println!("  Bezier Curve Details:");
+                        println!("    Control Points: {}", nb_poles);
+                        println!("    Degree: {}", degree);
+                    },
+                    opencascade::primitives::CurveDetails::Hyperbola {
+                        center,
+                        axis,
+                        major_radius,
+                        minor_radius,
+                    } => {
+                        println!("  Hyperbola Details:");
+                        println!("    Center: {:?}", center);
+                        println!("    Axis: {:?}", axis);
+                        println!("    Major Radius: {:.6}", major_radius);
+                        println!("    Minor Radius: {:.6}", minor_radius);
+                    },
+                    opencascade::primitives::CurveDetails::Parabola { vertex, axis, focal } => {
+                        println!("  Parabola Details:");
+                        println!("    Vertex: {:?}", vertex);
+                        println!("    Axis: {:?}", axis);
+                        println!("    Focal: {:.6}", focal);
+                    },
+                    opencascade::primitives::CurveDetails::OffsetCurve {
+                        basis_curve_type,
+                        offset,
+                    } => {
+                        println!("  Offset Curve Details:");
+                        println!("    Basis Curve Type: {}", basis_curve_type);
+                        println!("    Offset: {:.6}", offset);
+                    },
+                    opencascade::primitives::CurveDetails::TrimmedCurve {
+                        basis_curve_type,
+                        first_parameter,
+                        last_parameter,
+                    } => {
+                        println!("  Trimmed Curve Details:");
+                        println!("    Basis Curve Type: {}", basis_curve_type);
+                        println!("    First Parameter: {:.6}", first_parameter);
+                        println!("    Last Parameter: {:.6}", last_parameter);
+                    },
+                    opencascade::primitives::CurveDetails::Unknown(type_name) => {
+                        println!("  Details: Not available for {}", type_name);
+                    },
+                    _ => {},
+                }
+            }
+            // println!("Total Edges: {}\n", s.edges().count());
+            // println!("==============================\n");
+
+            s
         } else if let Some(kicad_file) = args.kicad_file {
             // Parse the kicad file, turn it into a face, extrude it by 1.6mm
             let pcb =
