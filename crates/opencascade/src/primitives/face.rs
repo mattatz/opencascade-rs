@@ -11,6 +11,37 @@ use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
 
+/// Detailed information about a surface's geometric properties
+#[derive(Debug, Clone)]
+pub enum SurfaceDetails {
+    /// A planar surface
+    Plane {
+        location: DVec3,
+        axis_location: DVec3,
+        axis_direction: DVec3,
+    },
+    /// A cylindrical surface
+    Cylinder {
+        location: DVec3,
+        axis_location: DVec3,
+        axis_direction: DVec3,
+        radius: f64,
+    },
+    /// A B-Spline surface
+    BSpline {
+        nb_u_poles: i32,
+        nb_v_poles: i32,
+        u_degree: i32,
+        v_degree: i32,
+        is_u_rational: bool,
+        is_v_rational: bool,
+        is_u_periodic: bool,
+        is_v_periodic: bool,
+    },
+    /// Unknown or unsupported surface type
+    Unknown(String),
+}
+
 pub struct Face {
     pub(crate) inner: UniquePtr<ffi::TopoDS_Face>,
 }
@@ -356,6 +387,85 @@ impl Face {
         let inner = ffi::outer_wire(&self.inner);
 
         Wire { inner }
+    }
+
+    /// Get the type name of the underlying geometric surface (e.g., "Geom_Plane", "Geom_CylindricalSurface")
+    pub fn surface_type(&self) -> String {
+        let surface = ffi::BRep_Tool_Surface(&self.inner);
+        let dynamic_type = ffi::DynamicType(&surface);
+        ffi::type_name(&dynamic_type)
+    }
+
+    /// Get detailed information about the underlying surface
+    pub fn surface_details(&self) -> SurfaceDetails {
+        let surface = ffi::BRep_Tool_Surface(&self.inner);
+        let surface_type = self.surface_type();
+
+        match surface_type.as_str() {
+            "Geom_Plane" => {
+                let plane = ffi::cast_surface_to_plane(&surface);
+                if !plane.IsNull() {
+                    let location = ffi::geom_plane_location(&plane);
+                    let axis = ffi::geom_plane_axis(&plane);
+                    let axis_location = ffi::gp_Ax1_location(&axis);
+                    let axis_direction = ffi::gp_Ax1_direction(&axis);
+
+                    SurfaceDetails::Plane {
+                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
+                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
+            "Geom_CylindricalSurface" => {
+                let cylinder = ffi::cast_surface_to_cylinder(&surface);
+                if !cylinder.IsNull() {
+                    let location = ffi::geom_cylinder_location(&cylinder);
+                    let axis = ffi::geom_cylinder_axis(&cylinder);
+                    let axis_location = ffi::gp_Ax1_location(&axis);
+                    let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let radius = ffi::geom_cylinder_radius(&cylinder);
+
+                    SurfaceDetails::Cylinder {
+                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        axis_location: dvec3(axis_location.X(), axis_location.Y(), axis_location.Z()),
+                        axis_direction: dvec3(axis_direction.X(), axis_direction.Y(), axis_direction.Z()),
+                        radius,
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
+            "Geom_BSplineSurface" => {
+                let bspline = ffi::cast_surface_to_bspline(&surface);
+                if !bspline.IsNull() {
+                    let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline);
+                    let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline);
+                    let u_degree = ffi::geom_bspline_surface_u_degree(&bspline);
+                    let v_degree = ffi::geom_bspline_surface_v_degree(&bspline);
+                    let is_u_rational = ffi::geom_bspline_surface_is_u_rational(&bspline);
+                    let is_v_rational = ffi::geom_bspline_surface_is_v_rational(&bspline);
+                    let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
+                    let is_v_periodic = ffi::geom_bspline_surface_is_v_periodic(&bspline);
+
+                    SurfaceDetails::BSpline {
+                        nb_u_poles,
+                        nb_v_poles,
+                        u_degree,
+                        v_degree,
+                        is_u_rational,
+                        is_v_rational,
+                        is_u_periodic,
+                        is_v_periodic,
+                    }
+                } else {
+                    SurfaceDetails::Unknown(surface_type)
+                }
+            },
+            _ => SurfaceDetails::Unknown(surface_type),
+        }
     }
 }
 

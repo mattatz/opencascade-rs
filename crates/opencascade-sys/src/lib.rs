@@ -82,6 +82,7 @@ pub mod ffi {
         type HandleGeomTrimmedCurve;
         type HandleGeomSurface;
         type HandleGeomBezierSurface;
+        type HandleGeom_BSplineSurface;
         type HandleGeomPlane;
         type HandleGeom2d_Curve;
         type HandleGeom2d_Ellipse;
@@ -122,6 +123,7 @@ pub mod ffi {
         pub fn IsNull(self: &HandleGeomTrimmedCurve) -> bool;
         pub fn IsNull(self: &HandleGeomSurface) -> bool;
         pub fn IsNull(self: &HandleGeomBezierSurface) -> bool;
+        pub fn IsNull(self: &HandleGeom_BSplineSurface) -> bool;
         pub fn IsNull(self: &HandleGeomPlane) -> bool;
         pub fn IsNull(self: &HandleGeom2d_Curve) -> bool;
         pub fn IsNull(self: &HandleGeom2d_Ellipse) -> bool;
@@ -283,11 +285,47 @@ pub mod ffi {
         type Geom_TrimmedCurve;
         type Geom_CylindricalSurface;
         type Geom_BezierSurface;
+        type Geom_BSplineSurface;
         type Geom2d_Ellipse;
         type Geom2d_Curve;
         type Geom2d_TrimmedCurve;
 
         pub fn handle_geom_plane_location(plane: &HandleGeomPlane) -> &gp_Pnt;
+
+        // Cast surface to specific types
+        pub fn cast_surface_to_plane(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeomPlane>;
+        pub fn cast_surface_to_cylinder(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeom_CylindricalSurface>;
+        pub fn cast_surface_to_bspline(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeom_BSplineSurface>;
+
+        // Plane properties
+        pub fn geom_plane_location(plane: &HandleGeomPlane) -> &gp_Pnt;
+        pub fn geom_plane_axis(plane: &HandleGeomPlane) -> &gp_Ax1;
+
+        // Cylinder properties
+        pub fn geom_cylinder_location(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Pnt;
+        pub fn geom_cylinder_axis(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Ax1;
+        pub fn geom_cylinder_radius(cylinder: &HandleGeom_CylindricalSurface) -> f64;
+
+        // BSpline surface properties
+        pub fn geom_bspline_surface_nb_u_poles(bspline: &HandleGeom_BSplineSurface) -> i32;
+        pub fn geom_bspline_surface_nb_v_poles(bspline: &HandleGeom_BSplineSurface) -> i32;
+        pub fn geom_bspline_surface_u_degree(bspline: &HandleGeom_BSplineSurface) -> i32;
+        pub fn geom_bspline_surface_v_degree(bspline: &HandleGeom_BSplineSurface) -> i32;
+        pub fn geom_bspline_surface_is_u_rational(bspline: &HandleGeom_BSplineSurface) -> bool;
+        pub fn geom_bspline_surface_is_v_rational(bspline: &HandleGeom_BSplineSurface) -> bool;
+        pub fn geom_bspline_surface_is_u_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
+        pub fn geom_bspline_surface_is_v_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
+        pub fn geom_bspline_surface_pole(
+            bspline: &HandleGeom_BSplineSurface,
+            u_index: i32,
+            v_index: i32,
+        ) -> &gp_Pnt;
 
         pub fn Geom_CylindricalSurface_ctor(
             axis: &gp_Ax3,
@@ -956,6 +994,8 @@ pub mod ffi {
 
         #[cxx_name = "construct_unique"]
         pub fn gp_Ax1_ctor(origin: &gp_Pnt, main_dir: &gp_Dir) -> UniquePtr<gp_Ax1>;
+        pub fn gp_Ax1_location(axis: &gp_Ax1) -> &gp_Pnt;
+        pub fn gp_Ax1_direction(axis: &gp_Ax1) -> &gp_Dir;
 
         #[cxx_name = "construct_unique"]
         pub fn gp_Ax2_ctor(origin: &gp_Pnt, main_dir: &gp_Dir) -> UniquePtr<gp_Ax2>;
