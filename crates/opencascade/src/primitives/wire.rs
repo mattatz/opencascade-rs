@@ -4,7 +4,7 @@ use crate::{
     angle::{Angle, ToAngle},
     law_function::law_function_from_graph,
     make_pipe_shell::make_pipe_shell_with_law_function,
-    primitives::{make_dir, make_point, make_vec, Edge, Face, JoinType, Shape, Shell},
+    primitives::{make_dir, make_point, make_vec, Edge, EdgeIterator, Face, JoinType, Shape, Shell},
     Error,
 };
 use cxx::UniquePtr;
@@ -252,6 +252,16 @@ impl Wire {
         let make_face = ffi::BRepBuilderAPI_MakeFace_wire(&self.inner, only_plane);
 
         Face::from_face(make_face.Face())
+    }
+
+    /// Returns an iterator over all edges in the wire
+    pub fn edges(&self) -> EdgeIterator {
+        let explorer = ffi::TopExp_Explorer_ctor(
+            ffi::cast_wire_to_shape(&self.inner),
+            ffi::TopAbs_ShapeEnum::TopAbs_EDGE,
+        );
+
+        EdgeIterator { explorer }
     }
 
     // Create a closure-based API

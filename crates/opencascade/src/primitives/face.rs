@@ -4,6 +4,7 @@ use crate::{
     make_pipe_shell::make_pipe_shell_with_law_function,
     primitives::{
         make_axis_1, make_point, make_vec, EdgeIterator, JoinType, Shape, Solid, Surface, Wire,
+        WireIterator,
     },
     workplane::Workplane,
 };
@@ -305,6 +306,16 @@ impl Face {
         );
 
         EdgeIterator { explorer }
+    }
+
+    /// Returns an iterator over all wires in the face (outer wire + inner wires/holes)
+    pub fn wires(&self) -> WireIterator {
+        let explorer = ffi::TopExp_Explorer_ctor(
+            ffi::cast_face_to_shape(&self.inner),
+            ffi::TopAbs_ShapeEnum::TopAbs_WIRE,
+        );
+
+        WireIterator { explorer }
     }
 
     pub fn center_of_mass(&self) -> DVec3 {
