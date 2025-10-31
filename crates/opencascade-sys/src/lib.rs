@@ -380,6 +380,11 @@ pub mod ffi {
             u_index: i32,
             v_index: i32,
         ) -> &gp_Pnt;
+        pub fn geom_bspline_surface_weight(
+            bspline: &HandleGeom_BSplineSurface,
+            u_index: i32,
+            v_index: i32,
+        ) -> f64;
 
         // Bezier surface properties
         pub fn geom_bezier_surface_nb_u_poles(bezier: &HandleGeomBezierSurface) -> i32;
@@ -391,6 +396,11 @@ pub mod ffi {
             u_index: i32,
             v_index: i32,
         ) -> &gp_Pnt;
+        pub fn geom_bezier_surface_weight(
+            bezier: &HandleGeomBezierSurface,
+            u_index: i32,
+            v_index: i32,
+        ) -> f64;
 
         // Cone properties
         pub fn geom_cone_location(cone: &HandleGeom_ConicalSurface) -> &gp_Pnt;
@@ -455,6 +465,7 @@ pub mod ffi {
 
         // BSpline curve poles (control points)
         pub fn geom_bspline_curve_pole(bspline: &HandleGeomBSplineCurve, index: i32) -> &gp_Pnt;
+        pub fn geom_bspline_curve_weight(bspline: &HandleGeomBSplineCurve, index: i32) -> f64;
 
         // Bezier curve properties
         pub fn geom_bezier_curve_nb_poles(bezier: &HandleGeomBezierCurve) -> i32;
@@ -462,6 +473,7 @@ pub mod ffi {
 
         // Bezier curve poles (control points)
         pub fn geom_bezier_curve_pole(bezier: &HandleGeomBezierCurve, index: i32) -> &gp_Pnt;
+        pub fn geom_bezier_curve_weight(bezier: &HandleGeomBezierCurve, index: i32) -> f64;
 
         // Hyperbola properties
         pub fn geom_hyperbola_location(hyperbola: &HandleGeom_Hyperbola) -> &gp_Pnt;

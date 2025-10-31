@@ -303,6 +303,7 @@ impl GameApp for ViewerApp {
                         println!("    Rational: {}", bspline.profile.is_rational);
                         println!("    Periodic: {}", bspline.profile.is_periodic);
                         println!("    Poles: {:?}", bspline.poles);
+                        println!("    Weights: {:?}", bspline.weights);
 
                         let knot_count = bspline.profile.knots.len();
                         let mult_sum: usize = bspline.profile.multiplicities.iter().sum();

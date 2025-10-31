@@ -263,6 +263,9 @@ inline int geom_bspline_surface_v_multiplicity(const HandleGeom_BSplineSurface &
 inline const gp_Pnt &geom_bspline_surface_pole(const HandleGeom_BSplineSurface &bspline, int u_index, int v_index) {
   return bspline->Pole(u_index, v_index);
 }
+inline double geom_bspline_surface_weight(const HandleGeom_BSplineSurface &bspline, int u_index, int v_index) {
+  return bspline->Weight(u_index, v_index);
+}
 
 // Bezier surface properties
 inline int geom_bezier_surface_nb_u_poles(const HandleGeomBezierSurface &bezier) { return bezier->NbUPoles(); }
@@ -271,6 +274,9 @@ inline int geom_bezier_surface_u_degree(const HandleGeomBezierSurface &bezier) {
 inline int geom_bezier_surface_v_degree(const HandleGeomBezierSurface &bezier) { return bezier->VDegree(); }
 inline const gp_Pnt &geom_bezier_surface_pole(const HandleGeomBezierSurface &bezier, int u_index, int v_index) {
   return bezier->Pole(u_index, v_index);
+}
+inline double geom_bezier_surface_weight(const HandleGeomBezierSurface &bezier, int u_index, int v_index) {
+  return bezier->Weight(u_index, v_index);
 }
 
 // Cone properties
@@ -390,6 +396,7 @@ inline int geom_bspline_curve_multiplicity(const HandleGeomBSplineCurve &bspline
 
 // BSpline curve poles (control points)
 inline const gp_Pnt &geom_bspline_curve_pole(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Pole(index); }
+inline double geom_bspline_curve_weight(const HandleGeomBSplineCurve &bspline, int index) { return bspline->Weight(index); }
 
 // Bezier curve properties
 inline int geom_bezier_curve_nb_poles(const HandleGeomBezierCurve &bezier) { return bezier->NbPoles(); }
@@ -397,6 +404,7 @@ inline int geom_bezier_curve_degree(const HandleGeomBezierCurve &bezier) { retur
 
 // Bezier curve poles (control points)
 inline const gp_Pnt &geom_bezier_curve_pole(const HandleGeomBezierCurve &bezier, int index) { return bezier->Pole(index); }
+inline double geom_bezier_curve_weight(const HandleGeomBezierCurve &bezier, int index) { return bezier->Weight(index); }
 
 // Hyperbola properties
 inline const gp_Pnt &geom_hyperbola_location(const HandleGeom_Hyperbola &hyperbola) { return hyperbola->Location(); }

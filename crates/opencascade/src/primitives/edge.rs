@@ -40,11 +40,12 @@ pub struct BSplineCurveProfile {
     pub multiplicities: Vec<usize>,
 }
 
-/// A B-Spline curve profile
+/// A B-Spline curve
 #[derive(Debug, Clone)]
 pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
     pub poles: Vec<DVec3>,
+    pub weights: Vec<f64>,
 }
 
 /// A Bezier curve profile
@@ -59,6 +60,7 @@ pub struct BezierCurveProfile {
 pub struct BezierCurve {
     pub profile: BezierCurveProfile,
     pub poles: Vec<DVec3>,
+    pub weights: Vec<f64>,
 }
 
 /// A hyperbola
@@ -373,11 +375,15 @@ impl Edge {
                         multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline, i) as usize);
                     }
 
-                    // Extract poles (control points)
+                    // Extract poles (control points) and weights
                     let mut poles = Vec::with_capacity(nb_poles);
+                    let mut weights = Vec::with_capacity(if is_rational { nb_poles } else { 0 });
                     for i in 1..=nb_poles as i32 {
                         let pole = ffi::geom_bspline_curve_pole(&bspline, i);
                         poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                        if is_rational {
+                            weights.push(ffi::geom_bspline_curve_weight(&bspline, i));
+                        }
                     }
 
                     CurveDetails::BSplineCurve(BSplineCurve {
@@ -390,6 +396,7 @@ impl Edge {
                             multiplicities,
                         },
                         poles,
+                        weights,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)
@@ -401,16 +408,19 @@ impl Edge {
                     let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier) as usize;
                     let degree = ffi::geom_bezier_curve_degree(&bezier) as usize;
 
-                    // Extract poles (control points)
+                    // Extract poles (control points) and weights
                     let mut poles = Vec::with_capacity(nb_poles);
+                    let mut weights = Vec::with_capacity(nb_poles);
                     for i in 1..=nb_poles as i32 {
                         let pole = ffi::geom_bezier_curve_pole(&bezier, i);
                         poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                        weights.push(ffi::geom_bezier_curve_weight(&bezier, i));
                     }
 
                     CurveDetails::BezierCurve(BezierCurve {
                         profile: BezierCurveProfile { nb_poles, degree },
                         poles,
+                        weights,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)

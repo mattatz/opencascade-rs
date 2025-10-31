@@ -63,6 +63,7 @@ pub struct BSplineSurface {
     pub u_profile: BSplineCurveProfile,
     pub v_profile: BSplineCurveProfile,
     pub poles: Vec<Vec<DVec3>>,
+    pub weights: Vec<Vec<f64>>,
 }
 
 /// A Bezier surface
@@ -71,6 +72,7 @@ pub struct BezierSurface {
     pub u_profile: BezierCurveProfile,
     pub v_profile: BezierCurveProfile,
     pub poles: Vec<Vec<DVec3>>,
+    pub weights: Vec<Vec<f64>>,
 }
 
 /// Detailed information about a surface's geometric properties
@@ -593,15 +595,24 @@ impl Face {
                         v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
                     }
 
-                    // Extract poles (control points) - 2D grid [u][v]
+                    // Extract poles (control points) and weights - 2D grid [u][v]
                     let mut poles = Vec::with_capacity(nb_u_poles);
+                    let mut weights = Vec::with_capacity(if is_u_rational || is_v_rational { nb_u_poles } else { 0 });
+
                     for u in 1..=nb_u_poles as i32 {
                         let mut v_poles = Vec::with_capacity(nb_v_poles);
+                        let mut v_weights = Vec::with_capacity(if is_u_rational || is_v_rational { nb_v_poles } else { 0 });
                         for v in 1..=nb_v_poles as i32 {
                             let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
                             v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                            if is_u_rational || is_v_rational {
+                                v_weights.push(ffi::geom_bspline_surface_weight(&bspline, u, v));
+                            }
                         }
                         poles.push(v_poles);
+                        if is_u_rational || is_v_rational {
+                            weights.push(v_weights);
+                        }
                     }
 
                     SurfaceDetails::BSpline(BSplineSurface {
@@ -622,6 +633,7 @@ impl Face {
                             multiplicities: v_multiplicities,
                         },
                         poles,
+                        weights,
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
@@ -635,15 +647,20 @@ impl Face {
                     let u_degree = ffi::geom_bezier_surface_u_degree(&bezier) as usize;
                     let v_degree = ffi::geom_bezier_surface_v_degree(&bezier) as usize;
 
-                    // Extract poles (control points) - 2D grid [u][v]
+                    // Extract poles (control points) and weights - 2D grid [u][v]
                     let mut poles = Vec::with_capacity(nb_u_poles);
+                    let mut weights = Vec::with_capacity(nb_u_poles);
+
                     for u in 1..=nb_u_poles as i32 {
                         let mut v_poles = Vec::with_capacity(nb_v_poles);
+                        let mut v_weights = Vec::with_capacity(nb_v_poles);
                         for v in 1..=nb_v_poles as i32 {
                             let pole = ffi::geom_bezier_surface_pole(&bezier, u, v);
                             v_poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                            v_weights.push(ffi::geom_bezier_surface_weight(&bezier, u, v));
                         }
                         poles.push(v_poles);
+                        weights.push(v_weights);
                     }
 
                     SurfaceDetails::Bezier(BezierSurface {
@@ -656,6 +673,7 @@ impl Face {
                             degree: v_degree,
                         },
                         poles,
+                        weights,
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
