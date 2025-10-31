@@ -154,7 +154,8 @@ impl GameApp for ViewerApp {
         let shape = if let Some(step_file) = args.step_file {
             let bytes = std::fs::read(step_file).expect("Failed to read STEP file, {step_file}");
             // let s = Shape::read_step(step_file).expect("Failed to read STEP file, {step_file}");
-            let s = Shape::read_step_from_bytes(&bytes).expect("Failed to read STEP file, {step_file}");
+            let s =
+                Shape::read_step_from_bytes(&bytes).expect("Failed to read STEP file, {step_file}");
             let faces = s.faces();
 
             // println!("=== STEP File Information ===");
@@ -215,17 +216,10 @@ impl GameApp for ViewerApp {
 
                         let u_knot_count = bspline.u_direction.knots.len();
                         let u_mult_sum: i32 = bspline.u_direction.multiplicities.iter().sum();
-                        println!("      {} unique knots, sum(multiplicities) = {}", u_knot_count, u_mult_sum);
-                        println!("      Expected knot vector length = {} + {} + 1 = {}",
-                            bspline.u_direction.nb_poles, bspline.u_direction.degree,
-                            bspline.u_direction.nb_poles + bspline.u_direction.degree + 1);
-
-                        if u_mult_sum == bspline.u_direction.nb_poles + bspline.u_direction.degree + 1 {
-                            println!("      ✓ Relationship verified!");
-                        } else {
-                            println!("      ✗ Mismatch! {} ≠ {}", u_mult_sum,
-                                bspline.u_direction.nb_poles + bspline.u_direction.degree + 1);
-                        }
+                        println!(
+                            "      {} unique knots, sum(multiplicities) = {}",
+                            u_knot_count, u_mult_sum
+                        );
 
                         println!("    V Direction:");
                         println!("      Control Points: {}", bspline.v_direction.nb_poles);
@@ -235,17 +229,10 @@ impl GameApp for ViewerApp {
 
                         let v_knot_count = bspline.v_direction.knots.len();
                         let v_mult_sum: i32 = bspline.v_direction.multiplicities.iter().sum();
-                        println!("      {} unique knots, sum(multiplicities) = {}", v_knot_count, v_mult_sum);
-                        println!("      Expected knot vector length = {} + {} + 1 = {}",
-                            bspline.v_direction.nb_poles, bspline.v_direction.degree,
-                            bspline.v_direction.nb_poles + bspline.v_direction.degree + 1);
-
-                        if v_mult_sum == bspline.v_direction.nb_poles + bspline.v_direction.degree + 1 {
-                            println!("      ✓ Relationship verified!");
-                        } else {
-                            println!("      ✗ Mismatch! {} ≠ {}", v_mult_sum,
-                                bspline.v_direction.nb_poles + bspline.v_direction.degree + 1);
-                        }
+                        println!(
+                            "      {} unique knots, sum(multiplicities) = {}",
+                            v_knot_count, v_mult_sum
+                        );
                     },
                     opencascade::primitives::SurfaceDetails::Bezier(bezier) => {
                         println!("  Bezier Surface Details:");
@@ -307,15 +294,10 @@ impl GameApp for ViewerApp {
 
                         let knot_count = bspline.knots.len();
                         let mult_sum: i32 = bspline.multiplicities.iter().sum();
-                        println!("    {} unique knots, sum(multiplicities) = {}", knot_count, mult_sum);
-                        println!("    Expected knot vector length = {} + {} + 1 = {}",
-                            bspline.nb_poles, bspline.degree, bspline.nb_poles + bspline.degree + 1);
-
-                        if mult_sum == bspline.nb_poles + bspline.degree + 1 {
-                            println!("    ✓ Relationship verified!");
-                        } else {
-                            println!("    ✗ Mismatch! {} ≠ {}", mult_sum, bspline.nb_poles + bspline.degree + 1);
-                        }
+                        println!(
+                            "    {} unique knots, sum(multiplicities) = {}",
+                            knot_count, mult_sum
+                        );
                     },
                     opencascade::primitives::CurveDetails::BezierCurve(bezier) => {
                         println!("  Bezier Curve Details:");
