@@ -1353,6 +1353,10 @@ pub mod ffi {
             reader: Pin<&mut STEPControl_Reader>,
             filename: String,
         ) -> IFSelect_ReturnStatus;
+        pub fn read_step_from_bytes(
+            reader: Pin<&mut STEPControl_Reader>,
+            data: &[u8],
+        ) -> IFSelect_ReturnStatus;
         pub fn read_iges(
             reader: Pin<&mut IGESControl_Reader>,
             filename: String,

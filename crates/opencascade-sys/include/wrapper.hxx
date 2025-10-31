@@ -1,4 +1,5 @@
 #include "rust/cxx.h"
+#include <sstream>
 #include <BOPAlgo_GlueEnum.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAlgoAPI_Common.hxx>
@@ -618,6 +619,17 @@ inline std::unique_ptr<BRepFeat_MakeCylindricalHole> BRepFeat_MakeCylindricalHol
 // Data Import
 inline IFSelect_ReturnStatus read_step(STEPControl_Reader &reader, rust::String theFileName) {
   return reader.ReadFile(theFileName.c_str());
+}
+
+inline IFSelect_ReturnStatus read_step_from_bytes(STEPControl_Reader &reader, rust::Slice<const uint8_t> data) {
+  // Create a string from the byte data
+  std::string str(reinterpret_cast<const char*>(data.data()), data.size());
+
+  // Create an input string stream from the string
+  std::istringstream stream(str);
+
+  // Read from the stream
+  return reader.ReadStream("memory_stream.step", stream);
 }
 
 inline IFSelect_ReturnStatus read_iges(IGESControl_Reader &reader, rust::String theFileName) {

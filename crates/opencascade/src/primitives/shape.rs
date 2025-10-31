@@ -516,6 +516,23 @@ impl Shape {
         Ok(Self { inner })
     }
 
+    /// Read a STEP file from byte data
+    pub fn read_step_from_bytes(data: &[u8]) -> Result<Self, Error> {
+        let mut reader = ffi::STEPControl_Reader_ctor();
+
+        let status = ffi::read_step_from_bytes(reader.pin_mut(), data);
+
+        if status != ffi::IFSelect_ReturnStatus::IFSelect_RetDone {
+            return Err(Error::StepReadFailed);
+        }
+
+        reader.pin_mut().TransferRoots(&ffi::Message_ProgressRange_ctor());
+
+        let inner = ffi::one_shape_step(&reader);
+
+        Ok(Self { inner })
+    }
+
     pub fn write_step(&self, path: impl AsRef<Path>) -> Result<(), Error> {
         let mut writer = ffi::STEPControl_Writer_ctor();
 
