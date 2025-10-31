@@ -3,8 +3,7 @@ use crate::{
     law_function::law_function_from_graph,
     make_pipe_shell::make_pipe_shell_with_law_function,
     primitives::{
-        make_axis_1, make_point, make_vec, EdgeIterator, JoinType, Shape, Solid, Surface, Wire,
-        WireIterator,
+        BSplineCurveProfile, BezierCurveProfile, EdgeIterator, JoinType, Shape, Solid, Surface, Wire, WireIterator, make_axis_1, make_point, make_vec
     },
     workplane::Workplane,
 };
@@ -61,15 +60,15 @@ pub struct Torus {
 /// A B-Spline surface
 #[derive(Debug, Clone)]
 pub struct BSplineSurface {
-    pub u_direction: super::BSplineCurve,
-    pub v_direction: super::BSplineCurve,
+    pub u_direction: BSplineCurveProfile,
+    pub v_direction: BSplineCurveProfile,
 }
 
 /// A Bezier surface
 #[derive(Debug, Clone)]
 pub struct BezierSurface {
-    pub u_direction: super::BezierCurve,
-    pub v_direction: super::BezierCurve,
+    pub u_direction: BezierCurveProfile,
+    pub v_direction: BezierCurveProfile,
 }
 
 /// Detailed information about a surface's geometric properties
@@ -593,7 +592,7 @@ impl Face {
                     }
 
                     SurfaceDetails::BSpline(BSplineSurface {
-                        u_direction: super::BSplineCurve {
+                        u_direction: super::BSplineCurveProfile {
                             nb_poles: nb_u_poles,
                             degree: u_degree,
                             is_rational: is_u_rational,
@@ -601,7 +600,7 @@ impl Face {
                             knots: u_knots,
                             multiplicities: u_multiplicities,
                         },
-                        v_direction: super::BSplineCurve {
+                        v_direction: super::BSplineCurveProfile {
                             nb_poles: nb_v_poles,
                             degree: v_degree,
                             is_rational: is_v_rational,
@@ -623,11 +622,11 @@ impl Face {
                     let v_degree = ffi::geom_bezier_surface_v_degree(&bezier);
 
                     SurfaceDetails::Bezier(BezierSurface {
-                        u_direction: super::BezierCurve {
+                        u_direction: super::BezierCurveProfile {
                             nb_poles: nb_u_poles,
                             degree: u_degree,
                         },
-                        v_direction: super::BezierCurve {
+                        v_direction: super::BezierCurveProfile {
                             nb_poles: nb_v_poles,
                             degree: v_degree,
                         },

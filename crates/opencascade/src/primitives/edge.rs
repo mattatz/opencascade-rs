@@ -29,9 +29,9 @@ pub struct Ellipse {
     pub minor_radius: f64,
 }
 
-/// A B-Spline curve
+/// A B-Spline curve profile
 #[derive(Debug, Clone)]
-pub struct BSplineCurve {
+pub struct BSplineCurveProfile {
     pub nb_poles: i32,
     pub degree: i32,
     pub is_rational: bool,
@@ -40,11 +40,25 @@ pub struct BSplineCurve {
     pub multiplicities: Vec<i32>,
 }
 
+/// A B-Spline curve profile
+#[derive(Debug, Clone)]
+pub struct BSplineCurve {
+    pub profile: BSplineCurveProfile,
+    pub poles: Vec<DVec3>,
+}
+
+/// A Bezier curve profile
+#[derive(Debug, Clone)]
+pub struct BezierCurveProfile {
+    pub nb_poles: i32,
+    pub degree: i32,
+}
+
 /// A Bezier curve
 #[derive(Debug, Clone)]
 pub struct BezierCurve {
-    pub nb_poles: i32,
-    pub degree: i32,
+    pub profile: BezierCurveProfile,
+    pub poles: Vec<DVec3>,
 }
 
 /// A hyperbola
@@ -359,13 +373,23 @@ impl Edge {
                         multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline, i));
                     }
 
+                    // Extract poles (control points)
+                    let mut poles = Vec::with_capacity(nb_poles as usize);
+                    for i in 1..=nb_poles {
+                        let pole = ffi::geom_bspline_curve_pole(&bspline, i);
+                        poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                    }
+
                     CurveDetails::BSplineCurve(BSplineCurve {
-                        nb_poles,
-                        degree,
-                        is_rational,
-                        is_periodic,
-                        knots,
-                        multiplicities,
+                        profile: BSplineCurveProfile {
+                            nb_poles,
+                            degree,
+                            is_rational,
+                            is_periodic,
+                            knots,
+                            multiplicities,
+                        },
+                        poles,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)
@@ -377,9 +401,16 @@ impl Edge {
                     let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier);
                     let degree = ffi::geom_bezier_curve_degree(&bezier);
 
+                    // Extract poles (control points)
+                    let mut poles = Vec::with_capacity(nb_poles as usize);
+                    for i in 1..=nb_poles {
+                        let pole = ffi::geom_bezier_curve_pole(&bezier, i);
+                        poles.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                    }
+
                     CurveDetails::BezierCurve(BezierCurve {
-                        nb_poles,
-                        degree,
+                        profile: BezierCurveProfile { nb_poles, degree },
+                        poles,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)

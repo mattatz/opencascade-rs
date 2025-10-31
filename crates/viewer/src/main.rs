@@ -287,13 +287,14 @@ impl GameApp for ViewerApp {
                     },
                     opencascade::primitives::CurveDetails::BSplineCurve(bspline) => {
                         println!("  BSpline Curve Details:");
-                        println!("    Control Points: {}", bspline.nb_poles);
-                        println!("    Degree: {}", bspline.degree);
-                        println!("    Rational: {}", bspline.is_rational);
-                        println!("    Periodic: {}", bspline.is_periodic);
+                        println!("    Control Points: {}", bspline.profile.nb_poles);
+                        println!("    Degree: {}", bspline.profile.degree);
+                        println!("    Rational: {}", bspline.profile.is_rational);
+                        println!("    Periodic: {}", bspline.profile.is_periodic);
+                        println!("    Poles: {:?}", bspline.poles);
 
-                        let knot_count = bspline.knots.len();
-                        let mult_sum: i32 = bspline.multiplicities.iter().sum();
+                        let knot_count = bspline.profile.knots.len();
+                        let mult_sum: i32 = bspline.profile.multiplicities.iter().sum();
                         println!(
                             "    {} unique knots, sum(multiplicities) = {}",
                             knot_count, mult_sum
@@ -301,8 +302,9 @@ impl GameApp for ViewerApp {
                     },
                     opencascade::primitives::CurveDetails::BezierCurve(bezier) => {
                         println!("  Bezier Curve Details:");
-                        println!("    Control Points: {}", bezier.nb_poles);
-                        println!("    Degree: {}", bezier.degree);
+                        println!("    Control Points: {}", bezier.profile.nb_poles);
+                        println!("    Degree: {}", bezier.profile.degree);
+                        println!("    Poles: {:?}", bezier.poles);
                     },
                     opencascade::primitives::CurveDetails::Hyperbola(hyperbola) => {
                         println!("  Hyperbola Details:");
