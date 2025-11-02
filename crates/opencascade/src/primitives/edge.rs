@@ -5,6 +5,71 @@ use opencascade_sys::ffi;
 
 use super::make_vec;
 
+/// A 2D line
+#[derive(Debug, Clone)]
+pub struct Line2d {
+    pub origin: DVec2,
+    pub direction: DVec2,
+}
+
+/// A 2D circle
+#[derive(Debug, Clone)]
+pub struct Circle2d {
+    pub center: DVec2,
+    pub radius: f64,
+}
+
+/// A 2D ellipse
+#[derive(Debug, Clone)]
+pub struct Ellipse2d {
+    pub center: DVec2,
+    pub major_radius: f64,
+    pub minor_radius: f64,
+}
+
+/// A 2D B-Spline curve
+#[derive(Debug, Clone)]
+pub struct BSplineCurve2d {
+    pub profile: BSplineCurveProfile,
+    pub poles: Vec<DVec2>,
+    pub weights: Option<Vec<f64>>,
+}
+
+/// A 2D Bezier curve
+#[derive(Debug, Clone)]
+pub struct BezierCurve2d {
+    pub profile: BezierCurveProfile,
+    pub poles: Vec<DVec2>,
+    pub weights: Option<Vec<f64>>,
+}
+
+/// A 2D trimmed curve (基底カーブをパラメータ範囲で切り取ったもの)
+#[derive(Debug, Clone)]
+pub struct TrimmedCurve2d {
+    pub basis_curve: Box<Curve2dDetails>,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
+}
+
+/// Detailed information about a 2D curve's geometric properties
+#[derive(Debug, Clone)]
+pub enum Curve2dDetails {
+    /// A 2D line
+    Line(Line2d),
+    /// A 2D circle
+    Circle(Circle2d),
+    /// A 2D ellipse
+    Ellipse(Ellipse2d),
+    /// A 2D B-Spline curve
+    BSplineCurve(BSplineCurve2d),
+    /// A 2D Bezier curve
+    BezierCurve(BezierCurve2d),
+    /// A 2D trimmed curve
+    TrimmedCurve(TrimmedCurve2d),
+    /// Unknown or unsupported curve type
+    Unknown(String),
+}
+
 /// A line
 #[derive(Debug, Clone)]
 pub struct Line {
@@ -142,6 +207,173 @@ impl ParametricCurve2d {
     /// Check if the curve is valid
     pub fn is_valid(&self) -> bool {
         !ffi::Geom2d_Curve_IsNull(&self.curve)
+    }
+
+    /// Get detailed information about the 2D curve's geometric properties
+    pub fn curve_details(&self) -> Curve2dDetails {
+        if !self.is_valid() {
+            return Curve2dDetails::Unknown("Null curve".to_string());
+        }
+
+        let curve_type = ffi::Geom2d_Curve_DynamicType(&self.curve);
+
+        match curve_type.as_str() {
+            "Geom2d_Line" => {
+                let line = ffi::cast_geom2d_curve_to_line(&self.curve);
+                if !ffi::HandleGeom2d_Line_IsNull(&line) {
+                    let location = ffi::geom2d_line_location(&line);
+                    let direction = ffi::geom2d_line_direction(&line);
+
+                    Curve2dDetails::Line(Line2d {
+                        origin: dvec2(location.X(), location.Y()),
+                        direction: dvec2(ffi::gp_Dir2d_X(&direction), ffi::gp_Dir2d_Y(&direction)),
+                    })
+                } else {
+                    Curve2dDetails::Unknown(curve_type)
+                }
+            }
+            "Geom2d_Circle" => {
+                let circle = ffi::cast_geom2d_curve_to_circle(&self.curve);
+                if !ffi::HandleGeom2d_Circle_IsNull(&circle) {
+                    let location = ffi::geom2d_circle_location(&circle);
+                    let radius = ffi::geom2d_circle_radius(&circle);
+
+                    Curve2dDetails::Circle(Circle2d {
+                        center: dvec2(location.X(), location.Y()),
+                        radius,
+                    })
+                } else {
+                    Curve2dDetails::Unknown(curve_type)
+                }
+            }
+            "Geom2d_Ellipse" => {
+                let ellipse = ffi::cast_geom2d_curve_to_ellipse(&self.curve);
+                if !ffi::HandleGeom2d_Ellipse_IsNull(&ellipse) {
+                    let location = ffi::geom2d_ellipse_location(&ellipse);
+                    let major_radius = ffi::geom2d_ellipse_major_radius(&ellipse);
+                    let minor_radius = ffi::geom2d_ellipse_minor_radius(&ellipse);
+
+                    Curve2dDetails::Ellipse(Ellipse2d {
+                        center: dvec2(location.X(), location.Y()),
+                        major_radius,
+                        minor_radius,
+                    })
+                } else {
+                    Curve2dDetails::Unknown(curve_type)
+                }
+            }
+            "Geom2d_BSplineCurve" => {
+                let bspline = ffi::cast_geom2d_curve_to_bspline(&self.curve);
+                if !ffi::HandleGeom2d_BSplineCurve_IsNull(&bspline) {
+                    let nb_poles = ffi::geom2d_bspline_curve_nb_poles(&bspline) as usize;
+                    let degree = ffi::geom2d_bspline_curve_degree(&bspline) as usize;
+                    let is_rational = ffi::geom2d_bspline_curve_is_rational(&bspline);
+                    let is_periodic = ffi::geom2d_bspline_curve_is_periodic(&bspline);
+
+                    // Extract knot vectors
+                    let nb_knots = ffi::geom2d_bspline_curve_nb_knots(&bspline);
+                    let mut knots = Vec::with_capacity(nb_knots as usize);
+                    let mut multiplicities = Vec::with_capacity(nb_knots as usize);
+
+                    for i in 1..=nb_knots {
+                        knots.push(ffi::geom2d_bspline_curve_knot(&bspline, i));
+                        multiplicities.push(ffi::geom2d_bspline_curve_multiplicity(&bspline, i) as usize);
+                    }
+
+                    // Extract poles (control points) and weights
+                    let poles = (1..=nb_poles as i32)
+                        .map(|i| {
+                            let pole = ffi::geom2d_bspline_curve_pole(&bspline, i);
+                            dvec2(pole.X(), pole.Y())
+                        })
+                        .collect();
+
+                    let weights = if is_rational {
+                        Some(
+                            (1..=nb_poles as i32)
+                                .map(|i| ffi::geom2d_bspline_curve_weight(&bspline, i))
+                                .collect(),
+                        )
+                    } else {
+                        None
+                    };
+
+                    Curve2dDetails::BSplineCurve(BSplineCurve2d {
+                        profile: BSplineCurveProfile {
+                            nb_poles,
+                            degree,
+                            is_rational,
+                            is_periodic,
+                            knots,
+                            multiplicities,
+                        },
+                        poles,
+                        weights,
+                    })
+                } else {
+                    Curve2dDetails::Unknown(curve_type)
+                }
+            }
+            "Geom2d_BezierCurve" => {
+                let bezier = ffi::cast_geom2d_curve_to_bezier(&self.curve);
+                if !ffi::HandleGeom2d_BezierCurve_IsNull(&bezier) {
+                    let nb_poles = ffi::geom2d_bezier_curve_nb_poles(&bezier) as usize;
+                    let degree = ffi::geom2d_bezier_curve_degree(&bezier) as usize;
+                    let is_rational = ffi::geom2d_bezier_curve_is_rational(&bezier);
+
+                    // Extract poles (control points) and weights
+                    let poles = (1..=nb_poles as i32)
+                        .map(|i| {
+                            let pole = ffi::geom2d_bezier_curve_pole(&bezier, i);
+                            dvec2(pole.X(), pole.Y())
+                        })
+                        .collect();
+
+                    let weights = if is_rational {
+                        Some(
+                            (1..=nb_poles as i32)
+                                .map(|i| ffi::geom2d_bezier_curve_weight(&bezier, i))
+                                .collect(),
+                        )
+                    } else {
+                        None
+                    };
+
+                    Curve2dDetails::BezierCurve(BezierCurve2d {
+                        profile: BezierCurveProfile { nb_poles, degree },
+                        poles,
+                        weights,
+                    })
+                } else {
+                    Curve2dDetails::Unknown(curve_type)
+                }
+            }
+            "Geom2d_TrimmedCurve" => {
+                let trimmed = ffi::cast_geom2d_curve_to_trimmed(&self.curve);
+                if !ffi::HandleGeom2d_TrimmedCurve_IsNull(&trimmed) {
+                    let basis_curve_handle = ffi::geom2d_trimmed_curve_basis_curve(&trimmed);
+                    let first_param = ffi::geom2d_trimmed_curve_first_parameter(&trimmed);
+                    let last_param = ffi::geom2d_trimmed_curve_last_parameter(&trimmed);
+
+                    // Recursively get the basis curve details
+                    let basis_curve_temp = ParametricCurve2d {
+                        curve: basis_curve_handle,
+                        first: first_param,
+                        last: last_param,
+                    };
+                    let basis_details = basis_curve_temp.curve_details();
+
+                    Curve2dDetails::TrimmedCurve(TrimmedCurve2d {
+                        basis_curve: Box::new(basis_details),
+                        first_parameter: first_param,
+                        last_parameter: last_param,
+                    })
+                } else {
+                    Curve2dDetails::Unknown(curve_type)
+                }
+            }
+            _ => Curve2dDetails::Unknown(curve_type),
+        }
     }
 }
 

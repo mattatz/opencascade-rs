@@ -44,7 +44,11 @@
 #include <GC_MakeArcOfCircle.hxx>
 #include <GC_MakeSegment.hxx>
 #include <GProp_GProps.hxx>
+#include <Geom2d_Line.hxx>
+#include <Geom2d_Circle.hxx>
 #include <Geom2d_Ellipse.hxx>
+#include <Geom2d_BSplineCurve.hxx>
+#include <Geom2d_BezierCurve.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
@@ -128,7 +132,11 @@ typedef opencascade::handle<Geom_CylindricalSurface> HandleGeom_CylindricalSurfa
 typedef opencascade::handle<Geom_SphericalSurface> HandleGeom_SphericalSurface;
 typedef opencascade::handle<Geom_ToroidalSurface> HandleGeom_ToroidalSurface;
 typedef opencascade::handle<Geom2d_Curve> HandleGeom2d_Curve;
+typedef opencascade::handle<Geom2d_Line> HandleGeom2d_Line;
+typedef opencascade::handle<Geom2d_Circle> HandleGeom2d_Circle;
 typedef opencascade::handle<Geom2d_Ellipse> HandleGeom2d_Ellipse;
+typedef opencascade::handle<Geom2d_BSplineCurve> HandleGeom2d_BSplineCurve;
+typedef opencascade::handle<Geom2d_BezierCurve> HandleGeom2d_BezierCurve;
 typedef opencascade::handle<Geom2d_TrimmedCurve> HandleGeom2d_TrimmedCurve;
 typedef opencascade::handle<Poly_Triangulation> HandlePoly_Triangulation;
 typedef opencascade::handle<TopTools_HSequenceOfShape> HandleTopTools_HSequenceOfShape;
@@ -610,6 +618,175 @@ inline std::unique_ptr<gp_Pnt2d> Geom2d_Curve_Value(const HandleGeom2d_Curve &cu
 
 inline bool Geom2d_Curve_IsNull(const HandleGeom2d_Curve &curve) {
   return curve.IsNull();
+}
+
+// Geom2d_Curve type information
+inline rust::String Geom2d_Curve_DynamicType(const HandleGeom2d_Curve &curve) {
+  return rust::String(curve->DynamicType()->Name());
+}
+
+// Geom2d_Line
+inline std::unique_ptr<HandleGeom2d_Line> cast_geom2d_curve_to_line(const HandleGeom2d_Curve &curve) {
+  return std::unique_ptr<HandleGeom2d_Line>(new opencascade::handle<Geom2d_Line>(
+      opencascade::handle<Geom2d_Line>::DownCast(curve)));
+}
+
+inline bool HandleGeom2d_Line_IsNull(const HandleGeom2d_Line &handle) {
+  return handle.IsNull();
+}
+
+inline std::unique_ptr<gp_Pnt2d> geom2d_line_location(const HandleGeom2d_Line &line) {
+  return std::unique_ptr<gp_Pnt2d>(new gp_Pnt2d(line->Location()));
+}
+
+inline std::unique_ptr<gp_Dir2d> geom2d_line_direction(const HandleGeom2d_Line &line) {
+  return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(line->Direction()));
+}
+
+inline Standard_Real gp_Dir2d_X(const gp_Dir2d &dir) {
+  return dir.X();
+}
+
+inline Standard_Real gp_Dir2d_Y(const gp_Dir2d &dir) {
+  return dir.Y();
+}
+
+// Geom2d_Circle
+inline std::unique_ptr<HandleGeom2d_Circle> cast_geom2d_curve_to_circle(const HandleGeom2d_Curve &curve) {
+  return std::unique_ptr<HandleGeom2d_Circle>(new opencascade::handle<Geom2d_Circle>(
+      opencascade::handle<Geom2d_Circle>::DownCast(curve)));
+}
+
+inline bool HandleGeom2d_Circle_IsNull(const HandleGeom2d_Circle &handle) {
+  return handle.IsNull();
+}
+
+inline std::unique_ptr<gp_Pnt2d> geom2d_circle_location(const HandleGeom2d_Circle &circle) {
+  return std::unique_ptr<gp_Pnt2d>(new gp_Pnt2d(circle->Location()));
+}
+
+inline Standard_Real geom2d_circle_radius(const HandleGeom2d_Circle &circle) {
+  return circle->Radius();
+}
+
+// Geom2d_Ellipse
+inline std::unique_ptr<HandleGeom2d_Ellipse> cast_geom2d_curve_to_ellipse(const HandleGeom2d_Curve &curve) {
+  return std::unique_ptr<HandleGeom2d_Ellipse>(new opencascade::handle<Geom2d_Ellipse>(
+      opencascade::handle<Geom2d_Ellipse>::DownCast(curve)));
+}
+
+inline bool HandleGeom2d_Ellipse_IsNull(const HandleGeom2d_Ellipse &handle) {
+  return handle.IsNull();
+}
+
+inline std::unique_ptr<gp_Pnt2d> geom2d_ellipse_location(const HandleGeom2d_Ellipse &ellipse) {
+  return std::unique_ptr<gp_Pnt2d>(new gp_Pnt2d(ellipse->Location()));
+}
+
+inline Standard_Real geom2d_ellipse_major_radius(const HandleGeom2d_Ellipse &ellipse) {
+  return ellipse->MajorRadius();
+}
+
+inline Standard_Real geom2d_ellipse_minor_radius(const HandleGeom2d_Ellipse &ellipse) {
+  return ellipse->MinorRadius();
+}
+
+// Geom2d_BSplineCurve
+inline std::unique_ptr<HandleGeom2d_BSplineCurve> cast_geom2d_curve_to_bspline(const HandleGeom2d_Curve &curve) {
+  return std::unique_ptr<HandleGeom2d_BSplineCurve>(new opencascade::handle<Geom2d_BSplineCurve>(
+      opencascade::handle<Geom2d_BSplineCurve>::DownCast(curve)));
+}
+
+inline bool HandleGeom2d_BSplineCurve_IsNull(const HandleGeom2d_BSplineCurve &handle) {
+  return handle.IsNull();
+}
+
+inline Standard_Integer geom2d_bspline_curve_nb_poles(const HandleGeom2d_BSplineCurve &bspline) {
+  return bspline->NbPoles();
+}
+
+inline Standard_Integer geom2d_bspline_curve_degree(const HandleGeom2d_BSplineCurve &bspline) {
+  return bspline->Degree();
+}
+
+inline bool geom2d_bspline_curve_is_rational(const HandleGeom2d_BSplineCurve &bspline) {
+  return bspline->IsRational();
+}
+
+inline bool geom2d_bspline_curve_is_periodic(const HandleGeom2d_BSplineCurve &bspline) {
+  return bspline->IsPeriodic();
+}
+
+inline Standard_Integer geom2d_bspline_curve_nb_knots(const HandleGeom2d_BSplineCurve &bspline) {
+  return bspline->NbKnots();
+}
+
+inline Standard_Real geom2d_bspline_curve_knot(const HandleGeom2d_BSplineCurve &bspline, Standard_Integer index) {
+  return bspline->Knot(index);
+}
+
+inline Standard_Integer geom2d_bspline_curve_multiplicity(const HandleGeom2d_BSplineCurve &bspline, Standard_Integer index) {
+  return bspline->Multiplicity(index);
+}
+
+inline std::unique_ptr<gp_Pnt2d> geom2d_bspline_curve_pole(const HandleGeom2d_BSplineCurve &bspline, Standard_Integer index) {
+  return std::unique_ptr<gp_Pnt2d>(new gp_Pnt2d(bspline->Pole(index)));
+}
+
+inline Standard_Real geom2d_bspline_curve_weight(const HandleGeom2d_BSplineCurve &bspline, Standard_Integer index) {
+  return bspline->Weight(index);
+}
+
+// Geom2d_BezierCurve
+inline std::unique_ptr<HandleGeom2d_BezierCurve> cast_geom2d_curve_to_bezier(const HandleGeom2d_Curve &curve) {
+  return std::unique_ptr<HandleGeom2d_BezierCurve>(new opencascade::handle<Geom2d_BezierCurve>(
+      opencascade::handle<Geom2d_BezierCurve>::DownCast(curve)));
+}
+
+inline bool HandleGeom2d_BezierCurve_IsNull(const HandleGeom2d_BezierCurve &handle) {
+  return handle.IsNull();
+}
+
+inline Standard_Integer geom2d_bezier_curve_nb_poles(const HandleGeom2d_BezierCurve &bezier) {
+  return bezier->NbPoles();
+}
+
+inline Standard_Integer geom2d_bezier_curve_degree(const HandleGeom2d_BezierCurve &bezier) {
+  return bezier->Degree();
+}
+
+inline bool geom2d_bezier_curve_is_rational(const HandleGeom2d_BezierCurve &bezier) {
+  return bezier->IsRational();
+}
+
+inline std::unique_ptr<gp_Pnt2d> geom2d_bezier_curve_pole(const HandleGeom2d_BezierCurve &bezier, Standard_Integer index) {
+  return std::unique_ptr<gp_Pnt2d>(new gp_Pnt2d(bezier->Pole(index)));
+}
+
+inline Standard_Real geom2d_bezier_curve_weight(const HandleGeom2d_BezierCurve &bezier, Standard_Integer index) {
+  return bezier->Weight(index);
+}
+
+// Geom2d_TrimmedCurve
+inline std::unique_ptr<HandleGeom2d_TrimmedCurve> cast_geom2d_curve_to_trimmed(const HandleGeom2d_Curve &curve) {
+  return std::unique_ptr<HandleGeom2d_TrimmedCurve>(new opencascade::handle<Geom2d_TrimmedCurve>(
+      opencascade::handle<Geom2d_TrimmedCurve>::DownCast(curve)));
+}
+
+inline bool HandleGeom2d_TrimmedCurve_IsNull(const HandleGeom2d_TrimmedCurve &handle) {
+  return handle.IsNull();
+}
+
+inline std::unique_ptr<HandleGeom2d_Curve> geom2d_trimmed_curve_basis_curve(const HandleGeom2d_TrimmedCurve &trimmed) {
+  return std::unique_ptr<HandleGeom2d_Curve>(new opencascade::handle<Geom2d_Curve>(trimmed->BasisCurve()));
+}
+
+inline Standard_Real geom2d_trimmed_curve_first_parameter(const HandleGeom2d_TrimmedCurve &trimmed) {
+  return trimmed->FirstParameter();
+}
+
+inline Standard_Real geom2d_trimmed_curve_last_parameter(const HandleGeom2d_TrimmedCurve &trimmed) {
+  return trimmed->LastParameter();
 }
 
 inline std::unique_ptr<gp_Trsf> TopLoc_Location_Transformation(const TopLoc_Location &location) {

@@ -972,4 +972,159 @@ mod tests {
         assert!(point_2d.x.is_finite() && point_2d.y.is_finite(),
                 "Expected finite 2D coordinates, got ({}, {})", point_2d.x, point_2d.y);
     }
+
+    #[test]
+    fn test_2d_curve_details() {
+        use crate::primitives::edge::Curve2dDetails;
+
+        // Create a simple rectangular face
+        let face = Workplane::xy().rect(10.0, 10.0).to_face();
+
+        // Get the outer wire
+        let outer_wire = face.outer_wire();
+
+        // Get edges from the wire
+        let edges: Vec<_> = outer_wire.edges().collect();
+        assert!(!edges.is_empty(), "Expected at least one edge");
+
+        // Check all edges
+        for (i, edge) in edges.iter().enumerate() {
+            let curve_2d = edge.curve_on_surface(&face);
+            assert!(curve_2d.is_some(), "Expected a 2D parametric curve for edge {}", i);
+
+            let curve_2d = curve_2d.unwrap();
+
+            // Get curve details
+            let details = curve_2d.curve_details();
+
+            println!("Edge {} - 2D curve type: {:?}", i,
+                     match &details {
+                         Curve2dDetails::Line(_) => "Line",
+                         Curve2dDetails::Circle(_) => "Circle",
+                         Curve2dDetails::Ellipse(_) => "Ellipse",
+                         Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
+                         Curve2dDetails::BezierCurve(_) => "BezierCurve",
+                         Curve2dDetails::TrimmedCurve(t) => {
+                             let basis_type = match &*t.basis_curve {
+                                 Curve2dDetails::Line(_) => "TrimmedCurve(Line)",
+                                 Curve2dDetails::Circle(_) => "TrimmedCurve(Circle)",
+                                 Curve2dDetails::Ellipse(_) => "TrimmedCurve(Ellipse)",
+                                 _ => "TrimmedCurve(Other)",
+                             };
+                             basis_type
+                         }
+                         Curve2dDetails::Unknown(s) => s.as_str(),
+                     });
+
+            // For a rectangular face, we might get lines or trimmed curves
+            match details {
+                Curve2dDetails::Line(line) => {
+                    // Verify that we got valid line data
+                    assert!(line.origin.x.is_finite() && line.origin.y.is_finite(),
+                            "Expected finite origin coordinates");
+                    assert!(line.direction.x.is_finite() && line.direction.y.is_finite(),
+                            "Expected finite direction coordinates");
+                }
+                Curve2dDetails::TrimmedCurve(ref trimmed) => {
+                    println!("  -> TrimmedCurve from {} to {}",
+                             trimmed.first_parameter, trimmed.last_parameter);
+                    // Verify the basis curve
+                    match &*trimmed.basis_curve {
+                        Curve2dDetails::Line(line) => {
+                            assert!(line.origin.x.is_finite() && line.origin.y.is_finite());
+                        }
+                        _ => {}
+                    }
+                }
+                Curve2dDetails::Unknown(ref type_name) => {
+                    println!("  -> Unknown curve type: {}", type_name);
+                }
+                other => {
+                    println!("  -> Other curve type: {:?}", other);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_2d_curve_types_circle() {
+        use crate::primitives::edge::Curve2dDetails;
+
+        // Create a circular face to test TrimmedCurve
+        let face = Workplane::xy().circle(0.0, 0.0, 5.0).to_face();
+
+        // Get the outer wire
+        let outer_wire = face.outer_wire();
+
+        // Get edges from the wire
+        let edges: Vec<_> = outer_wire.edges().collect();
+        println!("Circle face has {} edges", edges.len());
+
+        for (i, edge) in edges.iter().enumerate() {
+            if let Some(curve_2d) = edge.curve_on_surface(&face) {
+                let details = curve_2d.curve_details();
+
+                println!("Circle edge {} - 2D curve type: {:?}", i,
+                         match &details {
+                             Curve2dDetails::Line(_) => "Line",
+                             Curve2dDetails::Circle(_) => "Circle",
+                             Curve2dDetails::Ellipse(_) => "Ellipse",
+                             Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
+                             Curve2dDetails::BezierCurve(_) => "BezierCurve",
+                             Curve2dDetails::TrimmedCurve(t) => {
+                                 match &*t.basis_curve {
+                                     Curve2dDetails::Line(_) => "TrimmedCurve(Line)",
+                                     Curve2dDetails::Circle(_) => "TrimmedCurve(Circle)",
+                                     Curve2dDetails::Ellipse(_) => "TrimmedCurve(Ellipse)",
+                                     _ => "TrimmedCurve(Other)",
+                                 }
+                             }
+                             Curve2dDetails::Unknown(s) => s.as_str(),
+                         });
+            }
+        }
+    }
+
+    #[test]
+    fn test_2d_curve_types_filleted() {
+        use crate::primitives::edge::Curve2dDetails;
+
+        // Create a filleted rectangle (this often produces TrimmedCurves)
+        let rect_wire = Workplane::xy().rect(10.0, 10.0);
+        let face = rect_wire.to_face().fillet(1.0);
+
+        // Get the outer wire
+        let outer_wire = face.outer_wire();
+
+        // Get edges from the wire
+        let edges: Vec<_> = outer_wire.edges().collect();
+        println!("Filleted rect has {} edges", edges.len());
+
+        for (i, edge) in edges.iter().enumerate() {
+            if let Some(curve_2d) = edge.curve_on_surface(&face) {
+                let details = curve_2d.curve_details();
+
+                println!("Filleted edge {} - 2D curve type: {}", i,
+                         match &details {
+                             Curve2dDetails::Line(_) => "Line",
+                             Curve2dDetails::Circle(_) => "Circle",
+                             Curve2dDetails::Ellipse(_) => "Ellipse",
+                             Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
+                             Curve2dDetails::BezierCurve(_) => "BezierCurve",
+                             Curve2dDetails::TrimmedCurve(t) => {
+                                 let basis = match &*t.basis_curve {
+                                     Curve2dDetails::Line(_) => "Line",
+                                     Curve2dDetails::Circle(_) => "Circle",
+                                     Curve2dDetails::Ellipse(_) => "Ellipse",
+                                     _ => "Other",
+                                 };
+                                 println!("  -> TrimmedCurve basis: {}, params: [{}, {}]",
+                                         basis, t.first_parameter, t.last_parameter);
+                                 "TrimmedCurve"
+                             }
+                             Curve2dDetails::Unknown(s) => s.as_str(),
+                         });
+            }
+        }
+    }
 }
