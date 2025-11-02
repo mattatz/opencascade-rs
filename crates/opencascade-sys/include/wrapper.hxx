@@ -761,6 +761,10 @@ inline std::unique_ptr<TopoDS_Wire> outer_wire(const TopoDS_Face &face) {
   return std::unique_ptr<TopoDS_Wire>(new TopoDS_Wire(BRepTools::OuterWire(face)));
 }
 
+inline bool are_shapes_same(const TopoDS_Shape &shape1, const TopoDS_Shape &shape2) {
+  return shape1.IsSame(shape2);
+}
+
 // Collections
 inline void map_shapes(const TopoDS_Shape &S, const TopAbs_ShapeEnum T, TopTools_IndexedMapOfShape &M) {
   TopExp::MapShapes(S, T, M);

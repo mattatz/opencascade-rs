@@ -1575,6 +1575,7 @@ pub mod ffi {
 
         // BRepTools
         pub fn outer_wire(face: &TopoDS_Face) -> UniquePtr<TopoDS_Wire>;
+        pub fn are_shapes_same(shape1: &TopoDS_Shape, shape2: &TopoDS_Shape) -> bool;
 
         // Cleaning
         type ShapeUpgrade_UnifySameDomain;

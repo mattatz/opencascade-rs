@@ -233,6 +233,41 @@ impl Iterator for WireIterator {
     }
 }
 
+/// A wire with information about whether it's the outer wire of a face
+pub struct WireWithRole {
+    pub wire: Wire,
+    pub is_outer: bool,
+}
+
+pub struct WireWithRoleIterator {
+    explorer: UniquePtr<ffi::TopExp_Explorer>,
+    outer_wire: Wire,
+}
+
+impl Iterator for WireWithRoleIterator {
+    type Item = WireWithRole;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.explorer.More() {
+            let wire = ffi::TopoDS_cast_to_wire(self.explorer.Current());
+            let wire = Wire::from_wire(wire);
+
+            // Check if this wire is the same as the outer wire
+            // We compare by checking if the shapes are the same
+            let is_outer = ffi::are_shapes_same(
+                ffi::cast_wire_to_shape(&wire.inner),
+                ffi::cast_wire_to_shape(&self.outer_wire.inner),
+            );
+
+            self.explorer.pin_mut().Next();
+
+            Some(WireWithRole { wire, is_outer })
+        } else {
+            None
+        }
+    }
+}
+
 /// Given n and func, returns an iterator of (t, f(t)) values
 /// where t is in the range [0, 1].
 /// Note that n + 1 values are returned.

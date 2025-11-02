@@ -4,7 +4,7 @@ use crate::{
     make_pipe_shell::make_pipe_shell_with_law_function,
     primitives::{
         make_axis_1, make_point, make_vec, BSplineCurveProfile, BezierCurveProfile, EdgeIterator,
-        JoinType, Shape, Solid, Surface, Wire, WireIterator,
+        JoinType, Shape, Solid, Surface, Wire, WireIterator, WireWithRoleIterator,
     },
     workplane::Workplane,
 };
@@ -340,6 +340,21 @@ impl Face {
         );
 
         WireIterator { explorer }
+    }
+
+    /// Returns an iterator over all wires with information about whether each is the outer wire
+    pub fn wires_with_roles(&self) -> WireWithRoleIterator {
+        let explorer = ffi::TopExp_Explorer_ctor(
+            ffi::cast_face_to_shape(&self.inner),
+            ffi::TopAbs_ShapeEnum::TopAbs_WIRE,
+        );
+
+        let outer_wire = self.outer_wire();
+
+        WireWithRoleIterator {
+            explorer,
+            outer_wire,
+        }
     }
 
     pub fn center_of_mass(&self) -> DVec3 {
@@ -897,5 +912,30 @@ mod tests {
             "Expected surface_area() to be ~35.0, was actually {}",
             face.surface_area()
         );
+    }
+
+    #[test]
+    fn test_wires_with_roles_simple() {
+        // Create a simple face (no holes)
+        let face = Workplane::xy().rect(10.0, 10.0).to_face();
+
+        // Count outer and inner wires
+        let mut outer_count = 0;
+        let mut inner_count = 0;
+        let mut total_count = 0;
+
+        for wire_with_role in face.wires_with_roles() {
+            total_count += 1;
+            if wire_with_role.is_outer {
+                outer_count += 1;
+            } else {
+                inner_count += 1;
+            }
+        }
+
+        // A simple rectangular face should have exactly 1 wire, which is the outer wire
+        assert_eq!(total_count, 1, "Expected exactly 1 wire total");
+        assert_eq!(outer_count, 1, "Expected exactly 1 outer wire");
+        assert_eq!(inner_count, 0, "Expected 0 inner wires");
     }
 }
