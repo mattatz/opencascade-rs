@@ -12,6 +12,42 @@ use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
 
+/// UV parameter bounds for a face
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct UVBounds {
+    pub u_min: f64,
+    pub u_max: f64,
+    pub v_min: f64,
+    pub v_max: f64,
+}
+
+impl UVBounds {
+    /// Create a new UVBounds
+    pub fn new(u_min: f64, u_max: f64, v_min: f64, v_max: f64) -> Self {
+        Self {
+            u_min,
+            u_max,
+            v_min,
+            v_max,
+        }
+    }
+
+    /// Get the U range (u_max - u_min)
+    pub fn u_range(&self) -> f64 {
+        self.u_max - self.u_min
+    }
+
+    /// Get the V range (v_max - v_min)
+    pub fn v_range(&self) -> f64 {
+        self.v_max - self.v_min
+    }
+
+    /// Get the center point in UV space
+    pub fn center(&self) -> (f64, f64) {
+        ((self.u_min + self.u_max) / 2.0, (self.v_min + self.v_max) / 2.0)
+    }
+}
+
 /// A planar surface
 #[derive(Debug, Clone)]
 pub struct Plane {
@@ -21,10 +57,7 @@ pub struct Plane {
     pub x_direction: DVec3,
     pub y_direction: DVec3,
     /// UV parameter bounds of the face (not the infinite plane)
-    pub u_min: f64,
-    pub u_max: f64,
-    pub v_min: f64,
-    pub v_max: f64,
+    pub bounds: UVBounds,
 }
 
 /// A cylindrical surface
@@ -470,8 +503,7 @@ impl Face {
     }
 
     /// Get the UV parameter bounds of the face
-    /// Returns (u_min, u_max, v_min, v_max)
-    pub fn uv_bounds(&self) -> (f64, f64, f64, f64) {
+    pub fn uv_bounds(&self) -> UVBounds {
         let mut u_min = 0.0;
         let mut u_max = 0.0;
         let mut v_min = 0.0;
@@ -479,7 +511,7 @@ impl Face {
 
         ffi::face_uv_bounds(&self.inner, &mut u_min, &mut u_max, &mut v_min, &mut v_max);
 
-        (u_min, u_max, v_min, v_max)
+        UVBounds::new(u_min, u_max, v_min, v_max)
     }
 
     #[must_use]
@@ -513,7 +545,7 @@ impl Face {
                     let y_dir_ptr = ffi::geom_plane_y_direction(&plane);
 
                     // Get UV bounds for the face
-                    let (u_min, u_max, v_min, v_max) = self.uv_bounds();
+                    let bounds = self.uv_bounds();
 
                     SurfaceDetails::Plane(Plane {
                         location: dvec3(location.X(), location.Y(), location.Z()),
@@ -529,10 +561,7 @@ impl Face {
                         ),
                         x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
                         y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
-                        u_min,
-                        u_max,
-                        v_min,
-                        v_max,
+                        bounds,
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
@@ -1286,7 +1315,7 @@ mod tests {
             println!("  Axis Direction (Z): {:?}", plane.axis_direction);
             println!("  X Direction: {:?}", plane.x_direction);
             println!("  Y Direction: {:?}", plane.y_direction);
-            println!("  UV Bounds: U=[{}, {}], V=[{}, {}]", plane.u_min, plane.u_max, plane.v_min, plane.v_max);
+            println!("  UV Bounds: {:?}", plane.bounds);
 
             // Check that directions form an orthonormal basis
             let tolerance = 0.0001;
@@ -1336,8 +1365,8 @@ mod tests {
             );
 
             // Verify UV bounds are included in the Plane struct
-            let u_range = plane.u_max - plane.u_min;
-            let v_range = plane.v_max - plane.v_min;
+            let u_range = plane.bounds.u_range();
+            let v_range = plane.bounds.v_range();
             println!("  U range: {}", u_range);
             println!("  V range: {}", v_range);
 
@@ -1351,11 +1380,11 @@ mod tests {
             );
 
             // Verify that Plane struct bounds match face.uv_bounds()
-            let (u_min, u_max, v_min, v_max) = face.uv_bounds();
-            assert!((plane.u_min - u_min).abs() < tolerance, "Plane u_min should match face.uv_bounds()");
-            assert!((plane.u_max - u_max).abs() < tolerance, "Plane u_max should match face.uv_bounds()");
-            assert!((plane.v_min - v_min).abs() < tolerance, "Plane v_min should match face.uv_bounds()");
-            assert!((plane.v_max - v_max).abs() < tolerance, "Plane v_max should match face.uv_bounds()");
+            let bounds = face.uv_bounds();
+            assert!((plane.bounds.u_min - bounds.u_min).abs() < tolerance, "Plane u_min should match face.uv_bounds()");
+            assert!((plane.bounds.u_max - bounds.u_max).abs() < tolerance, "Plane u_max should match face.uv_bounds()");
+            assert!((plane.bounds.v_min - bounds.v_min).abs() < tolerance, "Plane v_min should match face.uv_bounds()");
+            assert!((plane.bounds.v_max - bounds.v_max).abs() < tolerance, "Plane v_max should match face.uv_bounds()");
         } else {
             panic!("Expected Plane surface, got {:?}", details);
         }
@@ -1365,27 +1394,25 @@ mod tests {
     fn test_face_uv_bounds() {
         // Test UV bounds for a rectangular face
         let rect_face = Workplane::xy().rect(10.0, 20.0).to_face();
-        let (u_min, u_max, v_min, v_max) = rect_face.uv_bounds();
+        let bounds = rect_face.uv_bounds();
 
         println!("\nRectangular Face (10x20) UV Bounds:");
-        println!("  U: [{}, {}]", u_min, u_max);
-        println!("  V: [{}, {}]", v_min, v_max);
+        println!("  {:?}", bounds);
 
         // Verify bounds are reasonable for the geometry
-        assert!(u_min < u_max, "u_min should be less than u_max");
-        assert!(v_min < v_max, "v_min should be less than v_max");
+        assert!(bounds.u_min < bounds.u_max, "u_min should be less than u_max");
+        assert!(bounds.v_min < bounds.v_max, "v_min should be less than v_max");
 
         // Test UV bounds for a circular face
         let circle_face = Workplane::xy().circle(0.0, 0.0, 5.0).to_face();
-        let (u_min, u_max, v_min, v_max) = circle_face.uv_bounds();
+        let bounds = circle_face.uv_bounds();
 
         println!("\nCircular Face (radius 5) UV Bounds:");
-        println!("  U: [{}, {}]", u_min, u_max);
-        println!("  V: [{}, {}]", v_min, v_max);
+        println!("  {:?}", bounds);
 
         // Verify bounds are reasonable
-        assert!(u_min < u_max, "u_min should be less than u_max");
-        assert!(v_min < v_max, "v_min should be less than v_max");
+        assert!(bounds.u_min < bounds.u_max, "u_min should be less than u_max");
+        assert!(bounds.v_min < bounds.v_max, "v_min should be less than v_max");
 
         // Test UV bounds for a cylindrical face
         use glam::dvec3;
@@ -1401,14 +1428,13 @@ mod tests {
         if let Some(cyl_face) = cylinder_shape.faces().find(|f| {
             matches!(f.surface_details(), SurfaceDetails::Cylinder(_))
         }) {
-            let (u_min, u_max, v_min, v_max) = cyl_face.uv_bounds();
+            let bounds = cyl_face.uv_bounds();
 
             println!("\nCylindrical Face (radius 5, height 10) UV Bounds:");
-            println!("  U: [{}, {}]", u_min, u_max);
-            println!("  V: [{}, {}]", v_min, v_max);
+            println!("  {:?}", bounds);
 
-            assert!(u_min < u_max, "u_min should be less than u_max");
-            assert!(v_min < v_max, "v_min should be less than v_max");
+            assert!(bounds.u_min < bounds.u_max, "u_min should be less than u_max");
+            assert!(bounds.v_min < bounds.v_max, "v_min should be less than v_max");
         }
     }
 }
