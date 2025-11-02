@@ -18,6 +18,13 @@ pub struct Plane {
     pub location: DVec3,
     pub axis_location: DVec3,
     pub axis_direction: DVec3,
+    pub x_direction: DVec3,
+    pub y_direction: DVec3,
+    /// UV parameter bounds of the face (not the infinite plane)
+    pub u_min: f64,
+    pub u_max: f64,
+    pub v_min: f64,
+    pub v_max: f64,
 }
 
 /// A cylindrical surface
@@ -462,6 +469,19 @@ impl Face {
         FaceOrientation::from(self.inner.Orientation())
     }
 
+    /// Get the UV parameter bounds of the face
+    /// Returns (u_min, u_max, v_min, v_max)
+    pub fn uv_bounds(&self) -> (f64, f64, f64, f64) {
+        let mut u_min = 0.0;
+        let mut u_max = 0.0;
+        let mut v_min = 0.0;
+        let mut v_max = 0.0;
+
+        ffi::face_uv_bounds(&self.inner, &mut u_min, &mut u_max, &mut v_min, &mut v_max);
+
+        (u_min, u_max, v_min, v_max)
+    }
+
     #[must_use]
     pub fn outer_wire(&self) -> Wire {
         let inner = ffi::outer_wire(&self.inner);
@@ -489,6 +509,11 @@ impl Face {
                     let axis = ffi::geom_plane_axis(&plane);
                     let axis_location = ffi::gp_Ax1_location(&axis);
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let x_dir_ptr = ffi::geom_plane_x_direction(&plane);
+                    let y_dir_ptr = ffi::geom_plane_y_direction(&plane);
+
+                    // Get UV bounds for the face
+                    let (u_min, u_max, v_min, v_max) = self.uv_bounds();
 
                     SurfaceDetails::Plane(Plane {
                         location: dvec3(location.X(), location.Y(), location.Z()),
@@ -502,6 +527,12 @@ impl Face {
                             axis_direction.Y(),
                             axis_direction.Z(),
                         ),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
+                        u_min,
+                        u_max,
+                        v_min,
+                        v_max,
                     })
                 } else {
                     SurfaceDetails::Unknown(surface_type)
@@ -1125,6 +1156,259 @@ mod tests {
                              Curve2dDetails::Unknown(s) => s.as_str(),
                          });
             }
+        }
+    }
+
+    #[test]
+    fn test_2d_curve_uv_domain() {
+        use crate::primitives::edge::Curve2dDetails;
+
+        // Create a simple rectangular face
+        let face = Workplane::xy().rect(10.0, 10.0).to_face();
+
+        // Get surface details to understand the UV domain
+        let surface_details = face.surface_details();
+        println!("Surface type: {:?}",
+                 match surface_details {
+                     SurfaceDetails::Plane(_) => "Plane",
+                     _ => "Other",
+                 });
+
+        // Get the outer wire
+        let outer_wire = face.outer_wire();
+        let edges: Vec<_> = outer_wire.edges().collect();
+
+        println!("\n2D Parameter Curve Analysis:");
+        println!("==============================");
+
+        for (i, edge) in edges.iter().enumerate() {
+            if let Some(curve_2d) = edge.curve_on_surface(&face) {
+                println!("\nEdge {}:", i);
+                println!("  Curve parameter range: [{}, {}]", curve_2d.first, curve_2d.last);
+
+                let details = curve_2d.curve_details();
+                match details {
+                    Curve2dDetails::Line(line) => {
+                        println!("  Type: Line");
+                        println!("    Origin (UV): ({}, {})", line.origin.x, line.origin.y);
+                        println!("    Direction: ({}, {})", line.direction.x, line.direction.y);
+                    }
+                    _ => {
+                        println!("  Type: {:?}", details);
+                    }
+                }
+
+                // Sample points along the curve
+                println!("  UV coordinates at different curve parameters:");
+                let samples = vec![
+                    curve_2d.first,
+                    (curve_2d.first + curve_2d.last) / 2.0,
+                    curve_2d.last,
+                ];
+
+                for (_j, t) in samples.iter().enumerate() {
+                    if let Some(uv) = curve_2d.value(*t) {
+                        println!("    t={:8.3} → UV=({:8.3}, {:8.3})", t, uv.x, uv.y);
+                    }
+                }
+            }
+        }
+
+        // Check if UV coordinates are reasonable for a 10x10 rectangle
+        // For a planar face, UV domain typically corresponds to the face bounds
+        println!("\nNote: For a planar rectangular face (10x10), UV domain typically");
+        println!("corresponds to the parametric representation of the plane.");
+    }
+
+    #[test]
+    fn test_2d_curve_uv_domain_circle() {
+        use crate::primitives::edge::Curve2dDetails;
+
+        // Create a circular face
+        let face = Workplane::xy().circle(0.0, 0.0, 5.0).to_face();
+
+        println!("\nCircular Face UV Domain Analysis:");
+        println!("===================================");
+
+        // Get the outer wire
+        let outer_wire = face.outer_wire();
+        let edges: Vec<_> = outer_wire.edges().collect();
+        println!("Number of edges: {}", edges.len());
+
+        for (i, edge) in edges.iter().enumerate() {
+            if let Some(curve_2d) = edge.curve_on_surface(&face) {
+                println!("\nEdge {}:", i);
+                println!("  Curve parameter range: [{}, {}]", curve_2d.first, curve_2d.last);
+
+                let details = curve_2d.curve_details();
+                match details {
+                    Curve2dDetails::Circle(circle) => {
+                        println!("  Type: Circle");
+                        println!("    Center (UV): ({}, {})", circle.center.x, circle.center.y);
+                        println!("    Radius: {}", circle.radius);
+                    }
+                    _ => {
+                        println!("  Type: Other");
+                    }
+                }
+
+                // Sample points along the curve
+                println!("  UV coordinates at different curve parameters:");
+                let n_samples = 8;
+                for j in 0..=n_samples {
+                    let t = curve_2d.first +
+                            (curve_2d.last - curve_2d.first) * (j as f64) / (n_samples as f64);
+                    if let Some(uv) = curve_2d.value(t) {
+                        println!("    t={:8.3} → UV=({:8.3}, {:8.3})", t, uv.x, uv.y);
+                    }
+                }
+            }
+        }
+
+        println!("\nNote: For a circular face (radius 5), the UV domain represents");
+        println!("the parametric space of the underlying planar surface.");
+    }
+
+    #[test]
+    fn test_plane_x_y_directions_and_uv_bounds() {
+        use glam::dvec3;
+
+        // Create a simple rectangular face on XY plane
+        let face = Workplane::xy().rect(10.0, 20.0).to_face();
+
+        // Get surface details
+        let details = face.surface_details();
+
+        if let SurfaceDetails::Plane(plane) = details {
+            println!("\nPlane Surface Details:");
+            println!("  Location: {:?}", plane.location);
+            println!("  Axis Location: {:?}", plane.axis_location);
+            println!("  Axis Direction (Z): {:?}", plane.axis_direction);
+            println!("  X Direction: {:?}", plane.x_direction);
+            println!("  Y Direction: {:?}", plane.y_direction);
+            println!("  UV Bounds: U=[{}, {}], V=[{}, {}]", plane.u_min, plane.u_max, plane.v_min, plane.v_max);
+
+            // Check that directions form an orthonormal basis
+            let tolerance = 0.0001;
+
+            // Verify each direction is normalized
+            assert!(
+                (plane.axis_direction.length() - 1.0).abs() < tolerance,
+                "Z direction should be normalized"
+            );
+            assert!(
+                (plane.x_direction.length() - 1.0).abs() < tolerance,
+                "X direction should be normalized"
+            );
+            assert!(
+                (plane.y_direction.length() - 1.0).abs() < tolerance,
+                "Y direction should be normalized"
+            );
+
+            // Verify directions are mutually orthogonal
+            assert!(
+                plane.x_direction.dot(plane.y_direction).abs() < tolerance,
+                "X and Y directions should be perpendicular"
+            );
+            assert!(
+                plane.x_direction.dot(plane.axis_direction).abs() < tolerance,
+                "X and Z directions should be perpendicular"
+            );
+            assert!(
+                plane.y_direction.dot(plane.axis_direction).abs() < tolerance,
+                "Y and Z directions should be perpendicular"
+            );
+
+            // Verify they form a right-handed coordinate system (or left-handed, either is valid)
+            let cross_product = plane.x_direction.cross(plane.y_direction);
+            let cross_length = (cross_product.normalize() - plane.axis_direction.normalize()).length();
+            let cross_length_neg = (cross_product.normalize() + plane.axis_direction.normalize()).length();
+            assert!(
+                cross_length < tolerance || cross_length_neg < tolerance,
+                "X × Y should equal ±Z (right-handed or left-handed coordinate system)"
+            );
+
+            // For XY plane, Z direction should be parallel to global Z (±Z)
+            let z_parallel = plane.axis_direction.dot(dvec3(0.0, 0.0, 1.0)).abs();
+            assert!(
+                (z_parallel - 1.0).abs() < tolerance,
+                "For XY plane, axis direction should be parallel to global Z axis"
+            );
+
+            // Verify UV bounds are included in the Plane struct
+            let u_range = plane.u_max - plane.u_min;
+            let v_range = plane.v_max - plane.v_min;
+            println!("  U range: {}", u_range);
+            println!("  V range: {}", v_range);
+
+            assert!(
+                (u_range - 10.0).abs() < tolerance,
+                "U range should be 10.0 for 10-wide rectangle"
+            );
+            assert!(
+                (v_range - 20.0).abs() < tolerance,
+                "V range should be 20.0 for 20-high rectangle"
+            );
+
+            // Verify that Plane struct bounds match face.uv_bounds()
+            let (u_min, u_max, v_min, v_max) = face.uv_bounds();
+            assert!((plane.u_min - u_min).abs() < tolerance, "Plane u_min should match face.uv_bounds()");
+            assert!((plane.u_max - u_max).abs() < tolerance, "Plane u_max should match face.uv_bounds()");
+            assert!((plane.v_min - v_min).abs() < tolerance, "Plane v_min should match face.uv_bounds()");
+            assert!((plane.v_max - v_max).abs() < tolerance, "Plane v_max should match face.uv_bounds()");
+        } else {
+            panic!("Expected Plane surface, got {:?}", details);
+        }
+    }
+
+    #[test]
+    fn test_face_uv_bounds() {
+        // Test UV bounds for a rectangular face
+        let rect_face = Workplane::xy().rect(10.0, 20.0).to_face();
+        let (u_min, u_max, v_min, v_max) = rect_face.uv_bounds();
+
+        println!("\nRectangular Face (10x20) UV Bounds:");
+        println!("  U: [{}, {}]", u_min, u_max);
+        println!("  V: [{}, {}]", v_min, v_max);
+
+        // Verify bounds are reasonable for the geometry
+        assert!(u_min < u_max, "u_min should be less than u_max");
+        assert!(v_min < v_max, "v_min should be less than v_max");
+
+        // Test UV bounds for a circular face
+        let circle_face = Workplane::xy().circle(0.0, 0.0, 5.0).to_face();
+        let (u_min, u_max, v_min, v_max) = circle_face.uv_bounds();
+
+        println!("\nCircular Face (radius 5) UV Bounds:");
+        println!("  U: [{}, {}]", u_min, u_max);
+        println!("  V: [{}, {}]", v_min, v_max);
+
+        // Verify bounds are reasonable
+        assert!(u_min < u_max, "u_min should be less than u_max");
+        assert!(v_min < v_max, "v_min should be less than v_max");
+
+        // Test UV bounds for a cylindrical face
+        use glam::dvec3;
+        let cylinder = Workplane::xy()
+            .circle(0.0, 0.0, 5.0)
+            .to_face()
+            .extrude(dvec3(0.0, 0.0, 10.0));
+
+        // Convert Solid to Shape to iterate over faces
+        let cylinder_shape: Shape = cylinder.into();
+
+        // Get one of the cylindrical faces
+        if let Some(cyl_face) = cylinder_shape.faces().find(|f| {
+            matches!(f.surface_details(), SurfaceDetails::Cylinder(_))
+        }) {
+            let (u_min, u_max, v_min, v_max) = cyl_face.uv_bounds();
+
+            println!("\nCylindrical Face (radius 5, height 10) UV Bounds:");
+            println!("  U: [{}, {}]", u_min, u_max);
+            println!("  V: [{}, {}]", v_min, v_max);
+
+            assert!(u_min < u_max, "u_min should be less than u_max");
+            assert!(v_min < v_max, "v_min should be less than v_max");
         }
     }
 }

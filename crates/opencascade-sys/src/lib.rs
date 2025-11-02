@@ -349,6 +349,8 @@ pub mod ffi {
         // Plane properties
         pub fn geom_plane_location(plane: &HandleGeomPlane) -> &gp_Pnt;
         pub fn geom_plane_axis(plane: &HandleGeomPlane) -> &gp_Ax1;
+        pub fn geom_plane_x_direction(plane: &HandleGeomPlane) -> UniquePtr<gp_Dir>;
+        pub fn geom_plane_y_direction(plane: &HandleGeomPlane) -> UniquePtr<gp_Dir>;
 
         // Cylinder properties
         pub fn geom_cylinder_location(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Pnt;
@@ -1639,6 +1641,13 @@ pub mod ffi {
 
         // BRepTools
         pub fn outer_wire(face: &TopoDS_Face) -> UniquePtr<TopoDS_Wire>;
+        pub fn face_uv_bounds(
+            face: &TopoDS_Face,
+            u_min: &mut f64,
+            u_max: &mut f64,
+            v_min: &mut f64,
+            v_max: &mut f64,
+        );
         pub fn are_shapes_same(shape1: &TopoDS_Shape, shape2: &TopoDS_Shape) -> bool;
 
         // Cleaning
