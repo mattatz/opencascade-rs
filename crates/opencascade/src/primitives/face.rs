@@ -938,4 +938,38 @@ mod tests {
         assert_eq!(outer_count, 1, "Expected exactly 1 outer wire");
         assert_eq!(inner_count, 0, "Expected 0 inner wires");
     }
+
+    #[test]
+    fn test_edge_curve_on_surface() {
+        use crate::primitives::edge::ParametricCurve2d;
+
+        // Create a simple rectangular face
+        let face = Workplane::xy().rect(10.0, 10.0).to_face();
+
+        // Get the outer wire
+        let outer_wire = face.outer_wire();
+
+        // Get edges from the wire
+        let edges: Vec<_> = outer_wire.edges().collect();
+        assert!(!edges.is_empty(), "Expected at least one edge");
+
+        // Get the 2D parametric curve for the first edge
+        let edge = &edges[0];
+        let curve_2d: Option<ParametricCurve2d> = edge.curve_on_surface(&face);
+
+        assert!(curve_2d.is_some(), "Expected a 2D parametric curve");
+
+        let curve_2d = curve_2d.unwrap();
+        assert!(curve_2d.is_valid(), "Expected a valid 2D curve");
+
+        // Test getting a point on the curve
+        let mid_param = (curve_2d.first + curve_2d.last) / 2.0;
+        let point_2d = curve_2d.value(mid_param);
+        assert!(point_2d.is_some(), "Expected a valid 2D point");
+
+        // The point should have valid coordinates
+        let point_2d = point_2d.unwrap();
+        assert!(point_2d.x.is_finite() && point_2d.y.is_finite(),
+                "Expected finite 2D coordinates, got ({}, {})", point_2d.x, point_2d.y);
+    }
 }

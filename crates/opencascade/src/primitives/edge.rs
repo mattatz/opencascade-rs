@@ -1,6 +1,6 @@
-use crate::primitives::{make_axis_2, make_point};
+use crate::primitives::{make_axis_2, make_point, Face};
 use cxx::UniquePtr;
-use glam::{dvec3, DVec3};
+use glam::{dvec2, dvec3, DVec2, DVec3};
 use opencascade_sys::ffi;
 
 use super::make_vec;
@@ -118,6 +118,31 @@ pub enum CurveDetails {
     TrimmedCurve(TrimmedCurve),
     /// Unknown or unsupported curve type
     Unknown(String),
+}
+
+/// A 2D parametric curve on a face's UV surface
+pub struct ParametricCurve2d {
+    curve: UniquePtr<ffi::HandleGeom2d_Curve>,
+    /// First parameter of the curve
+    pub first: f64,
+    /// Last parameter of the curve
+    pub last: f64,
+}
+
+impl ParametricCurve2d {
+    /// Get a 2D point on the curve at parameter u
+    pub fn value(&self, u: f64) -> Option<DVec2> {
+        if ffi::Geom2d_Curve_IsNull(&self.curve) {
+            return None;
+        }
+        let point = ffi::Geom2d_Curve_Value(&self.curve, u);
+        Some(dvec2(point.X(), point.Y()))
+    }
+
+    /// Check if the curve is valid
+    pub fn is_valid(&self) -> bool {
+        !ffi::Geom2d_Curve_IsNull(&self.curve)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -525,6 +550,20 @@ impl Edge {
             },
             _ => CurveDetails::Unknown(curve_type),
         }
+    }
+
+    /// Get the 2D parametric curve of this edge on the given face's UV surface
+    /// Returns None if the edge does not lie on the face
+    pub fn curve_on_surface(&self, face: &Face) -> Option<ParametricCurve2d> {
+        let mut first = 0.0;
+        let mut last = 0.0;
+        let curve = ffi::BRep_Tool_CurveOnSurface(&self.inner, &face.inner, &mut first, &mut last);
+
+        if ffi::Geom2d_Curve_IsNull(&curve) {
+            return None;
+        }
+
+        Some(ParametricCurve2d { curve, first, last })
     }
 }
 

@@ -598,6 +598,20 @@ inline std::unique_ptr<gp_Pnt> BRep_Tool_Pnt(const TopoDS_Vertex &vertex) {
   return std::unique_ptr<gp_Pnt>(new gp_Pnt(BRep_Tool::Pnt(vertex)));
 }
 
+inline std::unique_ptr<HandleGeom2d_Curve> BRep_Tool_CurveOnSurface(const TopoDS_Edge &edge, const TopoDS_Face &face,
+                                                                     Standard_Real &first, Standard_Real &last) {
+  return std::unique_ptr<HandleGeom2d_Curve>(
+      new opencascade::handle<Geom2d_Curve>(BRep_Tool::CurveOnSurface(edge, face, first, last)));
+}
+
+inline std::unique_ptr<gp_Pnt2d> Geom2d_Curve_Value(const HandleGeom2d_Curve &curve, Standard_Real u) {
+  return std::unique_ptr<gp_Pnt2d>(new gp_Pnt2d(curve->Value(u)));
+}
+
+inline bool Geom2d_Curve_IsNull(const HandleGeom2d_Curve &curve) {
+  return curve.IsNull();
+}
+
 inline std::unique_ptr<gp_Trsf> TopLoc_Location_Transformation(const TopLoc_Location &location) {
   return std::unique_ptr<gp_Trsf>(new gp_Trsf(location.Transformation()));
 }

@@ -1344,6 +1344,14 @@ pub mod ffi {
             first: &mut f64,
             last: &mut f64,
         ) -> UniquePtr<HandleGeomCurve>;
+        pub fn BRep_Tool_CurveOnSurface(
+            edge: &TopoDS_Edge,
+            face: &TopoDS_Face,
+            first: &mut f64,
+            last: &mut f64,
+        ) -> UniquePtr<HandleGeom2d_Curve>;
+        pub fn Geom2d_Curve_Value(curve: &HandleGeom2d_Curve, u: f64) -> UniquePtr<gp_Pnt2d>;
+        pub fn Geom2d_Curve_IsNull(curve: &HandleGeom2d_Curve) -> bool;
         pub fn BRep_Tool_Pnt(vertex: &TopoDS_Vertex) -> UniquePtr<gp_Pnt>;
         pub fn BRep_Tool_Triangulation(
             face: &TopoDS_Face,
