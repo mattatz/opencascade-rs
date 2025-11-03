@@ -36,6 +36,8 @@ impl Line2d {
 pub struct Circle2d {
     pub center: DVec2,
     pub radius: f64,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A 2D ellipse
@@ -44,6 +46,8 @@ pub struct Ellipse2d {
     pub center: DVec2,
     pub major_radius: f64,
     pub minor_radius: f64,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A 2D B-Spline curve
@@ -52,6 +56,8 @@ pub struct BSplineCurve2d {
     pub profile: BSplineCurveProfile,
     pub poles: Vec<DVec2>,
     pub weights: Option<Vec<f64>>,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A 2D Bezier curve
@@ -60,6 +66,8 @@ pub struct BezierCurve2d {
     pub profile: BezierCurveProfile,
     pub poles: Vec<DVec2>,
     pub weights: Option<Vec<f64>>,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A 2D trimmed curve (基底カーブをパラメータ範囲で切り取ったもの)
@@ -121,6 +129,8 @@ pub struct Circle {
     pub center: DVec3,
     pub axis: DVec3,
     pub radius: f64,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// An ellipse
@@ -130,6 +140,8 @@ pub struct Ellipse {
     pub axis: DVec3,
     pub major_radius: f64,
     pub minor_radius: f64,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A B-Spline curve profile
@@ -149,6 +161,8 @@ pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
     pub poles: Vec<DVec3>,
     pub weights: Option<Vec<f64>>,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A Bezier curve profile
@@ -164,6 +178,8 @@ pub struct BezierCurve {
     pub profile: BezierCurveProfile,
     pub poles: Vec<DVec3>,
     pub weights: Option<Vec<f64>>,
+    pub first_parameter: f64,
+    pub last_parameter: f64,
 }
 
 /// A hyperbola
@@ -281,6 +297,8 @@ impl ParametricCurve2d {
                     Curve2dDetails::Circle(Circle2d {
                         center: dvec2(location.X(), location.Y()),
                         radius,
+                        first_parameter: self.first,
+                        last_parameter: self.last,
                     })
                 } else {
                     Curve2dDetails::Unknown(curve_type)
@@ -297,6 +315,8 @@ impl ParametricCurve2d {
                         center: dvec2(location.X(), location.Y()),
                         major_radius,
                         minor_radius,
+                        first_parameter: self.first,
+                        last_parameter: self.last,
                     })
                 } else {
                     Curve2dDetails::Unknown(curve_type)
@@ -349,6 +369,8 @@ impl ParametricCurve2d {
                         },
                         poles,
                         weights,
+                        first_parameter: self.first,
+                        last_parameter: self.last,
                     })
                 } else {
                     Curve2dDetails::Unknown(curve_type)
@@ -383,6 +405,8 @@ impl ParametricCurve2d {
                         profile: BezierCurveProfile { nb_poles, degree },
                         poles,
                         weights,
+                        first_parameter: self.first,
+                        last_parameter: self.last,
                     })
                 } else {
                     Curve2dDetails::Unknown(curve_type)
@@ -632,6 +656,8 @@ impl Edge {
                         center: dvec3(center.X(), center.Y(), center.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
                         radius,
+                        first_parameter: first,
+                        last_parameter: last,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)
@@ -651,6 +677,8 @@ impl Edge {
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
                         major_radius,
                         minor_radius,
+                        first_parameter: first,
+                        last_parameter: last,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)
@@ -703,6 +731,8 @@ impl Edge {
                         },
                         poles,
                         weights,
+                        first_parameter: first,
+                        last_parameter: last,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)
@@ -737,6 +767,8 @@ impl Edge {
                         profile: BezierCurveProfile { nb_poles, degree },
                         poles,
                         weights,
+                        first_parameter: first,
+                        last_parameter: last,
                     })
                 } else {
                     CurveDetails::Unknown(curve_type)
