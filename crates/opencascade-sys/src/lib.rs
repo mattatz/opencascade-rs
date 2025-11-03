@@ -461,6 +461,8 @@ pub mod ffi {
         pub fn geom_ellipse_axis(ellipse: &HandleGeom_Ellipse) -> &gp_Ax1;
         pub fn geom_ellipse_major_radius(ellipse: &HandleGeom_Ellipse) -> f64;
         pub fn geom_ellipse_minor_radius(ellipse: &HandleGeom_Ellipse) -> f64;
+        pub fn geom_ellipse_x_direction(ellipse: &HandleGeom_Ellipse) -> UniquePtr<gp_Dir>;
+        pub fn geom_ellipse_y_direction(ellipse: &HandleGeom_Ellipse) -> UniquePtr<gp_Dir>;
 
         // BSpline curve properties
         pub fn geom_bspline_curve_nb_poles(bspline: &HandleGeomBSplineCurve) -> i32;
@@ -1383,6 +1385,7 @@ pub mod ffi {
         pub fn geom2d_ellipse_location(ellipse: &HandleGeom2d_Ellipse) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_ellipse_major_radius(ellipse: &HandleGeom2d_Ellipse) -> f64;
         pub fn geom2d_ellipse_minor_radius(ellipse: &HandleGeom2d_Ellipse) -> f64;
+        pub fn geom2d_ellipse_x_direction(ellipse: &HandleGeom2d_Ellipse) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_BSplineCurve
         pub fn cast_geom2d_curve_to_bspline(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_BSplineCurve>;

@@ -404,6 +404,12 @@ inline const gp_Pnt &geom_ellipse_location(const HandleGeom_Ellipse &ellipse) { 
 inline const gp_Ax1 &geom_ellipse_axis(const HandleGeom_Ellipse &ellipse) { return ellipse->Axis(); }
 inline double geom_ellipse_major_radius(const HandleGeom_Ellipse &ellipse) { return ellipse->MajorRadius(); }
 inline double geom_ellipse_minor_radius(const HandleGeom_Ellipse &ellipse) { return ellipse->MinorRadius(); }
+inline std::unique_ptr<gp_Dir> geom_ellipse_x_direction(const HandleGeom_Ellipse &ellipse) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(ellipse->Position().XDirection()));
+}
+inline std::unique_ptr<gp_Dir> geom_ellipse_y_direction(const HandleGeom_Ellipse &ellipse) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(ellipse->Position().YDirection()));
+}
 
 // BSpline curve properties
 inline int geom_bspline_curve_nb_poles(const HandleGeomBSplineCurve &bspline) { return bspline->NbPoles(); }
@@ -705,6 +711,10 @@ inline Standard_Real geom2d_ellipse_major_radius(const HandleGeom2d_Ellipse &ell
 
 inline Standard_Real geom2d_ellipse_minor_radius(const HandleGeom2d_Ellipse &ellipse) {
   return ellipse->MinorRadius();
+}
+
+inline std::unique_ptr<gp_Dir2d> geom2d_ellipse_x_direction(const HandleGeom2d_Ellipse &ellipse) {
+  return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(ellipse->Position().XDirection()));
 }
 
 // Geom2d_BSplineCurve

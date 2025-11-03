@@ -45,6 +45,7 @@ pub struct Circle2d {
 #[derive(Debug, Clone)]
 pub struct Ellipse2d {
     pub center: DVec2,
+    pub x_direction: DVec2,
     pub major_radius: f64,
     pub minor_radius: f64,
     pub first_parameter: f64,
@@ -141,6 +142,8 @@ pub struct Circle {
 pub struct Ellipse {
     pub center: DVec3,
     pub axis: DVec3,
+    pub x_axis: DVec3,
+    pub y_axis: DVec3,
     pub major_radius: f64,
     pub minor_radius: f64,
     pub first_parameter: f64,
@@ -313,11 +316,13 @@ impl ParametricCurve2d {
                 let ellipse = ffi::cast_geom2d_curve_to_ellipse(&self.curve);
                 if !ffi::HandleGeom2d_Ellipse_IsNull(&ellipse) {
                     let location = ffi::geom2d_ellipse_location(&ellipse);
+                    let x_dir = ffi::geom2d_ellipse_x_direction(&ellipse);
                     let major_radius = ffi::geom2d_ellipse_major_radius(&ellipse);
                     let minor_radius = ffi::geom2d_ellipse_minor_radius(&ellipse);
 
                     Curve2dDetails::Ellipse(Ellipse2d {
                         center: dvec2(location.X(), location.Y()),
+                        x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)),
                         major_radius,
                         minor_radius,
                         first_parameter: self.first,
@@ -678,12 +683,16 @@ impl Edge {
                     let center = ffi::geom_ellipse_location(&ellipse);
                     let axis = ffi::geom_ellipse_axis(&ellipse);
                     let axis_dir = ffi::gp_Ax1_direction(&axis);
+                    let x_dir = ffi::geom_ellipse_x_direction(&ellipse);
+                    let y_dir = ffi::geom_ellipse_y_direction(&ellipse);
                     let major_radius = ffi::geom_ellipse_major_radius(&ellipse);
                     let minor_radius = ffi::geom_ellipse_minor_radius(&ellipse);
 
                     CurveDetails::Ellipse(Ellipse {
                         center: dvec3(center.X(), center.Y(), center.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        x_axis: dvec3(x_dir.X(), x_dir.Y(), x_dir.Z()),
+                        y_axis: dvec3(y_dir.X(), y_dir.Y(), y_dir.Z()),
                         major_radius,
                         minor_radius,
                         first_parameter: first,
