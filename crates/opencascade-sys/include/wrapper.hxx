@@ -392,6 +392,12 @@ inline const gp_Ax1 &geom_line_position(const HandleGeom_Line &line) { return li
 inline const gp_Pnt &geom_circle_location(const HandleGeom_Circle &circle) { return circle->Location(); }
 inline const gp_Ax1 &geom_circle_axis(const HandleGeom_Circle &circle) { return circle->Axis(); }
 inline double geom_circle_radius(const HandleGeom_Circle &circle) { return circle->Radius(); }
+inline std::unique_ptr<gp_Dir> geom_circle_x_direction(const HandleGeom_Circle &circle) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(circle->Position().XDirection()));
+}
+inline std::unique_ptr<gp_Dir> geom_circle_y_direction(const HandleGeom_Circle &circle) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(circle->Position().YDirection()));
+}
 
 // Ellipse properties
 inline const gp_Pnt &geom_ellipse_location(const HandleGeom_Ellipse &ellipse) { return ellipse->Location(); }
@@ -673,6 +679,10 @@ inline std::unique_ptr<gp_Pnt2d> geom2d_circle_location(const HandleGeom2d_Circl
 
 inline Standard_Real geom2d_circle_radius(const HandleGeom2d_Circle &circle) {
   return circle->Radius();
+}
+
+inline std::unique_ptr<gp_Dir2d> geom2d_circle_x_direction(const HandleGeom2d_Circle &circle) {
+  return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(circle->Position().XDirection()));
 }
 
 // Geom2d_Ellipse

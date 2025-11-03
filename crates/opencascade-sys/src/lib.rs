@@ -453,6 +453,8 @@ pub mod ffi {
         pub fn geom_circle_location(circle: &HandleGeom_Circle) -> &gp_Pnt;
         pub fn geom_circle_axis(circle: &HandleGeom_Circle) -> &gp_Ax1;
         pub fn geom_circle_radius(circle: &HandleGeom_Circle) -> f64;
+        pub fn geom_circle_x_direction(circle: &HandleGeom_Circle) -> UniquePtr<gp_Dir>;
+        pub fn geom_circle_y_direction(circle: &HandleGeom_Circle) -> UniquePtr<gp_Dir>;
 
         // Ellipse properties
         pub fn geom_ellipse_location(ellipse: &HandleGeom_Ellipse) -> &gp_Pnt;
@@ -1373,6 +1375,7 @@ pub mod ffi {
         pub fn HandleGeom2d_Circle_IsNull(handle: &HandleGeom2d_Circle) -> bool;
         pub fn geom2d_circle_location(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_circle_radius(circle: &HandleGeom2d_Circle) -> f64;
+        pub fn geom2d_circle_x_direction(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_Ellipse
         pub fn cast_geom2d_curve_to_ellipse(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_Ellipse>;

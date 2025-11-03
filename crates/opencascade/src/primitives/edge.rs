@@ -35,6 +35,7 @@ impl Line2d {
 #[derive(Debug, Clone)]
 pub struct Circle2d {
     pub center: DVec2,
+    pub x_direction: DVec2,
     pub radius: f64,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -128,6 +129,8 @@ impl Line {
 pub struct Circle {
     pub center: DVec3,
     pub axis: DVec3,
+    pub x_axis: DVec3,
+    pub y_axis: DVec3,
     pub radius: f64,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -292,10 +295,12 @@ impl ParametricCurve2d {
                 let circle = ffi::cast_geom2d_curve_to_circle(&self.curve);
                 if !ffi::HandleGeom2d_Circle_IsNull(&circle) {
                     let location = ffi::geom2d_circle_location(&circle);
+                    let x_dir = ffi::geom2d_circle_x_direction(&circle);
                     let radius = ffi::geom2d_circle_radius(&circle);
 
                     Curve2dDetails::Circle(Circle2d {
                         center: dvec2(location.X(), location.Y()),
+                        x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)),
                         radius,
                         first_parameter: self.first,
                         last_parameter: self.last,
@@ -650,11 +655,15 @@ impl Edge {
                     let center = ffi::geom_circle_location(&circle);
                     let axis = ffi::geom_circle_axis(&circle);
                     let axis_dir = ffi::gp_Ax1_direction(&axis);
+                    let x_dir = ffi::geom_circle_x_direction(&circle);
+                    let y_dir = ffi::geom_circle_y_direction(&circle);
                     let radius = ffi::geom_circle_radius(&circle);
 
                     CurveDetails::Circle(Circle {
                         center: dvec3(center.X(), center.Y(), center.Z()),
                         axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        x_axis: dvec3(x_dir.X(), x_dir.Y(), x_dir.Z()),
+                        y_axis: dvec3(y_dir.X(), y_dir.Y(), y_dir.Z()),
                         radius,
                         first_parameter: first,
                         last_parameter: last,
