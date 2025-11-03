@@ -36,6 +36,7 @@ impl Line2d {
 pub struct Circle2d {
     pub center: DVec2,
     pub x_direction: DVec2,
+    pub y_direction: DVec2,
     pub radius: f64,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -46,6 +47,7 @@ pub struct Circle2d {
 pub struct Ellipse2d {
     pub center: DVec2,
     pub x_direction: DVec2,
+    pub y_direction: DVec2,
     pub major_radius: f64,
     pub minor_radius: f64,
     pub first_parameter: f64,
@@ -299,11 +301,13 @@ impl ParametricCurve2d {
                 if !ffi::HandleGeom2d_Circle_IsNull(&circle) {
                     let location = ffi::geom2d_circle_location(&circle);
                     let x_dir = ffi::geom2d_circle_x_direction(&circle);
+                    let y_dir = ffi::geom2d_circle_y_direction(&circle);
                     let radius = ffi::geom2d_circle_radius(&circle);
 
                     Curve2dDetails::Circle(Circle2d {
                         center: dvec2(location.X(), location.Y()),
                         x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)),
+                        y_direction: dvec2(ffi::gp_Dir2d_X(&y_dir), ffi::gp_Dir2d_Y(&y_dir)),
                         radius,
                         first_parameter: self.first,
                         last_parameter: self.last,
@@ -317,12 +321,14 @@ impl ParametricCurve2d {
                 if !ffi::HandleGeom2d_Ellipse_IsNull(&ellipse) {
                     let location = ffi::geom2d_ellipse_location(&ellipse);
                     let x_dir = ffi::geom2d_ellipse_x_direction(&ellipse);
+                    let y_dir = ffi::geom2d_ellipse_y_direction(&ellipse);
                     let major_radius = ffi::geom2d_ellipse_major_radius(&ellipse);
                     let minor_radius = ffi::geom2d_ellipse_minor_radius(&ellipse);
 
                     Curve2dDetails::Ellipse(Ellipse2d {
                         center: dvec2(location.X(), location.Y()),
                         x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)),
+                        y_direction: dvec2(ffi::gp_Dir2d_X(&y_dir), ffi::gp_Dir2d_Y(&y_dir)),
                         major_radius,
                         minor_radius,
                         first_parameter: self.first,

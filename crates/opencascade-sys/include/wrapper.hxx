@@ -691,6 +691,10 @@ inline std::unique_ptr<gp_Dir2d> geom2d_circle_x_direction(const HandleGeom2d_Ci
   return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(circle->Position().XDirection()));
 }
 
+inline std::unique_ptr<gp_Dir2d> geom2d_circle_y_direction(const HandleGeom2d_Circle &circle) {
+  return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(circle->Position().YDirection()));
+}
+
 // Geom2d_Ellipse
 inline std::unique_ptr<HandleGeom2d_Ellipse> cast_geom2d_curve_to_ellipse(const HandleGeom2d_Curve &curve) {
   return std::unique_ptr<HandleGeom2d_Ellipse>(new opencascade::handle<Geom2d_Ellipse>(
@@ -715,6 +719,10 @@ inline Standard_Real geom2d_ellipse_minor_radius(const HandleGeom2d_Ellipse &ell
 
 inline std::unique_ptr<gp_Dir2d> geom2d_ellipse_x_direction(const HandleGeom2d_Ellipse &ellipse) {
   return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(ellipse->Position().XDirection()));
+}
+
+inline std::unique_ptr<gp_Dir2d> geom2d_ellipse_y_direction(const HandleGeom2d_Ellipse &ellipse) {
+  return std::unique_ptr<gp_Dir2d>(new gp_Dir2d(ellipse->Position().YDirection()));
 }
 
 // Geom2d_BSplineCurve

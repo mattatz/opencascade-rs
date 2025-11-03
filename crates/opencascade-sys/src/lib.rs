@@ -1378,6 +1378,7 @@ pub mod ffi {
         pub fn geom2d_circle_location(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_circle_radius(circle: &HandleGeom2d_Circle) -> f64;
         pub fn geom2d_circle_x_direction(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Dir2d>;
+        pub fn geom2d_circle_y_direction(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_Ellipse
         pub fn cast_geom2d_curve_to_ellipse(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_Ellipse>;
@@ -1386,6 +1387,7 @@ pub mod ffi {
         pub fn geom2d_ellipse_major_radius(ellipse: &HandleGeom2d_Ellipse) -> f64;
         pub fn geom2d_ellipse_minor_radius(ellipse: &HandleGeom2d_Ellipse) -> f64;
         pub fn geom2d_ellipse_x_direction(ellipse: &HandleGeom2d_Ellipse) -> UniquePtr<gp_Dir2d>;
+        pub fn geom2d_ellipse_y_direction(ellipse: &HandleGeom2d_Ellipse) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_BSplineCurve
         pub fn cast_geom2d_curve_to_bspline(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_BSplineCurve>;
