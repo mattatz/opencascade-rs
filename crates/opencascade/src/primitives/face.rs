@@ -1437,4 +1437,114 @@ mod tests {
             assert!(bounds.v_min < bounds.v_max, "v_min should be less than v_max");
         }
     }
+
+    #[test]
+    fn test_line_curve_with_parameters() {
+        use crate::primitives::edge::CurveDetails;
+
+        // Create a rectangular face
+        let face = Workplane::xy().rect(10.0, 20.0).to_face();
+
+        // Get edges from the outer wire
+        let outer_wire = face.outer_wire();
+        let edges: Vec<_> = outer_wire.edges().collect();
+
+        println!("\nRectangular Face Edge Analysis:");
+        println!("================================");
+
+        let mut line_count = 0;
+        for (i, edge) in edges.iter().enumerate() {
+            let details = edge.curve_details();
+
+            if let CurveDetails::Line(line) = details {
+                line_count += 1;
+                println!("\nEdge {}: Line", i);
+                println!("  Origin: {:?}", line.origin);
+                println!("  Direction: {:?}", line.direction);
+                println!("  First parameter: {}", line.first_parameter);
+                println!("  Last parameter: {}", line.last_parameter);
+
+                let start = line.start_point();
+                let end = line.end_point();
+                let length = line.length();
+
+                println!("  Start point: {:?}", start);
+                println!("  End point: {:?}", end);
+                println!("  Length: {}", length);
+
+                // Verify start and end points are different
+                let tolerance = 0.0001;
+                assert!((start - end).length() > tolerance, "Start and end points should be different");
+
+                // Verify length is positive
+                assert!(length > 0.0, "Length should be positive");
+
+                // Verify that the distance from start to end equals the length
+                let computed_length = (end - start).length();
+                assert!(
+                    (computed_length - length).abs() < tolerance,
+                    "Computed length should match line.length()"
+                );
+            }
+        }
+
+        // Rectangle should have 4 line edges
+        assert_eq!(line_count, 4, "Rectangle should have 4 line edges");
+    }
+
+    #[test]
+    fn test_line2d_curve_with_parameters() {
+        use crate::primitives::edge::Curve2dDetails;
+
+        // Create a rectangular face
+        let face = Workplane::xy().rect(10.0, 20.0).to_face();
+
+        // Get edges from the outer wire
+        let outer_wire = face.outer_wire();
+        let edges: Vec<_> = outer_wire.edges().collect();
+
+        println!("\nRectangular Face 2D Curve Analysis:");
+        println!("====================================");
+
+        let mut line2d_count = 0;
+        for (i, edge) in edges.iter().enumerate() {
+            if let Some(curve_2d) = edge.curve_on_surface(&face) {
+                let details = curve_2d.curve_details();
+
+                if let Curve2dDetails::Line(line) = details {
+                    line2d_count += 1;
+                    println!("\nEdge {} - 2D Line:", i);
+                    println!("  Origin (UV): {:?}", line.origin);
+                    println!("  Direction: {:?}", line.direction);
+                    println!("  First parameter: {}", line.first_parameter);
+                    println!("  Last parameter: {}", line.last_parameter);
+
+                    let start = line.start_point();
+                    let end = line.end_point();
+                    let length = line.length();
+
+                    println!("  Start point (UV): {:?}", start);
+                    println!("  End point (UV): {:?}", end);
+                    println!("  Length: {}", length);
+
+                    // Verify start and end points are different
+                    let tolerance = 0.0001;
+                    assert!((start - end).length() > tolerance, "Start and end points should be different");
+
+                    // Verify length is positive
+                    assert!(length > 0.0, "Length should be positive");
+
+                    // Verify that the distance from start to end equals the length
+                    let computed_length = (end - start).length();
+                    assert!(
+                        (computed_length - length).abs() < tolerance,
+                        "Computed length should match line.length()"
+                    );
+                }
+            }
+        }
+
+        // Rectangle should have 4 2D line edges
+        assert_eq!(line2d_count, 4, "Rectangle should have 4 2D line edges");
+    }
 }
