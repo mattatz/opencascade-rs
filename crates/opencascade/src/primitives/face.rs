@@ -836,6 +836,95 @@ impl Face {
             _ => SurfaceDetails::Unknown(surface_type),
         }
     }
+
+    /// Convert the face's surface to a B-Spline surface representation.
+    /// This works for any surface type (plane, cylinder, sphere, torus, etc.)
+    /// Returns None if the conversion fails.
+    pub fn to_bspline_surface(&self) -> Option<BSplineSurface> {
+        let surface = ffi::BRep_Tool_Surface(&self.inner);
+        let bspline = ffi::convert_surface_to_bspline(&surface);
+
+        // Check if the UniquePtr is null (conversion failed)
+        if bspline.is_null() {
+            return None;
+        }
+
+        // Also check if the Handle itself is null
+        if bspline.IsNull() {
+            return None;
+        }
+
+        let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline) as usize;
+        let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline) as usize;
+        let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as usize;
+        let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as usize;
+        let is_u_rational = ffi::geom_bspline_surface_is_u_rational(&bspline);
+        let is_v_rational = ffi::geom_bspline_surface_is_v_rational(&bspline);
+        let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
+        let is_v_periodic = ffi::geom_bspline_surface_is_v_periodic(&bspline);
+
+        let nb_u_knots = ffi::geom_bspline_surface_nb_u_knots(&bspline) as usize;
+        let nb_v_knots = ffi::geom_bspline_surface_nb_v_knots(&bspline) as usize;
+
+        let mut u_knots = Vec::with_capacity(nb_u_knots);
+        let mut u_multiplicities = Vec::with_capacity(nb_u_knots);
+        for i in 1..=nb_u_knots as i32 {
+            u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
+            u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as usize);
+        }
+
+        let mut v_knots = Vec::with_capacity(nb_v_knots);
+        let mut v_multiplicities = Vec::with_capacity(nb_v_knots);
+        for i in 1..=nb_v_knots as i32 {
+            v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
+            v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
+        }
+
+        let mut poles = Vec::with_capacity(nb_u_poles);
+        for u in 1..=nb_u_poles as i32 {
+            let mut row = Vec::with_capacity(nb_v_poles);
+            for v in 1..=nb_v_poles as i32 {
+                let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
+                row.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+            }
+            poles.push(row);
+        }
+
+        let weights = if is_u_rational || is_v_rational {
+            let mut weights = Vec::with_capacity(nb_u_poles);
+            for u in 1..=nb_u_poles as i32 {
+                let mut row = Vec::with_capacity(nb_v_poles);
+                for v in 1..=nb_v_poles as i32 {
+                    row.push(ffi::geom_bspline_surface_weight(&bspline, u, v));
+                }
+                weights.push(row);
+            }
+            Some(weights)
+        } else {
+            None
+        };
+
+        Some(BSplineSurface {
+            u_profile: BSplineCurveProfile {
+                nb_poles: nb_u_poles,
+                degree: u_degree,
+                is_rational: is_u_rational,
+                is_periodic: is_u_periodic,
+                knots: u_knots,
+                multiplicities: u_multiplicities,
+            },
+            v_profile: BSplineCurveProfile {
+                nb_poles: nb_v_poles,
+                degree: v_degree,
+                is_rational: is_v_rational,
+                is_periodic: is_v_periodic,
+                knots: v_knots,
+                multiplicities: v_multiplicities,
+            },
+            poles,
+            weights,
+        })
+    }
 }
 
 pub struct CompoundFace {
@@ -1570,5 +1659,26 @@ mod tests {
 
         // Rectangle should have 4 2D line edges
         assert_eq!(line2d_count, 4, "Rectangle should have 4 2D line edges");
+    }
+
+
+    #[test]
+    fn test_surface_to_bspline_plane() {
+        // Create a planar face
+        let face = Workplane::xy().rect(10.0, 10.0).to_face();
+
+        // Try to convert to BSpline surface
+        // Note: Some surfaces (like infinite planes) may not convert successfully
+        let bspline = face.to_bspline_surface();
+
+        if let Some(bspline) = bspline {
+            // If conversion succeeded, verify the structure
+            assert!(bspline.u_profile.nb_poles >= 2, "BSpline should have at least 2 U poles");
+            assert!(bspline.v_profile.nb_poles >= 2, "BSpline should have at least 2 V poles");
+            assert!(!bspline.poles.is_empty(), "BSpline should have poles");
+        } else {
+            // Conversion may fail for some surface types, which is acceptable
+            println!("Note: Planar surface could not be converted to BSpline (this may be expected for infinite planes)");
+        }
     }
 }

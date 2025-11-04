@@ -333,6 +333,9 @@ pub mod ffi {
         pub fn cast_surface_to_bspline(
             surface: &HandleGeomSurface,
         ) -> UniquePtr<HandleGeom_BSplineSurface>;
+        pub fn convert_surface_to_bspline(
+            surface: &HandleGeomSurface,
+        ) -> UniquePtr<HandleGeom_BSplineSurface>;
         pub fn cast_surface_to_bezier(
             surface: &HandleGeomSurface,
         ) -> UniquePtr<HandleGeomBezierSurface>;

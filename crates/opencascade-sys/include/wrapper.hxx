@@ -54,6 +54,7 @@
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <GeomAbs_CurveType.hxx>
 #include <GeomAbs_JoinType.hxx>
+#include <GeomConvert.hxx>
 #include <Geom_BezierCurve.hxx>
 #include <Geom_BezierSurface.hxx>
 #include <Geom_Circle.hxx>
@@ -228,6 +229,27 @@ inline std::unique_ptr<HandleGeom_BSplineSurface> cast_surface_to_bspline(const 
     return std::unique_ptr<HandleGeom_BSplineSurface>();
   }
   return std::unique_ptr<HandleGeom_BSplineSurface>(new HandleGeom_BSplineSurface(bspline));
+}
+
+// Convert any surface to BSpline surface
+inline std::unique_ptr<HandleGeom_BSplineSurface> convert_surface_to_bspline(const HandleGeomSurface &surface) {
+  // Try direct cast first
+  Handle(Geom_BSplineSurface) bspline = Handle(Geom_BSplineSurface)::DownCast(surface);
+  if (!bspline.IsNull()) {
+    return std::unique_ptr<HandleGeom_BSplineSurface>(new HandleGeom_BSplineSurface(bspline));
+  }
+
+  // Convert to BSpline surface
+  try {
+    Handle(Geom_BSplineSurface) converted = GeomConvert::SurfaceToBSplineSurface(surface);
+    if (converted.IsNull()) {
+      return std::unique_ptr<HandleGeom_BSplineSurface>();
+    }
+    return std::unique_ptr<HandleGeom_BSplineSurface>(new HandleGeom_BSplineSurface(converted));
+  } catch (...) {
+    // Conversion failed, return null
+    return std::unique_ptr<HandleGeom_BSplineSurface>();
+  }
 }
 
 inline std::unique_ptr<HandleGeomBezierSurface> cast_surface_to_bezier(const HandleGeomSurface &surface) {
