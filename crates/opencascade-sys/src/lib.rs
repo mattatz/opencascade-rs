@@ -356,6 +356,8 @@ pub mod ffi {
         pub fn geom_cylinder_location(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Pnt;
         pub fn geom_cylinder_axis(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Ax1;
         pub fn geom_cylinder_radius(cylinder: &HandleGeom_CylindricalSurface) -> f64;
+        pub fn geom_cylinder_x_direction(cylinder: &HandleGeom_CylindricalSurface) -> UniquePtr<gp_Dir>;
+        pub fn geom_cylinder_y_direction(cylinder: &HandleGeom_CylindricalSurface) -> UniquePtr<gp_Dir>;
 
         // BSpline surface properties
         pub fn geom_bspline_surface_nb_u_poles(bspline: &HandleGeom_BSplineSurface) -> i32;
@@ -415,17 +417,23 @@ pub mod ffi {
         pub fn geom_cone_axis(cone: &HandleGeom_ConicalSurface) -> &gp_Ax1;
         pub fn geom_cone_ref_radius(cone: &HandleGeom_ConicalSurface) -> f64;
         pub fn geom_cone_semi_angle(cone: &HandleGeom_ConicalSurface) -> f64;
+        pub fn geom_cone_x_direction(cone: &HandleGeom_ConicalSurface) -> UniquePtr<gp_Dir>;
+        pub fn geom_cone_y_direction(cone: &HandleGeom_ConicalSurface) -> UniquePtr<gp_Dir>;
 
         // Sphere properties
         pub fn geom_sphere_location(sphere: &HandleGeom_SphericalSurface) -> &gp_Pnt;
         pub fn geom_sphere_axis(sphere: &HandleGeom_SphericalSurface) -> &gp_Ax1;
         pub fn geom_sphere_radius(sphere: &HandleGeom_SphericalSurface) -> f64;
+        pub fn geom_sphere_x_direction(sphere: &HandleGeom_SphericalSurface) -> UniquePtr<gp_Dir>;
+        pub fn geom_sphere_y_direction(sphere: &HandleGeom_SphericalSurface) -> UniquePtr<gp_Dir>;
 
         // Torus properties
         pub fn geom_torus_location(torus: &HandleGeom_ToroidalSurface) -> &gp_Pnt;
         pub fn geom_torus_axis(torus: &HandleGeom_ToroidalSurface) -> &gp_Ax1;
         pub fn geom_torus_major_radius(torus: &HandleGeom_ToroidalSurface) -> f64;
         pub fn geom_torus_minor_radius(torus: &HandleGeom_ToroidalSurface) -> f64;
+        pub fn geom_torus_x_direction(torus: &HandleGeom_ToroidalSurface) -> UniquePtr<gp_Dir>;
+        pub fn geom_torus_y_direction(torus: &HandleGeom_ToroidalSurface) -> UniquePtr<gp_Dir>;
 
         // Cast curve to specific types
         pub fn cast_curve_to_line(curve: &HandleGeomCurve) -> UniquePtr<HandleGeom_Line>;

@@ -214,6 +214,12 @@ inline std::unique_ptr<gp_Dir> geom_plane_y_direction(const HandleGeomPlane &pla
 inline const gp_Pnt &geom_cylinder_location(const HandleGeom_CylindricalSurface &cylinder) { return cylinder->Location(); }
 inline const gp_Ax1 &geom_cylinder_axis(const HandleGeom_CylindricalSurface &cylinder) { return cylinder->Axis(); }
 inline double geom_cylinder_radius(const HandleGeom_CylindricalSurface &cylinder) { return cylinder->Radius(); }
+inline std::unique_ptr<gp_Dir> geom_cylinder_x_direction(const HandleGeom_CylindricalSurface &cylinder) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(cylinder->Position().XDirection()));
+}
+inline std::unique_ptr<gp_Dir> geom_cylinder_y_direction(const HandleGeom_CylindricalSurface &cylinder) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(cylinder->Position().YDirection()));
+}
 
 // Cast surface to specific types
 inline std::unique_ptr<HandleGeom_BSplineSurface> cast_surface_to_bspline(const HandleGeomSurface &surface) {
@@ -300,17 +306,35 @@ inline const gp_Pnt &geom_cone_location(const HandleGeom_ConicalSurface &cone) {
 inline const gp_Ax1 &geom_cone_axis(const HandleGeom_ConicalSurface &cone) { return cone->Axis(); }
 inline double geom_cone_ref_radius(const HandleGeom_ConicalSurface &cone) { return cone->RefRadius(); }
 inline double geom_cone_semi_angle(const HandleGeom_ConicalSurface &cone) { return cone->SemiAngle(); }
+inline std::unique_ptr<gp_Dir> geom_cone_x_direction(const HandleGeom_ConicalSurface &cone) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(cone->Position().XDirection()));
+}
+inline std::unique_ptr<gp_Dir> geom_cone_y_direction(const HandleGeom_ConicalSurface &cone) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(cone->Position().YDirection()));
+}
 
 // Sphere properties
 inline const gp_Pnt &geom_sphere_location(const HandleGeom_SphericalSurface &sphere) { return sphere->Location(); }
 inline const gp_Ax1 &geom_sphere_axis(const HandleGeom_SphericalSurface &sphere) { return sphere->Axis(); }
 inline double geom_sphere_radius(const HandleGeom_SphericalSurface &sphere) { return sphere->Radius(); }
+inline std::unique_ptr<gp_Dir> geom_sphere_x_direction(const HandleGeom_SphericalSurface &sphere) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(sphere->Position().XDirection()));
+}
+inline std::unique_ptr<gp_Dir> geom_sphere_y_direction(const HandleGeom_SphericalSurface &sphere) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(sphere->Position().YDirection()));
+}
 
 // Torus properties
 inline const gp_Pnt &geom_torus_location(const HandleGeom_ToroidalSurface &torus) { return torus->Location(); }
 inline const gp_Ax1 &geom_torus_axis(const HandleGeom_ToroidalSurface &torus) { return torus->Axis(); }
 inline double geom_torus_major_radius(const HandleGeom_ToroidalSurface &torus) { return torus->MajorRadius(); }
 inline double geom_torus_minor_radius(const HandleGeom_ToroidalSurface &torus) { return torus->MinorRadius(); }
+inline std::unique_ptr<gp_Dir> geom_torus_x_direction(const HandleGeom_ToroidalSurface &torus) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(torus->Position().XDirection()));
+}
+inline std::unique_ptr<gp_Dir> geom_torus_y_direction(const HandleGeom_ToroidalSurface &torus) {
+  return std::unique_ptr<gp_Dir>(new gp_Dir(torus->Position().YDirection()));
+}
 
 // Cast curve to specific types
 inline std::unique_ptr<HandleGeom_Line> cast_curve_to_line(const HandleGeomCurve &curve) {

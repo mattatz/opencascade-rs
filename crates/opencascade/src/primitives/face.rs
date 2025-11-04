@@ -66,6 +66,8 @@ pub struct Cylinder {
     pub location: DVec3,
     pub axis_location: DVec3,
     pub axis_direction: DVec3,
+    pub x_direction: DVec3,
+    pub y_direction: DVec3,
     pub radius: f64,
 }
 
@@ -75,6 +77,8 @@ pub struct Cone {
     pub location: DVec3,
     pub axis_location: DVec3,
     pub axis_direction: DVec3,
+    pub x_direction: DVec3,
+    pub y_direction: DVec3,
     pub ref_radius: f64,
     pub semi_angle: f64,
 }
@@ -85,6 +89,8 @@ pub struct Sphere {
     pub location: DVec3,
     pub axis_location: DVec3,
     pub axis_direction: DVec3,
+    pub x_direction: DVec3,
+    pub y_direction: DVec3,
     pub radius: f64,
 }
 
@@ -94,6 +100,8 @@ pub struct Torus {
     pub location: DVec3,
     pub axis_location: DVec3,
     pub axis_direction: DVec3,
+    pub x_direction: DVec3,
+    pub y_direction: DVec3,
     pub major_radius: f64,
     pub minor_radius: f64,
 }
@@ -574,6 +582,8 @@ impl Face {
                     let axis = ffi::geom_cylinder_axis(&cylinder);
                     let axis_location = ffi::gp_Ax1_location(&axis);
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let x_dir_ptr = ffi::geom_cylinder_x_direction(&cylinder);
+                    let y_dir_ptr = ffi::geom_cylinder_y_direction(&cylinder);
                     let radius = ffi::geom_cylinder_radius(&cylinder);
 
                     SurfaceDetails::Cylinder(Cylinder {
@@ -588,6 +598,8 @@ impl Face {
                             axis_direction.Y(),
                             axis_direction.Z(),
                         ),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
                         radius,
                     })
                 } else {
@@ -601,6 +613,8 @@ impl Face {
                     let axis = ffi::geom_cone_axis(&cone);
                     let axis_location = ffi::gp_Ax1_location(&axis);
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let x_dir_ptr = ffi::geom_cone_x_direction(&cone);
+                    let y_dir_ptr = ffi::geom_cone_y_direction(&cone);
                     let ref_radius = ffi::geom_cone_ref_radius(&cone);
                     let semi_angle = ffi::geom_cone_semi_angle(&cone);
 
@@ -616,6 +630,8 @@ impl Face {
                             axis_direction.Y(),
                             axis_direction.Z(),
                         ),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
                         ref_radius,
                         semi_angle,
                     })
@@ -630,6 +646,8 @@ impl Face {
                     let axis = ffi::geom_sphere_axis(&sphere);
                     let axis_location = ffi::gp_Ax1_location(&axis);
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let x_dir_ptr = ffi::geom_sphere_x_direction(&sphere);
+                    let y_dir_ptr = ffi::geom_sphere_y_direction(&sphere);
                     let radius = ffi::geom_sphere_radius(&sphere);
 
                     SurfaceDetails::Sphere(Sphere {
@@ -644,6 +662,8 @@ impl Face {
                             axis_direction.Y(),
                             axis_direction.Z(),
                         ),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
                         radius,
                     })
                 } else {
@@ -657,6 +677,8 @@ impl Face {
                     let axis = ffi::geom_torus_axis(&torus);
                     let axis_location = ffi::gp_Ax1_location(&axis);
                     let axis_direction = ffi::gp_Ax1_direction(&axis);
+                    let x_dir_ptr = ffi::geom_torus_x_direction(&torus);
+                    let y_dir_ptr = ffi::geom_torus_y_direction(&torus);
                     let major_radius = ffi::geom_torus_major_radius(&torus);
                     let minor_radius = ffi::geom_torus_minor_radius(&torus);
 
@@ -672,6 +694,8 @@ impl Face {
                             axis_direction.Y(),
                             axis_direction.Z(),
                         ),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
                         major_radius,
                         minor_radius,
                     })
