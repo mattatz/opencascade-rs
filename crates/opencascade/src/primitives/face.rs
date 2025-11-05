@@ -876,7 +876,7 @@ impl Face {
         );
 
         let f = Face::from_face(make_face.Face());
-        println!("Surface details: {:?}", f.surface_details());
+        // println!("Surface details: {:?}", f.surface_details());
         Some(f)
     }
 
