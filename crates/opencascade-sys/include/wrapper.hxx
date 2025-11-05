@@ -293,6 +293,8 @@ inline bool geom_bspline_surface_is_u_rational(const HandleGeom_BSplineSurface &
 inline bool geom_bspline_surface_is_v_rational(const HandleGeom_BSplineSurface &bspline) { return bspline->IsVRational(); }
 inline bool geom_bspline_surface_is_u_periodic(const HandleGeom_BSplineSurface &bspline) { return bspline->IsUPeriodic(); }
 inline bool geom_bspline_surface_is_v_periodic(const HandleGeom_BSplineSurface &bspline) { return bspline->IsVPeriodic(); }
+inline void geom_bspline_surface_set_u_not_periodic(HandleGeom_BSplineSurface &bspline) { bspline->SetUNotPeriodic(); }
+inline void geom_bspline_surface_set_v_not_periodic(HandleGeom_BSplineSurface &bspline) { bspline->SetVNotPeriodic(); }
 
 // BSpline surface knots and multiplicities
 inline int geom_bspline_surface_nb_u_knots(const HandleGeom_BSplineSurface &bspline) { return bspline->NbUKnots(); }

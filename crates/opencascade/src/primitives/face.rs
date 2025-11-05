@@ -24,12 +24,7 @@ pub struct UVBounds {
 impl UVBounds {
     /// Create a new UVBounds
     pub fn new(u_min: f64, u_max: f64, v_min: f64, v_max: f64) -> Self {
-        Self {
-            u_min,
-            u_max,
-            v_min,
-            v_max,
-        }
+        Self { u_min, u_max, v_min, v_max }
     }
 
     /// Get the U range (u_max - u_min)
@@ -399,10 +394,7 @@ impl Face {
 
         let outer_wire = self.outer_wire();
 
-        WireWithRoleIterator {
-            explorer,
-            outer_wire,
-        }
+        WireWithRoleIterator { explorer, outer_wire }
     }
 
     pub fn center_of_mass(&self) -> DVec3 {
@@ -840,14 +832,30 @@ impl Face {
     /// Convert the face's surface to a B-Spline surface representation and create a new Face.
     /// This works for any surface type (plane, cylinder, sphere, torus, etc.)
     /// The UV bounds from the original face are preserved.
+    ///
+    /// # Arguments
+    ///
+    /// * `non_periodic` - If true, the resulting B-Spline surface will be set to non-periodic
+    ///                    in both U and V directions
+    ///
     /// Returns None if the conversion fails.
-    pub fn to_bspline_face(&self) -> Option<Face> {
+    pub fn to_bspline_face(&self, non_periodic: bool) -> Option<Face> {
         let surface = ffi::BRep_Tool_Surface(&self.inner);
-        let bspline = ffi::convert_surface_to_bspline(&surface);
+        let mut bspline = ffi::convert_surface_to_bspline(&surface);
 
         if bspline.is_null() || bspline.IsNull() {
             // println!("Conversion failed: {:?}", self.surface_type());
             return None;
+        }
+
+        // Set to non-periodic if requested
+        if non_periodic {
+            if ffi::geom_bspline_surface_is_u_periodic(&bspline) {
+                ffi::geom_bspline_surface_set_u_not_periodic(bspline.pin_mut());
+            }
+            if ffi::geom_bspline_surface_is_v_periodic(&bspline) {
+                ffi::geom_bspline_surface_set_v_not_periodic(bspline.pin_mut());
+            }
         }
 
         // Convert BSpline surface handle to generic surface handle
@@ -867,7 +875,9 @@ impl Face {
             EDGE_TOLERANCE,
         );
 
-        Some(Face::from_face(make_face.Face()))
+        let f = Face::from_face(make_face.Face());
+        println!("Surface details: {:?}", f.surface_details());
+        Some(f)
     }
 
     /// Convert the face's surface to a B-Spline surface representation.
@@ -1175,8 +1185,12 @@ mod tests {
 
         // The point should have valid coordinates
         let point_2d = point_2d.unwrap();
-        assert!(point_2d.x.is_finite() && point_2d.y.is_finite(),
-                "Expected finite 2D coordinates, got ({}, {})", point_2d.x, point_2d.y);
+        assert!(
+            point_2d.x.is_finite() && point_2d.y.is_finite(),
+            "Expected finite 2D coordinates, got ({}, {})",
+            point_2d.x,
+            point_2d.y
+        );
     }
 
     #[test]
@@ -1203,51 +1217,60 @@ mod tests {
             // Get curve details
             let details = curve_2d.curve_details();
 
-            println!("Edge {} - 2D curve type: {:?}", i,
-                     match &details {
-                         Curve2dDetails::Line(_) => "Line",
-                         Curve2dDetails::Circle(_) => "Circle",
-                         Curve2dDetails::Ellipse(_) => "Ellipse",
-                         Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
-                         Curve2dDetails::BezierCurve(_) => "BezierCurve",
-                         Curve2dDetails::TrimmedCurve(t) => {
-                             let basis_type = match &*t.basis_curve {
-                                 Curve2dDetails::Line(_) => "TrimmedCurve(Line)",
-                                 Curve2dDetails::Circle(_) => "TrimmedCurve(Circle)",
-                                 Curve2dDetails::Ellipse(_) => "TrimmedCurve(Ellipse)",
-                                 _ => "TrimmedCurve(Other)",
-                             };
-                             basis_type
-                         }
-                         Curve2dDetails::Unknown(s) => s.as_str(),
-                     });
+            println!(
+                "Edge {} - 2D curve type: {:?}",
+                i,
+                match &details {
+                    Curve2dDetails::Line(_) => "Line",
+                    Curve2dDetails::Circle(_) => "Circle",
+                    Curve2dDetails::Ellipse(_) => "Ellipse",
+                    Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
+                    Curve2dDetails::BezierCurve(_) => "BezierCurve",
+                    Curve2dDetails::TrimmedCurve(t) => {
+                        let basis_type = match &*t.basis_curve {
+                            Curve2dDetails::Line(_) => "TrimmedCurve(Line)",
+                            Curve2dDetails::Circle(_) => "TrimmedCurve(Circle)",
+                            Curve2dDetails::Ellipse(_) => "TrimmedCurve(Ellipse)",
+                            _ => "TrimmedCurve(Other)",
+                        };
+                        basis_type
+                    },
+                    Curve2dDetails::Unknown(s) => s.as_str(),
+                }
+            );
 
             // For a rectangular face, we might get lines or trimmed curves
             match details {
                 Curve2dDetails::Line(line) => {
                     // Verify that we got valid line data
-                    assert!(line.origin.x.is_finite() && line.origin.y.is_finite(),
-                            "Expected finite origin coordinates");
-                    assert!(line.direction.x.is_finite() && line.direction.y.is_finite(),
-                            "Expected finite direction coordinates");
-                }
+                    assert!(
+                        line.origin.x.is_finite() && line.origin.y.is_finite(),
+                        "Expected finite origin coordinates"
+                    );
+                    assert!(
+                        line.direction.x.is_finite() && line.direction.y.is_finite(),
+                        "Expected finite direction coordinates"
+                    );
+                },
                 Curve2dDetails::TrimmedCurve(ref trimmed) => {
-                    println!("  -> TrimmedCurve from {} to {}",
-                             trimmed.first_parameter, trimmed.last_parameter);
+                    println!(
+                        "  -> TrimmedCurve from {} to {}",
+                        trimmed.first_parameter, trimmed.last_parameter
+                    );
                     // Verify the basis curve
                     match &*trimmed.basis_curve {
                         Curve2dDetails::Line(line) => {
                             assert!(line.origin.x.is_finite() && line.origin.y.is_finite());
-                        }
-                        _ => {}
+                        },
+                        _ => {},
                     }
-                }
+                },
                 Curve2dDetails::Unknown(ref type_name) => {
                     println!("  -> Unknown curve type: {}", type_name);
-                }
+                },
                 other => {
                     println!("  -> Other curve type: {:?}", other);
-                }
+                },
             }
         }
     }
@@ -1270,23 +1293,26 @@ mod tests {
             if let Some(curve_2d) = edge.curve_on_surface(&face) {
                 let details = curve_2d.curve_details();
 
-                println!("Circle edge {} - 2D curve type: {:?}", i,
-                         match &details {
-                             Curve2dDetails::Line(_) => "Line",
-                             Curve2dDetails::Circle(_) => "Circle",
-                             Curve2dDetails::Ellipse(_) => "Ellipse",
-                             Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
-                             Curve2dDetails::BezierCurve(_) => "BezierCurve",
-                             Curve2dDetails::TrimmedCurve(t) => {
-                                 match &*t.basis_curve {
-                                     Curve2dDetails::Line(_) => "TrimmedCurve(Line)",
-                                     Curve2dDetails::Circle(_) => "TrimmedCurve(Circle)",
-                                     Curve2dDetails::Ellipse(_) => "TrimmedCurve(Ellipse)",
-                                     _ => "TrimmedCurve(Other)",
-                                 }
-                             }
-                             Curve2dDetails::Unknown(s) => s.as_str(),
-                         });
+                println!(
+                    "Circle edge {} - 2D curve type: {:?}",
+                    i,
+                    match &details {
+                        Curve2dDetails::Line(_) => "Line",
+                        Curve2dDetails::Circle(_) => "Circle",
+                        Curve2dDetails::Ellipse(_) => "Ellipse",
+                        Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
+                        Curve2dDetails::BezierCurve(_) => "BezierCurve",
+                        Curve2dDetails::TrimmedCurve(t) => {
+                            match &*t.basis_curve {
+                                Curve2dDetails::Line(_) => "TrimmedCurve(Line)",
+                                Curve2dDetails::Circle(_) => "TrimmedCurve(Circle)",
+                                Curve2dDetails::Ellipse(_) => "TrimmedCurve(Ellipse)",
+                                _ => "TrimmedCurve(Other)",
+                            }
+                        },
+                        Curve2dDetails::Unknown(s) => s.as_str(),
+                    }
+                );
             }
         }
     }
@@ -1310,26 +1336,31 @@ mod tests {
             if let Some(curve_2d) = edge.curve_on_surface(&face) {
                 let details = curve_2d.curve_details();
 
-                println!("Filleted edge {} - 2D curve type: {}", i,
-                         match &details {
-                             Curve2dDetails::Line(_) => "Line",
-                             Curve2dDetails::Circle(_) => "Circle",
-                             Curve2dDetails::Ellipse(_) => "Ellipse",
-                             Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
-                             Curve2dDetails::BezierCurve(_) => "BezierCurve",
-                             Curve2dDetails::TrimmedCurve(t) => {
-                                 let basis = match &*t.basis_curve {
-                                     Curve2dDetails::Line(_) => "Line",
-                                     Curve2dDetails::Circle(_) => "Circle",
-                                     Curve2dDetails::Ellipse(_) => "Ellipse",
-                                     _ => "Other",
-                                 };
-                                 println!("  -> TrimmedCurve basis: {}, params: [{}, {}]",
-                                         basis, t.first_parameter, t.last_parameter);
-                                 "TrimmedCurve"
-                             }
-                             Curve2dDetails::Unknown(s) => s.as_str(),
-                         });
+                println!(
+                    "Filleted edge {} - 2D curve type: {}",
+                    i,
+                    match &details {
+                        Curve2dDetails::Line(_) => "Line",
+                        Curve2dDetails::Circle(_) => "Circle",
+                        Curve2dDetails::Ellipse(_) => "Ellipse",
+                        Curve2dDetails::BSplineCurve(_) => "BSplineCurve",
+                        Curve2dDetails::BezierCurve(_) => "BezierCurve",
+                        Curve2dDetails::TrimmedCurve(t) => {
+                            let basis = match &*t.basis_curve {
+                                Curve2dDetails::Line(_) => "Line",
+                                Curve2dDetails::Circle(_) => "Circle",
+                                Curve2dDetails::Ellipse(_) => "Ellipse",
+                                _ => "Other",
+                            };
+                            println!(
+                                "  -> TrimmedCurve basis: {}, params: [{}, {}]",
+                                basis, t.first_parameter, t.last_parameter
+                            );
+                            "TrimmedCurve"
+                        },
+                        Curve2dDetails::Unknown(s) => s.as_str(),
+                    }
+                );
             }
         }
     }
@@ -1343,11 +1374,13 @@ mod tests {
 
         // Get surface details to understand the UV domain
         let surface_details = face.surface_details();
-        println!("Surface type: {:?}",
-                 match surface_details {
-                     SurfaceDetails::Plane(_) => "Plane",
-                     _ => "Other",
-                 });
+        println!(
+            "Surface type: {:?}",
+            match surface_details {
+                SurfaceDetails::Plane(_) => "Plane",
+                _ => "Other",
+            }
+        );
 
         // Get the outer wire
         let outer_wire = face.outer_wire();
@@ -1367,19 +1400,16 @@ mod tests {
                         println!("  Type: Line");
                         println!("    Origin (UV): ({}, {})", line.origin.x, line.origin.y);
                         println!("    Direction: ({}, {})", line.direction.x, line.direction.y);
-                    }
+                    },
                     _ => {
                         println!("  Type: {:?}", details);
-                    }
+                    },
                 }
 
                 // Sample points along the curve
                 println!("  UV coordinates at different curve parameters:");
-                let samples = vec![
-                    curve_2d.first,
-                    (curve_2d.first + curve_2d.last) / 2.0,
-                    curve_2d.last,
-                ];
+                let samples =
+                    vec![curve_2d.first, (curve_2d.first + curve_2d.last) / 2.0, curve_2d.last];
 
                 for (_j, t) in samples.iter().enumerate() {
                     if let Some(uv) = curve_2d.value(*t) {
@@ -1421,18 +1451,18 @@ mod tests {
                         println!("  Type: Circle");
                         println!("    Center (UV): ({}, {})", circle.center.x, circle.center.y);
                         println!("    Radius: {}", circle.radius);
-                    }
+                    },
                     _ => {
                         println!("  Type: Other");
-                    }
+                    },
                 }
 
                 // Sample points along the curve
                 println!("  UV coordinates at different curve parameters:");
                 let n_samples = 8;
                 for j in 0..=n_samples {
-                    let t = curve_2d.first +
-                            (curve_2d.last - curve_2d.first) * (j as f64) / (n_samples as f64);
+                    let t = curve_2d.first
+                        + (curve_2d.last - curve_2d.first) * (j as f64) / (n_samples as f64);
                     if let Some(uv) = curve_2d.value(t) {
                         println!("    t={:8.3} → UV=({:8.3}, {:8.3})", t, uv.x, uv.y);
                     }
@@ -1496,8 +1526,10 @@ mod tests {
 
             // Verify they form a right-handed coordinate system (or left-handed, either is valid)
             let cross_product = plane.x_direction.cross(plane.y_direction);
-            let cross_length = (cross_product.normalize() - plane.axis_direction.normalize()).length();
-            let cross_length_neg = (cross_product.normalize() + plane.axis_direction.normalize()).length();
+            let cross_length =
+                (cross_product.normalize() - plane.axis_direction.normalize()).length();
+            let cross_length_neg =
+                (cross_product.normalize() + plane.axis_direction.normalize()).length();
             assert!(
                 cross_length < tolerance || cross_length_neg < tolerance,
                 "X × Y should equal ±Z (right-handed or left-handed coordinate system)"
@@ -1527,10 +1559,22 @@ mod tests {
 
             // Verify that Plane struct bounds match face.uv_bounds()
             let bounds = face.uv_bounds();
-            assert!((plane.bounds.u_min - bounds.u_min).abs() < tolerance, "Plane u_min should match face.uv_bounds()");
-            assert!((plane.bounds.u_max - bounds.u_max).abs() < tolerance, "Plane u_max should match face.uv_bounds()");
-            assert!((plane.bounds.v_min - bounds.v_min).abs() < tolerance, "Plane v_min should match face.uv_bounds()");
-            assert!((plane.bounds.v_max - bounds.v_max).abs() < tolerance, "Plane v_max should match face.uv_bounds()");
+            assert!(
+                (plane.bounds.u_min - bounds.u_min).abs() < tolerance,
+                "Plane u_min should match face.uv_bounds()"
+            );
+            assert!(
+                (plane.bounds.u_max - bounds.u_max).abs() < tolerance,
+                "Plane u_max should match face.uv_bounds()"
+            );
+            assert!(
+                (plane.bounds.v_min - bounds.v_min).abs() < tolerance,
+                "Plane v_min should match face.uv_bounds()"
+            );
+            assert!(
+                (plane.bounds.v_max - bounds.v_max).abs() < tolerance,
+                "Plane v_max should match face.uv_bounds()"
+            );
         } else {
             panic!("Expected Plane surface, got {:?}", details);
         }
@@ -1562,18 +1606,17 @@ mod tests {
 
         // Test UV bounds for a cylindrical face
         use glam::dvec3;
-        let cylinder = Workplane::xy()
-            .circle(0.0, 0.0, 5.0)
-            .to_face()
-            .extrude(dvec3(0.0, 0.0, 10.0));
+        let cylinder =
+            Workplane::xy().circle(0.0, 0.0, 5.0).to_face().extrude(dvec3(0.0, 0.0, 10.0));
 
         // Convert Solid to Shape to iterate over faces
         let cylinder_shape: Shape = cylinder.into();
 
         // Get one of the cylindrical faces
-        if let Some(cyl_face) = cylinder_shape.faces().find(|f| {
-            matches!(f.surface_details(), SurfaceDetails::Cylinder(_))
-        }) {
+        if let Some(cyl_face) = cylinder_shape
+            .faces()
+            .find(|f| matches!(f.surface_details(), SurfaceDetails::Cylinder(_)))
+        {
             let bounds = cyl_face.uv_bounds();
 
             println!("\nCylindrical Face (radius 5, height 10) UV Bounds:");
@@ -1620,7 +1663,10 @@ mod tests {
 
                 // Verify start and end points are different
                 let tolerance = 0.0001;
-                assert!((start - end).length() > tolerance, "Start and end points should be different");
+                assert!(
+                    (start - end).length() > tolerance,
+                    "Start and end points should be different"
+                );
 
                 // Verify length is positive
                 assert!(length > 0.0, "Length should be positive");
@@ -1675,7 +1721,10 @@ mod tests {
 
                     // Verify start and end points are different
                     let tolerance = 0.0001;
-                    assert!((start - end).length() > tolerance, "Start and end points should be different");
+                    assert!(
+                        (start - end).length() > tolerance,
+                        "Start and end points should be different"
+                    );
 
                     // Verify length is positive
                     assert!(length > 0.0, "Length should be positive");
@@ -1693,7 +1742,6 @@ mod tests {
         // Rectangle should have 4 2D line edges
         assert_eq!(line2d_count, 4, "Rectangle should have 4 2D line edges");
     }
-
 
     #[test]
     fn test_surface_to_bspline_plane() {

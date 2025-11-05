@@ -371,6 +371,8 @@ pub mod ffi {
         pub fn geom_bspline_surface_is_v_rational(bspline: &HandleGeom_BSplineSurface) -> bool;
         pub fn geom_bspline_surface_is_u_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
         pub fn geom_bspline_surface_is_v_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
+        pub fn geom_bspline_surface_set_u_not_periodic(bspline: Pin<&mut HandleGeom_BSplineSurface>);
+        pub fn geom_bspline_surface_set_v_not_periodic(bspline: Pin<&mut HandleGeom_BSplineSurface>);
 
         // BSpline surface knots and multiplicities
         pub fn geom_bspline_surface_nb_u_knots(bspline: &HandleGeom_BSplineSurface) -> i32;
