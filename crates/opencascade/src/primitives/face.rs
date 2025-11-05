@@ -837,6 +837,39 @@ impl Face {
         }
     }
 
+    /// Convert the face's surface to a B-Spline surface representation and create a new Face.
+    /// This works for any surface type (plane, cylinder, sphere, torus, etc.)
+    /// The UV bounds from the original face are preserved.
+    /// Returns None if the conversion fails.
+    pub fn to_bspline_face(&self) -> Option<Face> {
+        let surface = ffi::BRep_Tool_Surface(&self.inner);
+        let bspline = ffi::convert_surface_to_bspline(&surface);
+
+        if bspline.is_null() || bspline.IsNull() {
+            // println!("Conversion failed: {:?}", self.surface_type());
+            return None;
+        }
+
+        // Convert BSpline surface handle to generic surface handle
+        let surface_handle = ffi::bspline_surface_to_surface(&bspline);
+
+        // Get UV bounds from the original face
+        let bounds = self.uv_bounds();
+
+        // Create a Face from the surface with UV bounds
+        const EDGE_TOLERANCE: f64 = 0.0001;
+        let make_face = ffi::BRepBuilderAPI_MakeFace_surface_with_bounds(
+            &surface_handle,
+            bounds.u_min,
+            bounds.u_max,
+            bounds.v_min,
+            bounds.v_max,
+            EDGE_TOLERANCE,
+        );
+
+        Some(Face::from_face(make_face.Face()))
+    }
+
     /// Convert the face's surface to a B-Spline surface representation.
     /// This works for any surface type (plane, cylinder, sphere, torus, etc.)
     /// Returns None if the conversion fails.

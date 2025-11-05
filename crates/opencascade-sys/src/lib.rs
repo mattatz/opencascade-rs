@@ -537,6 +537,9 @@ pub mod ffi {
         pub fn bezier_to_surface(
             bezier_handle: &HandleGeomBezierSurface,
         ) -> UniquePtr<HandleGeomSurface>;
+        pub fn bspline_surface_to_surface(
+            bspline_handle: &HandleGeom_BSplineSurface,
+        ) -> UniquePtr<HandleGeomSurface>;
 
         pub fn Geom2d_Ellipse_ctor(
             axis: &gp_Ax2d,
@@ -798,6 +801,15 @@ pub mod ffi {
         #[cxx_name = "construct_unique"]
         pub fn BRepBuilderAPI_MakeFace_surface(
             surface: &HandleGeomSurface,
+            edge_tolerance: f64,
+        ) -> UniquePtr<BRepBuilderAPI_MakeFace>;
+        #[cxx_name = "construct_unique"]
+        pub fn BRepBuilderAPI_MakeFace_surface_with_bounds(
+            surface: &HandleGeomSurface,
+            u_min: f64,
+            u_max: f64,
+            v_min: f64,
+            v_max: f64,
             edge_tolerance: f64,
         ) -> UniquePtr<BRepBuilderAPI_MakeFace>;
 

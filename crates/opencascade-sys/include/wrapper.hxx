@@ -532,6 +532,10 @@ inline std::unique_ptr<HandleGeomSurface> bezier_to_surface(const HandleGeomBezi
   return std::unique_ptr<HandleGeomSurface>(new opencascade::handle<Geom_Surface>(bezier_handle));
 }
 
+inline std::unique_ptr<HandleGeomSurface> bspline_surface_to_surface(const HandleGeom_BSplineSurface &bspline_handle) {
+  return std::unique_ptr<HandleGeomSurface>(new opencascade::handle<Geom_Surface>(bspline_handle));
+}
+
 inline std::unique_ptr<HandleGeom2d_Ellipse> Geom2d_Ellipse_ctor(const gp_Ax2d &axis, double major_radius,
                                                                  double minor_radius) {
   return std::unique_ptr<HandleGeom2d_Ellipse>(
