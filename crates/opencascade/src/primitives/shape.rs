@@ -15,6 +15,12 @@ pub struct Shape {
     pub(crate) inner: UniquePtr<ffi::TopoDS_Shape>,
 }
 
+impl std::fmt::Debug for Shape {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Shape {{ inner: {:?} }}", self.inner.as_ptr())
+    }
+}
+
 impl AsRef<Shape> for Shape {
     fn as_ref(&self) -> &Shape {
         self

@@ -39,6 +39,7 @@
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
 #include <BRepTools.hxx>
+#include <BRepTools_WireExplorer.hxx>
 #include <GCE2d_MakeSegment.hxx>
 #include <GCPnts_TangentialDeflection.hxx>
 #include <GC_MakeArcOfCircle.hxx>
@@ -1045,6 +1046,35 @@ inline void face_uv_bounds(const TopoDS_Face &face, Standard_Real &u_min, Standa
 
 inline bool are_shapes_same(const TopoDS_Shape &shape1, const TopoDS_Shape &shape2) {
   return shape1.IsSame(shape2);
+}
+
+// BRepTools_WireExplorer
+inline std::unique_ptr<BRepTools_WireExplorer> BRepTools_WireExplorer_ctor(const TopoDS_Wire &wire) {
+  return std::unique_ptr<BRepTools_WireExplorer>(new BRepTools_WireExplorer(wire));
+}
+
+inline bool BRepTools_WireExplorer_More(const BRepTools_WireExplorer &explorer) {
+  return explorer.More();
+}
+
+inline void BRepTools_WireExplorer_Next(BRepTools_WireExplorer &explorer) {
+  explorer.Next();
+}
+
+inline std::unique_ptr<TopoDS_Edge> BRepTools_WireExplorer_Current(const BRepTools_WireExplorer &explorer) {
+  return std::unique_ptr<TopoDS_Edge>(new TopoDS_Edge(explorer.Current()));
+}
+
+inline TopAbs_Orientation BRepTools_WireExplorer_Orientation(const BRepTools_WireExplorer &explorer) {
+  return explorer.Orientation();
+}
+
+inline std::unique_ptr<TopoDS_Vertex> BRepTools_WireExplorer_CurrentVertex(const BRepTools_WireExplorer &explorer) {
+  return std::unique_ptr<TopoDS_Vertex>(new TopoDS_Vertex(explorer.CurrentVertex()));
+}
+
+inline void BRepTools_WireExplorer_Clear(BRepTools_WireExplorer &explorer) {
+  explorer.Clear();
 }
 
 // Collections

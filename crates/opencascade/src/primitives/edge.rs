@@ -295,7 +295,7 @@ impl ParametricCurve2d {
                 } else {
                     Curve2dDetails::Unknown(curve_type)
                 }
-            }
+            },
             "Geom2d_Circle" => {
                 let circle = ffi::cast_geom2d_curve_to_circle(&self.curve);
                 if !ffi::HandleGeom2d_Circle_IsNull(&circle) {
@@ -315,7 +315,7 @@ impl ParametricCurve2d {
                 } else {
                     Curve2dDetails::Unknown(curve_type)
                 }
-            }
+            },
             "Geom2d_Ellipse" => {
                 let ellipse = ffi::cast_geom2d_curve_to_ellipse(&self.curve);
                 if !ffi::HandleGeom2d_Ellipse_IsNull(&ellipse) {
@@ -337,7 +337,7 @@ impl ParametricCurve2d {
                 } else {
                     Curve2dDetails::Unknown(curve_type)
                 }
-            }
+            },
             "Geom2d_BSplineCurve" => {
                 let bspline = ffi::cast_geom2d_curve_to_bspline(&self.curve);
                 if !ffi::HandleGeom2d_BSplineCurve_IsNull(&bspline) {
@@ -353,7 +353,8 @@ impl ParametricCurve2d {
 
                     for i in 1..=nb_knots {
                         knots.push(ffi::geom2d_bspline_curve_knot(&bspline, i));
-                        multiplicities.push(ffi::geom2d_bspline_curve_multiplicity(&bspline, i) as usize);
+                        multiplicities
+                            .push(ffi::geom2d_bspline_curve_multiplicity(&bspline, i) as usize);
                     }
 
                     // Extract poles (control points) and weights
@@ -391,7 +392,7 @@ impl ParametricCurve2d {
                 } else {
                     Curve2dDetails::Unknown(curve_type)
                 }
-            }
+            },
             "Geom2d_BezierCurve" => {
                 let bezier = ffi::cast_geom2d_curve_to_bezier(&self.curve);
                 if !ffi::HandleGeom2d_BezierCurve_IsNull(&bezier) {
@@ -427,7 +428,7 @@ impl ParametricCurve2d {
                 } else {
                     Curve2dDetails::Unknown(curve_type)
                 }
-            }
+            },
             "Geom2d_TrimmedCurve" => {
                 let trimmed = ffi::cast_geom2d_curve_to_trimmed(&self.curve);
                 if !ffi::HandleGeom2d_TrimmedCurve_IsNull(&trimmed) {
@@ -451,7 +452,7 @@ impl ParametricCurve2d {
                 } else {
                     Curve2dDetails::Unknown(curve_type)
                 }
-            }
+            },
             _ => Curve2dDetails::Unknown(curve_type),
         }
     }
@@ -491,6 +492,12 @@ pub struct Edge {
     pub(crate) inner: UniquePtr<ffi::TopoDS_Edge>,
 }
 
+impl std::fmt::Debug for Edge {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Edge({:?}: {:?})", self.edge_type(), self.inner.as_ptr())
+    }
+}
+
 impl AsRef<Edge> for Edge {
     fn as_ref(&self) -> &Edge {
         self
@@ -498,6 +505,10 @@ impl AsRef<Edge> for Edge {
 }
 
 impl Edge {
+    pub fn unique_ptr(&self) -> &UniquePtr<ffi::TopoDS_Edge> {
+        &self.inner
+    }
+
     pub(crate) fn from_edge(edge: &ffi::TopoDS_Edge) -> Self {
         let inner = ffi::TopoDS_Edge_to_owned(edge);
 

@@ -1375,6 +1375,19 @@ pub mod ffi {
             vertex: Pin<&mut TopoDS_Vertex>,
         ) -> bool;
 
+        // BRepTools_WireExplorer
+        type BRepTools_WireExplorer;
+
+        #[cxx_name = "construct_unique"]
+        pub fn BRepTools_WireExplorer_ctor(wire: &TopoDS_Wire) -> UniquePtr<BRepTools_WireExplorer>;
+
+        pub fn BRepTools_WireExplorer_More(explorer: &BRepTools_WireExplorer) -> bool;
+        pub fn BRepTools_WireExplorer_Next(explorer: Pin<&mut BRepTools_WireExplorer>);
+        pub fn BRepTools_WireExplorer_Current(explorer: &BRepTools_WireExplorer) -> UniquePtr<TopoDS_Edge>;
+        pub fn BRepTools_WireExplorer_Orientation(explorer: &BRepTools_WireExplorer) -> TopAbs_Orientation;
+        pub fn BRepTools_WireExplorer_CurrentVertex(explorer: &BRepTools_WireExplorer) -> UniquePtr<TopoDS_Vertex>;
+        pub fn BRepTools_WireExplorer_Clear(explorer: Pin<&mut BRepTools_WireExplorer>);
+
         pub fn BRep_Tool_Surface(face: &TopoDS_Face) -> UniquePtr<HandleGeomSurface>;
         pub fn BRep_Tool_Curve(
             edge: &TopoDS_Edge,

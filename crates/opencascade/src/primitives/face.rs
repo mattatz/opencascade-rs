@@ -883,9 +883,9 @@ impl Face {
     /// Convert the face's surface to a B-Spline surface representation.
     /// This works for any surface type (plane, cylinder, sphere, torus, etc.)
     /// Returns None if the conversion fails.
-    pub fn to_bspline_surface(&self) -> Option<BSplineSurface> {
+    pub fn to_bspline_surface(&self, non_periodic: bool) -> Option<BSplineSurface> {
         let surface = ffi::BRep_Tool_Surface(&self.inner);
-        let bspline = ffi::convert_surface_to_bspline(&surface);
+        let mut bspline = ffi::convert_surface_to_bspline(&surface);
 
         // Check if the UniquePtr is null (conversion failed)
         if bspline.is_null() {
@@ -895,6 +895,16 @@ impl Face {
         // Also check if the Handle itself is null
         if bspline.IsNull() {
             return None;
+        }
+
+        // Set to non-periodic if requested
+        if non_periodic {
+            if ffi::geom_bspline_surface_is_u_periodic(&bspline) {
+                ffi::geom_bspline_surface_set_u_not_periodic(bspline.pin_mut());
+            }
+            if ffi::geom_bspline_surface_is_v_periodic(&bspline) {
+                ffi::geom_bspline_surface_set_v_not_periodic(bspline.pin_mut());
+            }
         }
 
         let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline) as usize;
@@ -1750,7 +1760,7 @@ mod tests {
 
         // Try to convert to BSpline surface
         // Note: Some surfaces (like infinite planes) may not convert successfully
-        let bspline = face.to_bspline_surface();
+        let bspline = face.to_bspline_surface(false);
 
         if let Some(bspline) = bspline {
             // If conversion succeeded, verify the structure

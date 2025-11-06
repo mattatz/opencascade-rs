@@ -148,6 +148,27 @@ impl EdgeIterator {
     }
 }
 
+pub struct WireEdgeIterator {
+    explorer: UniquePtr<ffi::BRepTools_WireExplorer>,
+}
+
+impl Iterator for WireEdgeIterator {
+    type Item = Edge;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if ffi::BRepTools_WireExplorer_More(&self.explorer) {
+            let edge = ffi::BRepTools_WireExplorer_Current(&self.explorer);
+            let edge = Edge::from_edge(&edge);
+
+            ffi::BRepTools_WireExplorer_Next(self.explorer.pin_mut());
+
+            Some(edge)
+        } else {
+            None
+        }
+    }
+}
+
 pub struct FaceIterator {
     explorer: UniquePtr<ffi::TopExp_Explorer>,
 }
