@@ -1,4 +1,4 @@
-use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails, SurfaceType};
+use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,25 +81,33 @@ pub fn step_bytes_to_json_pretty(bytes: &[u8]) -> Result<String, String> {
     geometry_to_json_pretty(&geometry)
 }
 
-#[cfg(target_family = "wasm")]
-use wasm_bindgen::prelude::*;
+/// C-compatible wrapper for parsing STEP from bytes
+/// Returns a null-terminated C string that must be freed by the caller
+#[no_mangle]
+pub extern "C" fn parse_step_c(data: *const u8, len: usize) -> *mut std::os::raw::c_char {
+    if data.is_null() {
+        return std::ptr::null_mut();
+    }
 
-#[cfg(target_family = "wasm")]
-#[wasm_bindgen]
-pub fn init_panic_hook() {
-    console_error_panic_hook::set_once();
+    let bytes = unsafe { std::slice::from_raw_parts(data, len) };
+
+    match step_bytes_to_json(bytes) {
+        Ok(json) => {
+            let c_string = std::ffi::CString::new(json).unwrap_or_default();
+            c_string.into_raw()
+        }
+        Err(_) => std::ptr::null_mut(),
+    }
 }
 
-#[cfg(target_family = "wasm")]
-#[wasm_bindgen]
-pub fn parse_step_wasm(bytes: &[u8]) -> Result<String, JsValue> {
-    step_bytes_to_json(bytes).map_err(|e| JsValue::from_str(&e))
-}
-
-#[cfg(target_family = "wasm")]
-#[wasm_bindgen]
-pub fn parse_step_wasm_pretty(bytes: &[u8]) -> Result<String, JsValue> {
-    step_bytes_to_json_pretty(bytes).map_err(|e| JsValue::from_str(&e))
+/// Free a C string allocated by parse_step_c
+#[no_mangle]
+pub extern "C" fn free_string(s: *mut std::os::raw::c_char) {
+    if !s.is_null() {
+        unsafe {
+            let _ = std::ffi::CString::from_raw(s);
+        }
+    }
 }
 
 #[cfg(test)]

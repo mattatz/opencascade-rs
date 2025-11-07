@@ -7,10 +7,11 @@ rustflags = [
 rustflags = [
     "-C", "link-arg=-fexceptions",
     "-C", "link-arg=-sDISABLE_EXCEPTION_CATCHING=0",
-    "-C", "link-arg=-sSTANDALONE_WASM=0",
+    "-C", "link-arg=-lembind",
+    "-C", "link-arg=--no-entry",
     "-C", "link-arg=-sEXPORTED_RUNTIME_METHODS=['cwrap','ccall']",
-    "-C", "link-arg=-sEXPORT_ALL=1",
-    "-C", "link-arg=-sERROR_ON_UNDEFINED_SYMBOLS=0"
+    "-C", "link-arg=-sALLOW_MEMORY_GROWTH=1",
+    "-C", "link-arg=-sSTANDALONE_WASM=0"
 ]
 
 [env]
