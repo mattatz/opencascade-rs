@@ -458,6 +458,7 @@ impl ParametricCurve2d {
     }
 }
 
+/// The type of curve based on OpenCASCADE's GeomAbs classification
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum EdgeType {
     Line,
@@ -469,6 +470,78 @@ pub enum EdgeType {
     BSplineCurve,
     OffsetCurve,
     OtherCurve,
+}
+
+/// The specific geometric curve type (e.g., Geom_Line, Geom_Circle)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CurveType {
+    /// Geom_Line - A line curve
+    Line,
+    /// Geom_Circle - A circular curve
+    Circle,
+    /// Geom_Ellipse - An elliptical curve
+    Ellipse,
+    /// Geom_Hyperbola - A hyperbolic curve
+    Hyperbola,
+    /// Geom_Parabola - A parabolic curve
+    Parabola,
+    /// Geom_BezierCurve - A Bezier curve
+    BezierCurve,
+    /// Geom_BSplineCurve - A B-Spline curve
+    BSplineCurve,
+    /// Geom_OffsetCurve - An offset curve
+    OffsetCurve,
+    /// Geom_TrimmedCurve - A trimmed curve
+    TrimmedCurve,
+    /// Unknown or unsupported curve type
+    Unknown(String),
+}
+
+impl CurveType {
+    /// Get the OpenCASCADE type name as a string (e.g., "Geom_Line")
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Line => "Geom_Line",
+            Self::Circle => "Geom_Circle",
+            Self::Ellipse => "Geom_Ellipse",
+            Self::Hyperbola => "Geom_Hyperbola",
+            Self::Parabola => "Geom_Parabola",
+            Self::BezierCurve => "Geom_BezierCurve",
+            Self::BSplineCurve => "Geom_BSplineCurve",
+            Self::OffsetCurve => "Geom_OffsetCurve",
+            Self::TrimmedCurve => "Geom_TrimmedCurve",
+            Self::Unknown(s) => s.as_str(),
+        }
+    }
+}
+
+impl From<String> for CurveType {
+    fn from(type_name: String) -> Self {
+        match type_name.as_str() {
+            "Geom_Line" => Self::Line,
+            "Geom_Circle" => Self::Circle,
+            "Geom_Ellipse" => Self::Ellipse,
+            "Geom_Hyperbola" => Self::Hyperbola,
+            "Geom_Parabola" => Self::Parabola,
+            "Geom_BezierCurve" => Self::BezierCurve,
+            "Geom_BSplineCurve" => Self::BSplineCurve,
+            "Geom_OffsetCurve" => Self::OffsetCurve,
+            "Geom_TrimmedCurve" => Self::TrimmedCurve,
+            _ => Self::Unknown(type_name),
+        }
+    }
+}
+
+impl From<&str> for CurveType {
+    fn from(type_name: &str) -> Self {
+        Self::from(type_name.to_string())
+    }
+}
+
+impl std::fmt::Display for CurveType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }
 
 impl From<ffi::GeomAbs_CurveType> for EdgeType {
@@ -627,18 +700,19 @@ impl Edge {
         EdgeType::from(curve.GetType())
     }
 
-    /// Get the type name of the underlying curve (e.g., "Geom_Line", "Geom_Circle")
-    pub fn curve_type(&self) -> String {
+    /// Get the type of the underlying curve (e.g., CurveType::Line, CurveType::Circle)
+    pub fn curve_type(&self) -> CurveType {
         let mut first = 0.0;
         let mut last = 0.0;
         let curve = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
 
         if curve.IsNull() {
-            return "Unknown".to_string();
+            return CurveType::Unknown("Null curve".to_string());
         }
 
         let dynamic_type = ffi::DynamicTypeCurve(&curve);
-        ffi::type_name(&dynamic_type)
+        let type_name = ffi::type_name(&dynamic_type);
+        CurveType::from(type_name)
     }
 
     /// Get detailed information about the underlying curve
@@ -653,8 +727,8 @@ impl Edge {
 
         let curve_type = self.curve_type();
 
-        match curve_type.as_str() {
-            "Geom_Line" => {
+        match curve_type {
+            CurveType::Line => {
                 let line = ffi::cast_curve_to_line(&curve);
                 if !line.IsNull() {
                     let position = ffi::geom_line_position(&line);
@@ -668,10 +742,10 @@ impl Edge {
                         last_parameter: last,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_Circle" => {
+            CurveType::Circle => {
                 let circle = ffi::cast_curve_to_circle(&curve);
                 if !circle.IsNull() {
                     let center = ffi::geom_circle_location(&circle);
@@ -691,10 +765,10 @@ impl Edge {
                         last_parameter: last,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_Ellipse" => {
+            CurveType::Ellipse => {
                 let ellipse = ffi::cast_curve_to_ellipse(&curve);
                 if !ellipse.IsNull() {
                     let center = ffi::geom_ellipse_location(&ellipse);
@@ -716,10 +790,10 @@ impl Edge {
                         last_parameter: last,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_BSplineCurve" => {
+            CurveType::BSplineCurve => {
                 let bspline = ffi::cast_curve_to_bspline_curve(&curve);
                 if !bspline.IsNull() {
                     let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline) as usize;
@@ -770,10 +844,10 @@ impl Edge {
                         last_parameter: last,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_BezierCurve" => {
+            CurveType::BezierCurve => {
                 let bezier = ffi::cast_curve_to_bezier_curve(&curve);
                 if !bezier.IsNull() {
                     let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier) as usize;
@@ -806,10 +880,10 @@ impl Edge {
                         last_parameter: last,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_Hyperbola" => {
+            CurveType::Hyperbola => {
                 let hyperbola = ffi::cast_curve_to_hyperbola(&curve);
                 if !hyperbola.IsNull() {
                     let center = ffi::geom_hyperbola_location(&hyperbola);
@@ -825,10 +899,10 @@ impl Edge {
                         minor_radius,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_Parabola" => {
+            CurveType::Parabola => {
                 let parabola = ffi::cast_curve_to_parabola(&curve);
                 if !parabola.IsNull() {
                     let vertex = ffi::geom_parabola_location(&parabola);
@@ -842,10 +916,10 @@ impl Edge {
                         focal,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_OffsetCurve" => {
+            CurveType::OffsetCurve => {
                 let offset = ffi::cast_curve_to_offset_curve(&curve);
                 if !offset.IsNull() {
                     let basis_curve = ffi::geom_offset_curve_basis_curve(&offset);
@@ -863,10 +937,10 @@ impl Edge {
                         offset: offset_value,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            "Geom_TrimmedCurve" => {
+            CurveType::TrimmedCurve => {
                 let trimmed = ffi::cast_curve_to_trimmed_curve(&curve);
                 if !trimmed.IsNull() {
                     let basis_curve = ffi::geom_trimmed_curve_basis_curve(&trimmed);
@@ -886,10 +960,10 @@ impl Edge {
                         last_parameter,
                     })
                 } else {
-                    CurveDetails::Unknown(curve_type)
+                    CurveDetails::Unknown(curve_type.to_string())
                 }
             },
-            _ => CurveDetails::Unknown(curve_type),
+            CurveType::Unknown(type_name) => CurveDetails::Unknown(type_name),
         }
     }
 
