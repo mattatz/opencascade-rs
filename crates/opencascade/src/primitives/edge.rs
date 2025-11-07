@@ -235,6 +235,7 @@ pub struct TrimmedCurve {
 
 /// Detailed information about a curve's geometric properties
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum CurveDetails {
     /// A line
     Line(Line),

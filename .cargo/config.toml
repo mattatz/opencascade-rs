@@ -14,7 +14,7 @@ rustflags = [
     "-C",
     "link-arg=-sEXPORTED_RUNTIME_METHODS=[\"UTF8ToString\",\"cwrap\",\"ccall\", \"HEAPU8\"]",
     "-C",
-    "link-arg=-sEXPORTED_FUNCTIONS=[\"_malloc\",\"_free\"]",
+    "link-arg=-sEXPORTED_FUNCTIONS=[\"_malloc\",\"_free\", \"_parse_step\", \"_free_step\"]",
 ]
 
 [env]

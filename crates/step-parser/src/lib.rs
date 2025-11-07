@@ -75,25 +75,15 @@ pub fn step_bytes_to_json_pretty(bytes: &[u8]) -> Result<String, String> {
     geometry_to_json_pretty(&geometry)
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn test(n: usize) -> usize {
-    println!("test: {}", n);
-    n * 2
-}
-
 /// C-compatible wrapper for parsing STEP from bytes
 /// Returns a null-terminated C string that must be freed by the caller
 #[unsafe(no_mangle)]
 pub extern "C" fn parse_step(data: *const u8, len: usize) -> *mut std::os::raw::c_char {
-    println!("parse_step: data: {:?}, len: {}", data, len);
-
     if data.is_null() {
-        println!("data is null");
         return std::ptr::null_mut();
     }
 
     let bytes = unsafe { std::slice::from_raw_parts(data, len) };
-    println!("bytes: {:?}", bytes.len());
 
     match step_bytes_to_json(bytes) {
         Ok(json) => {

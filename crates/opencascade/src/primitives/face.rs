@@ -122,6 +122,7 @@ pub struct BezierSurface {
 
 /// Detailed information about a surface's geometric properties
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum SurfaceDetails {
     /// A planar surface
     Plane(Plane),
