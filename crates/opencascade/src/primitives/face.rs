@@ -11,9 +11,10 @@ use crate::{
 use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
+use serde::{Deserialize, Serialize};
 
 /// UV parameter bounds for a face
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct UVBounds {
     pub u_min: f64,
     pub u_max: f64,
@@ -44,7 +45,7 @@ impl UVBounds {
 }
 
 /// A planar surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Plane {
     pub location: DVec3,
     pub axis_location: DVec3,
@@ -56,7 +57,7 @@ pub struct Plane {
 }
 
 /// A cylindrical surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cylinder {
     pub location: DVec3,
     pub axis_location: DVec3,
@@ -67,7 +68,7 @@ pub struct Cylinder {
 }
 
 /// A conical surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cone {
     pub location: DVec3,
     pub axis_location: DVec3,
@@ -79,7 +80,7 @@ pub struct Cone {
 }
 
 /// A spherical surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sphere {
     pub location: DVec3,
     pub axis_location: DVec3,
@@ -90,7 +91,7 @@ pub struct Sphere {
 }
 
 /// A toroidal surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Torus {
     pub location: DVec3,
     pub axis_location: DVec3,
@@ -102,7 +103,7 @@ pub struct Torus {
 }
 
 /// A B-Spline surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineSurface {
     pub u_profile: BSplineCurveProfile,
     pub v_profile: BSplineCurveProfile,
@@ -111,7 +112,7 @@ pub struct BSplineSurface {
 }
 
 /// A Bezier surface
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierSurface {
     pub u_profile: BezierCurveProfile,
     pub v_profile: BezierCurveProfile,
@@ -120,7 +121,7 @@ pub struct BezierSurface {
 }
 
 /// Detailed information about a surface's geometric properties
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SurfaceDetails {
     /// A planar surface
     Plane(Plane),

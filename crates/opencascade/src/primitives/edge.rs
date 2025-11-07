@@ -2,11 +2,12 @@ use crate::primitives::{make_axis_2, make_point, Face};
 use cxx::UniquePtr;
 use glam::{dvec2, dvec3, DVec2, DVec3};
 use opencascade_sys::ffi;
+use serde::{Deserialize, Serialize};
 
 use super::make_vec;
 
 /// A 2D line
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line2d {
     pub origin: DVec2,
     pub direction: DVec2,
@@ -32,7 +33,7 @@ impl Line2d {
 }
 
 /// A 2D circle
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Circle2d {
     pub center: DVec2,
     pub x_direction: DVec2,
@@ -43,7 +44,7 @@ pub struct Circle2d {
 }
 
 /// A 2D ellipse
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ellipse2d {
     pub center: DVec2,
     pub x_direction: DVec2,
@@ -102,7 +103,7 @@ pub enum Curve2dDetails {
 }
 
 /// A line
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line {
     pub origin: DVec3,
     pub direction: DVec3,
@@ -128,7 +129,7 @@ impl Line {
 }
 
 /// A circle
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Circle {
     pub center: DVec3,
     pub axis: DVec3,
@@ -140,7 +141,7 @@ pub struct Circle {
 }
 
 /// An ellipse
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ellipse {
     pub center: DVec3,
     pub axis: DVec3,
@@ -153,7 +154,7 @@ pub struct Ellipse {
 }
 
 /// A B-Spline curve profile
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurveProfile {
     pub nb_poles: usize,
     pub degree: usize,
@@ -163,8 +164,18 @@ pub struct BSplineCurveProfile {
     pub multiplicities: Vec<usize>,
 }
 
+impl BSplineCurveProfile {
+    pub fn expand_knots(&self) -> Vec<f64> {
+        self.knots
+            .iter()
+            .zip(self.multiplicities.iter())
+            .flat_map(|(knot, mult)| vec![*knot; *mult])
+            .collect()
+    }
+}
+
 /// A B-Spline curve
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
     pub poles: Vec<DVec3>,
@@ -174,14 +185,14 @@ pub struct BSplineCurve {
 }
 
 /// A Bezier curve profile
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurveProfile {
     pub nb_poles: usize,
     pub degree: usize,
 }
 
 /// A Bezier curve
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurve {
     pub profile: BezierCurveProfile,
     pub poles: Vec<DVec3>,
@@ -191,7 +202,7 @@ pub struct BezierCurve {
 }
 
 /// A hyperbola
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hyperbola {
     pub center: DVec3,
     pub axis: DVec3,
@@ -200,7 +211,7 @@ pub struct Hyperbola {
 }
 
 /// A parabola
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parabola {
     pub vertex: DVec3,
     pub axis: DVec3,
@@ -208,14 +219,14 @@ pub struct Parabola {
 }
 
 /// An offset curve
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OffsetCurve {
     pub basis_curve_type: String,
     pub offset: f64,
 }
 
 /// A trimmed curve
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrimmedCurve {
     pub basis_curve_type: String,
     pub first_parameter: f64,
@@ -223,7 +234,7 @@ pub struct TrimmedCurve {
 }
 
 /// Detailed information about a curve's geometric properties
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CurveDetails {
     /// A line
     Line(Line),
@@ -561,6 +572,42 @@ impl From<ffi::GeomAbs_CurveType> for EdgeType {
     }
 }
 
+/// The orientation of a topological shape (edge, face, etc.)
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Orientation {
+    /// Forward orientation - the default positive direction
+    Forward,
+    /// Reversed orientation - the opposite direction
+    Reversed,
+    /// Internal orientation - internal to a solid
+    Internal,
+    /// External orientation - external to a solid
+    External,
+}
+
+impl From<ffi::TopAbs_Orientation> for Orientation {
+    fn from(orientation: ffi::TopAbs_Orientation) -> Self {
+        match orientation {
+            ffi::TopAbs_Orientation::TopAbs_FORWARD => Self::Forward,
+            ffi::TopAbs_Orientation::TopAbs_REVERSED => Self::Reversed,
+            ffi::TopAbs_Orientation::TopAbs_INTERNAL => Self::Internal,
+            ffi::TopAbs_Orientation::TopAbs_EXTERNAL => Self::External,
+            ffi::TopAbs_Orientation { repr } => panic!("Unexpected orientation: {repr}"),
+        }
+    }
+}
+
+impl std::fmt::Display for Orientation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Forward => write!(f, "Forward"),
+            Self::Reversed => write!(f, "Reversed"),
+            Self::Internal => write!(f, "Internal"),
+            Self::External => write!(f, "External"),
+        }
+    }
+}
+
 pub struct Edge {
     pub(crate) inner: UniquePtr<ffi::TopoDS_Edge>,
 }
@@ -698,6 +745,13 @@ impl Edge {
         let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
 
         EdgeType::from(curve.GetType())
+    }
+
+    /// Get the orientation of this edge (Forward, Reversed, Internal, External)
+    pub fn orientation(&self) -> Orientation {
+        let shape = ffi::cast_edge_to_shape(&self.inner);
+        let orientation = shape.Orientation();
+        Orientation::from(orientation)
     }
 
     /// Get the type of the underlying curve (e.g., CurveType::Line, CurveType::Circle)
