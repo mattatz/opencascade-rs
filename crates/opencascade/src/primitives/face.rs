@@ -140,6 +140,70 @@ pub enum SurfaceDetails {
     Unknown(String),
 }
 
+/// The specific geometric surface type (e.g., Geom_Plane, Geom_CylindricalSurface)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SurfaceType {
+    /// Geom_Plane - A planar surface
+    Plane,
+    /// Geom_CylindricalSurface - A cylindrical surface
+    CylindricalSurface,
+    /// Geom_ConicalSurface - A conical surface
+    ConicalSurface,
+    /// Geom_SphericalSurface - A spherical surface
+    SphericalSurface,
+    /// Geom_ToroidalSurface - A toroidal surface
+    ToroidalSurface,
+    /// Geom_BSplineSurface - A B-Spline surface
+    BSplineSurface,
+    /// Geom_BezierSurface - A Bezier surface
+    BezierSurface,
+    /// Unknown or unsupported surface type
+    Unknown(String),
+}
+
+impl SurfaceType {
+    /// Get the OpenCASCADE type name as a string (e.g., "Geom_Plane")
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Plane => "Geom_Plane",
+            Self::CylindricalSurface => "Geom_CylindricalSurface",
+            Self::ConicalSurface => "Geom_ConicalSurface",
+            Self::SphericalSurface => "Geom_SphericalSurface",
+            Self::ToroidalSurface => "Geom_ToroidalSurface",
+            Self::BSplineSurface => "Geom_BSplineSurface",
+            Self::BezierSurface => "Geom_BezierSurface",
+            Self::Unknown(s) => s.as_str(),
+        }
+    }
+}
+
+impl From<String> for SurfaceType {
+    fn from(type_name: String) -> Self {
+        match type_name.as_str() {
+            "Geom_Plane" => Self::Plane,
+            "Geom_CylindricalSurface" => Self::CylindricalSurface,
+            "Geom_ConicalSurface" => Self::ConicalSurface,
+            "Geom_SphericalSurface" => Self::SphericalSurface,
+            "Geom_ToroidalSurface" => Self::ToroidalSurface,
+            "Geom_BSplineSurface" => Self::BSplineSurface,
+            "Geom_BezierSurface" => Self::BezierSurface,
+            _ => Self::Unknown(type_name),
+        }
+    }
+}
+
+impl From<&str> for SurfaceType {
+    fn from(type_name: &str) -> Self {
+        Self::from(type_name.to_string())
+    }
+}
+
+impl std::fmt::Display for SurfaceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 pub struct Face {
     pub(crate) inner: UniquePtr<ffi::TopoDS_Face>,
 }
@@ -521,11 +585,12 @@ impl Face {
         Wire { inner }
     }
 
-    /// Get the type name of the underlying geometric surface (e.g., "Geom_Plane", "Geom_CylindricalSurface")
-    pub fn surface_type(&self) -> String {
+    /// Get the type of the underlying geometric surface (e.g., SurfaceType::Plane, SurfaceType::CylindricalSurface)
+    pub fn surface_type(&self) -> SurfaceType {
         let surface = ffi::BRep_Tool_Surface(&self.inner);
         let dynamic_type = ffi::DynamicType(&surface);
-        ffi::type_name(&dynamic_type)
+        let type_name = ffi::type_name(&dynamic_type);
+        SurfaceType::from(type_name)
     }
 
     /// Get detailed information about the underlying surface
@@ -533,8 +598,8 @@ impl Face {
         let surface = ffi::BRep_Tool_Surface(&self.inner);
         let surface_type = self.surface_type();
 
-        match surface_type.as_str() {
-            "Geom_Plane" => {
+        match surface_type {
+            SurfaceType::Plane => {
                 let plane = ffi::cast_surface_to_plane(&surface);
                 if !plane.IsNull() {
                     let location = ffi::geom_plane_location(&plane);
@@ -564,10 +629,10 @@ impl Face {
                         bounds,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            "Geom_CylindricalSurface" => {
+            SurfaceType::CylindricalSurface => {
                 let cylinder = ffi::cast_surface_to_cylinder(&surface);
                 if !cylinder.IsNull() {
                     let location = ffi::geom_cylinder_location(&cylinder);
@@ -595,10 +660,10 @@ impl Face {
                         radius,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            "Geom_ConicalSurface" => {
+            SurfaceType::ConicalSurface => {
                 let cone = ffi::cast_surface_to_cone(&surface);
                 if !cone.IsNull() {
                     let location = ffi::geom_cone_location(&cone);
@@ -628,10 +693,10 @@ impl Face {
                         semi_angle,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            "Geom_SphericalSurface" => {
+            SurfaceType::SphericalSurface => {
                 let sphere = ffi::cast_surface_to_sphere(&surface);
                 if !sphere.IsNull() {
                     let location = ffi::geom_sphere_location(&sphere);
@@ -659,10 +724,10 @@ impl Face {
                         radius,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            "Geom_ToroidalSurface" => {
+            SurfaceType::ToroidalSurface => {
                 let torus = ffi::cast_surface_to_torus(&surface);
                 if !torus.IsNull() {
                     let location = ffi::geom_torus_location(&torus);
@@ -692,10 +757,10 @@ impl Face {
                         minor_radius,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            "Geom_BSplineSurface" => {
+            SurfaceType::BSplineSurface => {
                 let bspline = ffi::cast_surface_to_bspline(&surface);
                 if !bspline.IsNull() {
                     let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline) as usize;
@@ -776,10 +841,10 @@ impl Face {
                         weights,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            "Geom_BezierSurface" => {
+            SurfaceType::BezierSurface => {
                 let bezier = ffi::cast_surface_to_bezier(&surface);
                 if !bezier.IsNull() {
                     let nb_u_poles = ffi::geom_bezier_surface_nb_u_poles(&bezier) as usize;
@@ -822,10 +887,10 @@ impl Face {
                         weights,
                     })
                 } else {
-                    SurfaceDetails::Unknown(surface_type)
+                    SurfaceDetails::Unknown(surface_type.to_string())
                 }
             },
-            _ => SurfaceDetails::Unknown(surface_type),
+            SurfaceType::Unknown(type_name) => SurfaceDetails::Unknown(type_name),
         }
     }
 
