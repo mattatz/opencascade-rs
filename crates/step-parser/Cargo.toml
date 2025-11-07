@@ -1,19 +1,20 @@
 [package]
 name = "step-parser"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "step-parser"
+path = "src/main.rs"
 
 [dependencies]
 opencascade = { path = "../opencascade" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 glam = { version = "0.24", features = ["serde"] }
-
-[build-dependencies]
-cc = "1.0"
 
 [profile.release]
 opt-level = "z"

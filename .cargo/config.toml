@@ -1,17 +1,20 @@
 [target.wasm32-unknown-unknown]
-rustflags = [
-    "-C", "target-feature=+exception-handling"
-]
+rustflags = ["-C", "target-feature=+exception-handling"]
 
 [target.wasm32-unknown-emscripten]
+linker = "emcc"
+ar = "emar"
+runner = "emrun"
+
 rustflags = [
-    "-C", "link-arg=-fexceptions",
-    "-C", "link-arg=-sDISABLE_EXCEPTION_CATCHING=0",
-    "-C", "link-arg=-lembind",
-    "-C", "link-arg=--no-entry",
-    "-C", "link-arg=-sEXPORTED_RUNTIME_METHODS=['cwrap','ccall']",
-    "-C", "link-arg=-sALLOW_MEMORY_GROWTH=1",
-    "-C", "link-arg=-sSTANDALONE_WASM=0"
+    "-C",
+    "link-arg=-sENVIRONMENT=web",
+    "-C",
+    "link-arg=-sALLOW_MEMORY_GROWTH=1",
+    "-C",
+    "link-arg=-sEXPORTED_RUNTIME_METHODS=[\"UTF8ToString\",\"cwrap\",\"ccall\", \"HEAPU8\"]",
+    "-C",
+    "link-arg=-sEXPORTED_FUNCTIONS=[\"_malloc\",\"_free\"]",
 ]
 
 [env]

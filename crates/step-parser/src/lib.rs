@@ -38,10 +38,7 @@ fn extract_geometry(shape: &Shape) -> Result<StepGeometry, String> {
     for edge in shape.edges() {
         let curve_details = edge.curve_details();
 
-        edges.push(EdgeInfo {
-            curve_details,
-            orientation: edge.orientation(),
-        });
+        edges.push(EdgeInfo { curve_details, orientation: edge.orientation() });
     }
 
     // Extract all faces
@@ -49,10 +46,7 @@ fn extract_geometry(shape: &Shape) -> Result<StepGeometry, String> {
         let surface_details = face.surface_details();
         let surface_type = format!("{}", face.surface_type());
 
-        faces.push(FaceInfo {
-            surface_details,
-            surface_type,
-        });
+        faces.push(FaceInfo { surface_details, surface_type });
     }
 
     Ok(StepGeometry { edges, faces })
@@ -81,28 +75,41 @@ pub fn step_bytes_to_json_pretty(bytes: &[u8]) -> Result<String, String> {
     geometry_to_json_pretty(&geometry)
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn test(n: usize) -> usize {
+    println!("test: {}", n);
+    n * 2
+}
+
 /// C-compatible wrapper for parsing STEP from bytes
 /// Returns a null-terminated C string that must be freed by the caller
-#[no_mangle]
-pub extern "C" fn parse_step_c(data: *const u8, len: usize) -> *mut std::os::raw::c_char {
+#[unsafe(no_mangle)]
+pub extern "C" fn parse_step(data: *const u8, len: usize) -> *mut std::os::raw::c_char {
+    println!("parse_step: data: {:?}, len: {}", data, len);
+
     if data.is_null() {
+        println!("data is null");
         return std::ptr::null_mut();
     }
 
     let bytes = unsafe { std::slice::from_raw_parts(data, len) };
+    println!("bytes: {:?}", bytes.len());
 
     match step_bytes_to_json(bytes) {
         Ok(json) => {
             let c_string = std::ffi::CString::new(json).unwrap_or_default();
             c_string.into_raw()
-        }
-        Err(_) => std::ptr::null_mut(),
+        },
+        Err(e) => {
+            println!("Error: {}", e);
+            std::ptr::null_mut()
+        },
     }
 }
 
-/// Free a C string allocated by parse_step_c
-#[no_mangle]
-pub extern "C" fn free_string(s: *mut std::os::raw::c_char) {
+/// Free a C string allocated by parse_step
+#[unsafe(no_mangle)]
+pub extern "C" fn free_step(s: *mut std::os::raw::c_char) {
     if !s.is_null() {
         unsafe {
             let _ = std::ffi::CString::from_raw(s);
@@ -116,10 +123,7 @@ mod tests {
 
     #[test]
     fn test_geometry_serialization() {
-        let geometry = StepGeometry {
-            edges: vec![],
-            faces: vec![],
-        };
+        let geometry = StepGeometry { edges: vec![], faces: vec![] };
 
         let json = geometry_to_json(&geometry).unwrap();
         assert!(json.contains("edges"));
@@ -137,9 +141,11 @@ mod tests {
 
                 match parse_step_from_bytes(&bytes) {
                     Ok(geometry) => {
-                        println!("  Found {} edges and {} faces",
-                                geometry.edges.len(),
-                                geometry.faces.len());
+                        println!(
+                            "  Found {} edges and {} faces",
+                            geometry.edges.len(),
+                            geometry.faces.len()
+                        );
 
                         // Verify we can serialize to JSON
                         let json = geometry_to_json(&geometry).unwrap();
@@ -151,10 +157,10 @@ mod tests {
                         assert!(pretty_json.len() > json.len()); // Pretty version should be longer
 
                         return; // Test passed with at least one file
-                    }
+                    },
                     Err(e) => {
                         println!("  Warning: Failed to parse: {}", e);
-                    }
+                    },
                 }
             }
         }
