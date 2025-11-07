@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8" />
+  <title>STEP Parser</title>
+  <body>
+    <input type="file" id="stepFileInput" accept=".step,.stp" />
+    <script>
+      let moduleReady = false;
+
+      window.Module = {
+        onRuntimeInitialized() {
+          console.log("Emscripten runtime ready");
+          moduleReady = true;
+        },
+        locateFile(path) {
+          return path;
+        },
+      };
+
+      // STEPファイルのバイトを取得
+      const fileInput = document.getElementById("stepFileInput");
+      fileInput.addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+          return;
+        }
+
+        // モジュールが初期化されるまで待つ
+        if (!moduleReady) {
+          console.error("モジュールがまだ初期化されていません");
+          return;
+        }
+
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          const len = bytes.length;
+
+          // Emscriptenのヒープメモリにデータをコピー
+          // _mallocが利用可能かチェック（asm経由の場合もある）
+          const malloc = Module._malloc || (Module.asm && Module.asm._malloc);
+          const free = Module._free || (Module.asm && Module.asm._free);
+
+          if (!malloc) {
+            console.error("_malloc関数が見つかりません");
+            console.log(
+              "利用可能な関数:",
+              Object.keys(Module).filter((k) => k.startsWith("_"))
+            );
+            return;
+          }
+
+          const ptr = malloc(len);
+          if (!ptr) {
+            console.error("メモリの確保に失敗しました");
+            return;
+          }
+
+          Module.HEAPU8.set(bytes, ptr);
+
+          const res = Module._parse_step(ptr, len);
+          free?.(ptr);
+
+          if (res) {
+            const utf8ToString =
+              Module.UTF8ToString || (Module.asm && Module.asm.UTF8ToString);
+            if (utf8ToString) {
+              const s = utf8ToString(res);
+              console.log(JSON.parse(s));
+            } else {
+              console.log("解析結果（ポインタ）:", res);
+            }
+
+            Module._free_step?.(res);
+          } else {
+            console.error("STEPファイルの解析に失敗しました");
+          }
+        } catch (error) {
+          console.error("ファイルの読み込みに失敗しました:", error);
+        }
+      });
+    </script>
+    <script src="../../../target/wasm32-unknown-emscripten/release/step-parser.js"></script>
+  </body>
+</html>
