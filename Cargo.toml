@@ -2,10 +2,11 @@
 members = [
     "crates/kicad-parser", "crates/model-api",
     "crates/opencascade",
-    "crates/opencascade-sys",
+    "crates/opencascade-sys", "crates/step-parser",
     "crates/viewer", "crates/wasm-example",
     "examples",
 ]
+exclude = ["crates/occt-sys"]
 
 resolver = "2"
 
