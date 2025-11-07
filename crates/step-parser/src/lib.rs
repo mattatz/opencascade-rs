@@ -1,10 +1,10 @@
-use opencascade::primitives::{CurveDetails, Shape, SurfaceDetails};
+use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails, SurfaceType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeInfo {
     pub curve_details: CurveDetails,
-    pub orientation: String,
+    pub orientation: Orientation,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,11 +37,10 @@ fn extract_geometry(shape: &Shape) -> Result<StepGeometry, String> {
     // Extract all edges
     for edge in shape.edges() {
         let curve_details = edge.curve_details();
-        let orientation = format!("{}", edge.orientation());
 
         edges.push(EdgeInfo {
             curve_details,
-            orientation,
+            orientation: edge.orientation(),
         });
     }
 

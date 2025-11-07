@@ -573,7 +573,7 @@ impl From<ffi::GeomAbs_CurveType> for EdgeType {
 }
 
 /// The orientation of a topological shape (edge, face, etc.)
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Orientation {
     /// Forward orientation - the default positive direction
     Forward,
