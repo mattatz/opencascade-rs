@@ -26,12 +26,12 @@ pub struct SolidInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StepGeometry {
+pub struct StepInfo {
     pub solids: Vec<SolidInfo>,
 }
 
 /// Parse STEP file from bytes and extract geometry information
-pub fn parse_step_from_bytes(bytes: &[u8]) -> Result<StepGeometry, String> {
+pub fn parse_step_from_bytes(bytes: &[u8]) -> Result<StepInfo, String> {
     // Import STEP file directly from bytes
     let shape = Shape::read_step_from_bytes(bytes)
         .map_err(|e| format!("Failed to import STEP file: {}", e))?;
@@ -41,7 +41,7 @@ pub fn parse_step_from_bytes(bytes: &[u8]) -> Result<StepGeometry, String> {
 }
 
 /// Extract Brep structure from a shape (Solid → Face → Wire → Edge)
-fn extract_geometry(shape: &Shape) -> Result<StepGeometry, String> {
+fn extract_geometry(shape: &Shape) -> Result<StepInfo, String> {
     let mut solids = Vec::new();
 
     // Check if the shape itself is a solid
@@ -57,7 +57,7 @@ fn extract_geometry(shape: &Shape) -> Result<StepGeometry, String> {
         }
     }
 
-    Ok(StepGeometry { solids })
+    Ok(StepInfo { solids })
 }
 
 /// Try to extract solid info from a shape (returns None if shape has no faces)
@@ -114,12 +114,12 @@ fn extract_faces_from_shape(shape: &Shape) -> Vec<FaceInfo> {
 }
 
 /// Serialize StepGeometry to JSON string
-pub fn geometry_to_json(geometry: &StepGeometry) -> Result<String, String> {
+pub fn geometry_to_json(geometry: &StepInfo) -> Result<String, String> {
     serde_json::to_string(geometry).map_err(|e| format!("Failed to serialize to JSON: {}", e))
 }
 
 /// Serialize StepGeometry to pretty JSON string
-pub fn geometry_to_json_pretty(geometry: &StepGeometry) -> Result<String, String> {
+pub fn geometry_to_json_pretty(geometry: &StepInfo) -> Result<String, String> {
     serde_json::to_string_pretty(geometry)
         .map_err(|e| format!("Failed to serialize to JSON: {}", e))
 }
@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_geometry_serialization() {
-        let geometry = StepGeometry { solids: vec![] };
+        let geometry = StepInfo { solids: vec![] };
 
         let json = geometry_to_json(&geometry).unwrap();
         assert!(json.contains("solids"));
