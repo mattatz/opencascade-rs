@@ -1,18 +1,22 @@
 use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails};
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeInfo {
     pub curve_details: CurveDetails,
     pub orientation: Orientation,
 }
 
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WireInfo {
     pub edges: Vec<EdgeInfo>,
     pub is_outer: bool,
 }
 
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FaceInfo {
     pub surface_details: SurfaceDetails,
@@ -20,11 +24,13 @@ pub struct FaceInfo {
     pub wires: Vec<WireInfo>,
 }
 
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SolidInfo {
     pub faces: Vec<FaceInfo>,
 }
 
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StepInfo {
     pub solids: Vec<SolidInfo>,
