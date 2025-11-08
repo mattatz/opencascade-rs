@@ -3,6 +3,7 @@ use cxx::UniquePtr;
 use glam::{dvec2, dvec3, DVec2, DVec3};
 use opencascade_sys::ffi;
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 use super::make_vec;
 
@@ -103,6 +104,7 @@ pub enum Curve2dDetails {
 }
 
 /// A line
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line {
     pub origin: DVec3,
@@ -129,6 +131,7 @@ impl Line {
 }
 
 /// A circle
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Circle {
     pub center: DVec3,
@@ -141,6 +144,7 @@ pub struct Circle {
 }
 
 /// An ellipse
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ellipse {
     pub center: DVec3,
@@ -154,14 +158,15 @@ pub struct Ellipse {
 }
 
 /// A B-Spline curve profile
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurveProfile {
-    pub nb_poles: usize,
-    pub degree: usize,
+    pub nb_poles: u32,
+    pub degree: u32,
     pub is_rational: bool,
     pub is_periodic: bool,
     pub knots: Vec<f64>,
-    pub multiplicities: Vec<usize>,
+    pub multiplicities: Vec<u32>,
 }
 
 impl BSplineCurveProfile {
@@ -169,12 +174,13 @@ impl BSplineCurveProfile {
         self.knots
             .iter()
             .zip(self.multiplicities.iter())
-            .flat_map(|(knot, mult)| vec![*knot; *mult])
+            .flat_map(|(knot, mult)| vec![*knot; *mult as usize])
             .collect()
     }
 }
 
 /// A B-Spline curve
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
@@ -185,13 +191,15 @@ pub struct BSplineCurve {
 }
 
 /// A Bezier curve profile
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurveProfile {
-    pub nb_poles: usize,
-    pub degree: usize,
+    pub nb_poles: u32,
+    pub degree: u32,
 }
 
 /// A Bezier curve
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurve {
     pub profile: BezierCurveProfile,
@@ -202,6 +210,7 @@ pub struct BezierCurve {
 }
 
 /// A hyperbola
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hyperbola {
     pub center: DVec3,
@@ -211,6 +220,7 @@ pub struct Hyperbola {
 }
 
 /// A parabola
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parabola {
     pub vertex: DVec3,
@@ -219,6 +229,7 @@ pub struct Parabola {
 }
 
 /// An offset curve
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OffsetCurve {
     pub basis_curve_type: String,
@@ -226,6 +237,7 @@ pub struct OffsetCurve {
 }
 
 /// A trimmed curve
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrimmedCurve {
     pub basis_curve_type: String,
@@ -234,6 +246,7 @@ pub struct TrimmedCurve {
 }
 
 /// Detailed information about a curve's geometric properties
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum CurveDetails {
@@ -353,8 +366,8 @@ impl ParametricCurve2d {
             "Geom2d_BSplineCurve" => {
                 let bspline = ffi::cast_geom2d_curve_to_bspline(&self.curve);
                 if !ffi::HandleGeom2d_BSplineCurve_IsNull(&bspline) {
-                    let nb_poles = ffi::geom2d_bspline_curve_nb_poles(&bspline) as usize;
-                    let degree = ffi::geom2d_bspline_curve_degree(&bspline) as usize;
+                    let nb_poles = ffi::geom2d_bspline_curve_nb_poles(&bspline) as u32;
+                    let degree = ffi::geom2d_bspline_curve_degree(&bspline) as u32;
                     let is_rational = ffi::geom2d_bspline_curve_is_rational(&bspline);
                     let is_periodic = ffi::geom2d_bspline_curve_is_periodic(&bspline);
 
@@ -366,7 +379,7 @@ impl ParametricCurve2d {
                     for i in 1..=nb_knots {
                         knots.push(ffi::geom2d_bspline_curve_knot(&bspline, i));
                         multiplicities
-                            .push(ffi::geom2d_bspline_curve_multiplicity(&bspline, i) as usize);
+                            .push(ffi::geom2d_bspline_curve_multiplicity(&bspline, i) as u32);
                     }
 
                     // Extract poles (control points) and weights
@@ -408,8 +421,8 @@ impl ParametricCurve2d {
             "Geom2d_BezierCurve" => {
                 let bezier = ffi::cast_geom2d_curve_to_bezier(&self.curve);
                 if !ffi::HandleGeom2d_BezierCurve_IsNull(&bezier) {
-                    let nb_poles = ffi::geom2d_bezier_curve_nb_poles(&bezier) as usize;
-                    let degree = ffi::geom2d_bezier_curve_degree(&bezier) as usize;
+                    let nb_poles = ffi::geom2d_bezier_curve_nb_poles(&bezier) as u32;
+                    let degree = ffi::geom2d_bezier_curve_degree(&bezier) as u32;
                     let is_rational = ffi::geom2d_bezier_curve_is_rational(&bezier);
 
                     // Extract poles (control points) and weights
@@ -574,6 +587,7 @@ impl From<ffi::GeomAbs_CurveType> for EdgeType {
 }
 
 /// The orientation of a topological shape (edge, face, etc.)
+#[typeshare]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Orientation {
     /// Forward orientation - the default positive direction
@@ -851,8 +865,8 @@ impl Edge {
             CurveType::BSplineCurve => {
                 let bspline = ffi::cast_curve_to_bspline_curve(&curve);
                 if !bspline.IsNull() {
-                    let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline) as usize;
-                    let degree = ffi::geom_bspline_curve_degree(&bspline) as usize;
+                    let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline) as u32;
+                    let degree = ffi::geom_bspline_curve_degree(&bspline) as u32;
                     let is_rational = ffi::geom_bspline_curve_is_rational(&bspline);
                     let is_periodic = ffi::geom_bspline_curve_is_periodic(&bspline);
 
@@ -864,7 +878,7 @@ impl Edge {
                     for i in 1..=nb_knots {
                         knots.push(ffi::geom_bspline_curve_knot(&bspline, i));
                         multiplicities
-                            .push(ffi::geom_bspline_curve_multiplicity(&bspline, i) as usize);
+                            .push(ffi::geom_bspline_curve_multiplicity(&bspline, i) as u32);
                     }
 
                     // Extract poles (control points) and weights
@@ -905,8 +919,8 @@ impl Edge {
             CurveType::BezierCurve => {
                 let bezier = ffi::cast_curve_to_bezier_curve(&curve);
                 if !bezier.IsNull() {
-                    let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier) as usize;
-                    let degree = ffi::geom_bezier_curve_degree(&bezier) as usize;
+                    let nb_poles = ffi::geom_bezier_curve_nb_poles(&bezier) as u32;
+                    let degree = ffi::geom_bezier_curve_degree(&bezier) as u32;
                     let is_rational = ffi::geom_bezier_curve_is_rational(&bezier);
 
                     // Extract poles (control points) and weights

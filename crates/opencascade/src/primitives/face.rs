@@ -12,8 +12,10 @@ use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 /// UV parameter bounds for a face
+#[typeshare]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct UVBounds {
     pub u_min: f64,
@@ -45,6 +47,7 @@ impl UVBounds {
 }
 
 /// A planar surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Plane {
     pub location: DVec3,
@@ -57,6 +60,7 @@ pub struct Plane {
 }
 
 /// A cylindrical surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cylinder {
     pub location: DVec3,
@@ -68,6 +72,7 @@ pub struct Cylinder {
 }
 
 /// A conical surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cone {
     pub location: DVec3,
@@ -80,6 +85,7 @@ pub struct Cone {
 }
 
 /// A spherical surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sphere {
     pub location: DVec3,
@@ -91,6 +97,7 @@ pub struct Sphere {
 }
 
 /// A toroidal surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Torus {
     pub location: DVec3,
@@ -103,6 +110,7 @@ pub struct Torus {
 }
 
 /// A B-Spline surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineSurface {
     pub u_profile: BSplineCurveProfile,
@@ -112,6 +120,7 @@ pub struct BSplineSurface {
 }
 
 /// A Bezier surface
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierSurface {
     pub u_profile: BezierCurveProfile,
@@ -121,6 +130,7 @@ pub struct BezierSurface {
 }
 
 /// Detailed information about a surface's geometric properties
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum SurfaceDetails {
@@ -765,10 +775,10 @@ impl Face {
             SurfaceType::BSplineSurface => {
                 let bspline = ffi::cast_surface_to_bspline(&surface);
                 if !bspline.IsNull() {
-                    let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline) as usize;
-                    let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline) as usize;
-                    let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as usize;
-                    let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as usize;
+                    let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline);
+                    let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline);
+                    let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as u32;
+                    let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as u32;
                     let is_u_rational = ffi::geom_bspline_surface_is_u_rational(&bspline);
                     let is_v_rational = ffi::geom_bspline_surface_is_v_rational(&bspline);
                     let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
@@ -782,7 +792,7 @@ impl Face {
                     for i in 1..=nb_u_knots {
                         u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
                         u_multiplicities
-                            .push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as usize);
+                            .push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as u32);
                     }
 
                     // Extract knot vectors for V direction
@@ -793,7 +803,7 @@ impl Face {
                     for i in 1..=nb_v_knots {
                         v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
                         v_multiplicities
-                            .push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
+                            .push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as u32);
                     }
 
                     // Extract poles (control points) and weights - 2D grid [u][v]
@@ -824,7 +834,7 @@ impl Face {
 
                     SurfaceDetails::BSpline(BSplineSurface {
                         u_profile: BSplineCurveProfile {
-                            nb_poles: nb_u_poles,
+                            nb_poles: nb_u_poles as u32,
                             degree: u_degree,
                             is_rational: is_u_rational,
                             is_periodic: is_u_periodic,
@@ -832,7 +842,7 @@ impl Face {
                             multiplicities: u_multiplicities,
                         },
                         v_profile: BSplineCurveProfile {
-                            nb_poles: nb_v_poles,
+                            nb_poles: nb_v_poles as u32,
                             degree: v_degree,
                             is_rational: is_v_rational,
                             is_periodic: is_v_periodic,
@@ -849,10 +859,10 @@ impl Face {
             SurfaceType::BezierSurface => {
                 let bezier = ffi::cast_surface_to_bezier(&surface);
                 if !bezier.IsNull() {
-                    let nb_u_poles = ffi::geom_bezier_surface_nb_u_poles(&bezier) as usize;
-                    let nb_v_poles = ffi::geom_bezier_surface_nb_v_poles(&bezier) as usize;
-                    let u_degree = ffi::geom_bezier_surface_u_degree(&bezier) as usize;
-                    let v_degree = ffi::geom_bezier_surface_v_degree(&bezier) as usize;
+                    let nb_u_poles = ffi::geom_bezier_surface_nb_u_poles(&bezier);
+                    let nb_v_poles = ffi::geom_bezier_surface_nb_v_poles(&bezier);
+                    let u_degree = ffi::geom_bezier_surface_u_degree(&bezier) as u32;
+                    let v_degree = ffi::geom_bezier_surface_v_degree(&bezier) as u32;
                     let is_u_rational = ffi::geom_bezier_surface_is_u_rational(&bezier);
                     let is_v_rational = ffi::geom_bezier_surface_is_v_rational(&bezier);
 
@@ -883,8 +893,8 @@ impl Face {
                     };
 
                     SurfaceDetails::Bezier(BezierSurface {
-                        u_profile: BezierCurveProfile { nb_poles: nb_u_poles, degree: u_degree },
-                        v_profile: BezierCurveProfile { nb_poles: nb_v_poles, degree: v_degree },
+                        u_profile: BezierCurveProfile { nb_poles: nb_u_poles as u32, degree: u_degree },
+                        v_profile: BezierCurveProfile { nb_poles: nb_v_poles as u32, degree: v_degree },
                         poles,
                         weights,
                     })
@@ -974,10 +984,10 @@ impl Face {
             }
         }
 
-        let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline) as usize;
-        let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline) as usize;
-        let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as usize;
-        let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as usize;
+        let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline);
+        let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline);
+        let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as u32;
+        let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as u32;
         let is_u_rational = ffi::geom_bspline_surface_is_u_rational(&bspline);
         let is_v_rational = ffi::geom_bspline_surface_is_v_rational(&bspline);
         let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
@@ -990,19 +1000,19 @@ impl Face {
         let mut u_multiplicities = Vec::with_capacity(nb_u_knots);
         for i in 1..=nb_u_knots as i32 {
             u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
-            u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as usize);
+            u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as u32);
         }
 
         let mut v_knots = Vec::with_capacity(nb_v_knots);
         let mut v_multiplicities = Vec::with_capacity(nb_v_knots);
         for i in 1..=nb_v_knots as i32 {
             v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
-            v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as usize);
+            v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as u32);
         }
 
-        let mut poles = Vec::with_capacity(nb_u_poles);
+        let mut poles = Vec::with_capacity(nb_u_poles as usize);
         for u in 1..=nb_u_poles as i32 {
-            let mut row = Vec::with_capacity(nb_v_poles);
+            let mut row = Vec::with_capacity(nb_v_poles as usize);
             for v in 1..=nb_v_poles as i32 {
                 let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
                 row.push(dvec3(pole.X(), pole.Y(), pole.Z()));
@@ -1011,9 +1021,9 @@ impl Face {
         }
 
         let weights = if is_u_rational || is_v_rational {
-            let mut weights = Vec::with_capacity(nb_u_poles);
+            let mut weights = Vec::with_capacity(nb_u_poles as usize);
             for u in 1..=nb_u_poles as i32 {
-                let mut row = Vec::with_capacity(nb_v_poles);
+                let mut row = Vec::with_capacity(nb_v_poles as usize);
                 for v in 1..=nb_v_poles as i32 {
                     row.push(ffi::geom_bspline_surface_weight(&bspline, u, v));
                 }
@@ -1026,7 +1036,7 @@ impl Face {
 
         Some(BSplineSurface {
             u_profile: BSplineCurveProfile {
-                nb_poles: nb_u_poles,
+                nb_poles: nb_u_poles as u32,
                 degree: u_degree,
                 is_rational: is_u_rational,
                 is_periodic: is_u_periodic,
@@ -1034,7 +1044,7 @@ impl Face {
                 multiplicities: u_multiplicities,
             },
             v_profile: BSplineCurveProfile {
-                nb_poles: nb_v_poles,
+                nb_poles: nb_v_poles as u32,
                 degree: v_degree,
                 is_rational: is_v_rational,
                 is_periodic: is_v_periodic,
