@@ -8,15 +8,26 @@ pub struct EdgeInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WireInfo {
+    pub edges: Vec<EdgeInfo>,
+    pub is_outer: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FaceInfo {
     pub surface_details: SurfaceDetails,
     pub surface_type: String,
+    pub wires: Vec<WireInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SolidInfo {
+    pub faces: Vec<FaceInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StepGeometry {
-    pub edges: Vec<EdgeInfo>,
-    pub faces: Vec<FaceInfo>,
+    pub solids: Vec<SolidInfo>,
 }
 
 /// Parse STEP file from bytes and extract geometry information
@@ -29,27 +40,77 @@ pub fn parse_step_from_bytes(bytes: &[u8]) -> Result<StepGeometry, String> {
     extract_geometry(&shape)
 }
 
-/// Extract edges and faces from a shape
+/// Extract Brep structure from a shape (Solid → Face → Wire → Edge)
 fn extract_geometry(shape: &Shape) -> Result<StepGeometry, String> {
-    let mut edges = Vec::new();
-    let mut faces = Vec::new();
+    let mut solids = Vec::new();
 
-    // Extract all edges
-    for edge in shape.edges() {
-        let curve_details = edge.curve_details();
-
-        edges.push(EdgeInfo { curve_details, orientation: edge.orientation() });
+    // Check if the shape itself is a solid
+    if let Some(solid_info) = extract_solid_from_shape(shape) {
+        solids.push(solid_info);
     }
 
-    // Extract all faces
+    // If no solids found, create a "virtual solid" from all faces in the shape
+    if solids.is_empty() {
+        let faces = extract_faces_from_shape(shape);
+        if !faces.is_empty() {
+            solids.push(SolidInfo { faces });
+        }
+    }
+
+    Ok(StepGeometry { solids })
+}
+
+/// Try to extract solid info from a shape (returns None if shape has no faces)
+fn extract_solid_from_shape(shape: &Shape) -> Option<SolidInfo> {
+    let faces = extract_faces_from_shape(shape);
+
+    if faces.is_empty() {
+        None
+    } else {
+        Some(SolidInfo { faces })
+    }
+}
+
+/// Extract all faces from a shape and their hierarchical structure
+fn extract_faces_from_shape(shape: &Shape) -> Vec<FaceInfo> {
+    let mut faces = Vec::new();
+
     for face in shape.faces() {
         let surface_details = face.surface_details();
         let surface_type = format!("{}", face.surface_type());
 
-        faces.push(FaceInfo { surface_details, surface_type });
+        // Extract wires from the face
+        let mut wires = Vec::new();
+
+        // Get all wires with their roles (outer or inner)
+        for wire_with_role in face.wires_with_roles() {
+            let mut edges = Vec::new();
+
+            // Extract edges from the wire
+            for edge in wire_with_role.wire.edges() {
+                let curve_details = edge.curve_details();
+                let orientation = edge.orientation();
+
+                edges.push(EdgeInfo {
+                    curve_details,
+                    orientation,
+                });
+            }
+
+            wires.push(WireInfo {
+                edges,
+                is_outer: wire_with_role.is_outer,
+            });
+        }
+
+        faces.push(FaceInfo {
+            surface_details,
+            surface_type,
+            wires,
+        });
     }
 
-    Ok(StepGeometry { edges, faces })
+    faces
 }
 
 /// Serialize StepGeometry to JSON string
@@ -113,11 +174,10 @@ mod tests {
 
     #[test]
     fn test_geometry_serialization() {
-        let geometry = StepGeometry { edges: vec![], faces: vec![] };
+        let geometry = StepGeometry { solids: vec![] };
 
         let json = geometry_to_json(&geometry).unwrap();
-        assert!(json.contains("edges"));
-        assert!(json.contains("faces"));
+        assert!(json.contains("solids"));
     }
 
     #[test]
@@ -131,16 +191,34 @@ mod tests {
 
                 match parse_step_from_bytes(&bytes) {
                     Ok(geometry) => {
-                        println!(
-                            "  Found {} edges and {} faces",
-                            geometry.edges.len(),
-                            geometry.faces.len()
-                        );
+                        println!("  Found {} solids", geometry.solids.len());
+                        for (i, solid) in geometry.solids.iter().enumerate() {
+                            println!(
+                                "    Solid {}: {} faces",
+                                i,
+                                solid.faces.len()
+                            );
+                            for (j, face) in solid.faces.iter().enumerate() {
+                                println!(
+                                    "      Face {}: {} wires, surface type: {}",
+                                    j,
+                                    face.wires.len(),
+                                    face.surface_type
+                                );
+                                for (k, wire) in face.wires.iter().enumerate() {
+                                    println!(
+                                        "        Wire {} ({}): {} edges",
+                                        k,
+                                        if wire.is_outer { "outer" } else { "inner" },
+                                        wire.edges.len()
+                                    );
+                                }
+                            }
+                        }
 
                         // Verify we can serialize to JSON
                         let json = geometry_to_json(&geometry).unwrap();
-                        assert!(json.contains("edges"));
-                        assert!(json.contains("faces"));
+                        assert!(json.contains("solids"));
 
                         // Test pretty JSON too
                         let pretty_json = geometry_to_json_pretty(&geometry).unwrap();
@@ -156,5 +234,25 @@ mod tests {
         }
 
         println!("Note: No test STEP files found, skipping functional test");
+    }
+
+    #[test]
+    fn test_json_structure() {
+        // Test with screw.step if it exists
+        if let Ok(bytes) = std::fs::read("../../screw.step") {
+            let geometry = parse_step_from_bytes(&bytes).unwrap();
+            let json = geometry_to_json_pretty(&geometry).unwrap();
+
+            // Show a sample of the JSON structure
+            let lines: Vec<_> = json.lines().take(50).collect();
+            println!("=== JSON Sample (first 50 lines) ===");
+            for line in lines {
+                println!("{}", line);
+            }
+            println!("...");
+            println!("Total JSON length: {} characters", json.len());
+        } else {
+            println!("Note: screw.step not found, skipping JSON structure test");
+        }
     }
 }
