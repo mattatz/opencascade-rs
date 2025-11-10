@@ -1,4 +1,4 @@
-use glam::{DVec2, DVec3};
+use crate::{DVec2, DVec3};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -34,23 +34,6 @@ pub struct Line2d {
     pub direction: DVec2,
     pub first_parameter: f64,
     pub last_parameter: f64,
-}
-
-impl Line2d {
-    /// Get the start point of the line segment
-    pub fn start_point(&self) -> DVec2 {
-        self.origin + self.direction * self.first_parameter
-    }
-
-    /// Get the end point of the line segment
-    pub fn end_point(&self) -> DVec2 {
-        self.origin + self.direction * self.last_parameter
-    }
-
-    /// Get the length of the line segment
-    pub fn length(&self) -> f64 {
-        (self.last_parameter - self.first_parameter) * self.direction.length()
-    }
 }
 
 /// A 2D circle
@@ -131,23 +114,6 @@ pub struct Line {
     pub direction: DVec3,
     pub first_parameter: f64,
     pub last_parameter: f64,
-}
-
-impl Line {
-    /// Get the start point of the line segment
-    pub fn start_point(&self) -> DVec3 {
-        self.origin + self.direction * self.first_parameter
-    }
-
-    /// Get the end point of the line segment
-    pub fn end_point(&self) -> DVec3 {
-        self.origin + self.direction * self.last_parameter
-    }
-
-    /// Get the length of the line segment
-    pub fn length(&self) -> f64 {
-        (self.last_parameter - self.first_parameter) * self.direction.length()
-    }
 }
 
 /// A circle
@@ -291,4 +257,3 @@ pub enum CurveDetails {
     /// Unknown or unsupported curve type
     Unknown(String),
 }
-

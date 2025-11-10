@@ -3,8 +3,8 @@ use crate::{
     law_function::law_function_from_graph,
     make_pipe_shell::make_pipe_shell_with_law_function,
     primitives::{
-        make_axis_1, make_point, make_vec, EdgeIterator,
-        JoinType, Shape, Solid, Surface, Wire, WireIterator, WireWithRoleIterator,
+        make_axis_1, make_point, make_vec, EdgeIterator, JoinType, Shape, Solid, Surface, Wire,
+        WireIterator, WireWithRoleIterator,
     },
     workplane::Workplane,
 };
@@ -487,19 +487,21 @@ impl Face {
                     let bounds = self.uv_bounds();
 
                     SurfaceDetails::Plane(Plane {
-                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        location: dvec3(location.X(), location.Y(), location.Z()).into(),
                         axis_location: dvec3(
                             axis_location.X(),
                             axis_location.Y(),
                             axis_location.Z(),
-                        ),
+                        )
+                        .into(),
                         axis_direction: dvec3(
                             axis_direction.X(),
                             axis_direction.Y(),
                             axis_direction.Z(),
-                        ),
-                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
-                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
+                        )
+                        .into(),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()).into(),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()).into(),
                         bounds,
                     })
                 } else {
@@ -518,19 +520,21 @@ impl Face {
                     let radius = ffi::geom_cylinder_radius(&cylinder);
 
                     SurfaceDetails::Cylinder(Cylinder {
-                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        location: dvec3(location.X(), location.Y(), location.Z()).into(),
                         axis_location: dvec3(
                             axis_location.X(),
                             axis_location.Y(),
                             axis_location.Z(),
-                        ),
+                        )
+                        .into(),
                         axis_direction: dvec3(
                             axis_direction.X(),
                             axis_direction.Y(),
                             axis_direction.Z(),
-                        ),
-                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
-                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
+                        )
+                        .into(),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()).into(),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()).into(),
                         radius,
                     })
                 } else {
@@ -550,19 +554,21 @@ impl Face {
                     let semi_angle = ffi::geom_cone_semi_angle(&cone);
 
                     SurfaceDetails::Cone(Cone {
-                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        location: dvec3(location.X(), location.Y(), location.Z()).into(),
                         axis_location: dvec3(
                             axis_location.X(),
                             axis_location.Y(),
                             axis_location.Z(),
-                        ),
+                        )
+                        .into(),
                         axis_direction: dvec3(
                             axis_direction.X(),
                             axis_direction.Y(),
                             axis_direction.Z(),
-                        ),
-                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
-                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
+                        )
+                        .into(),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()).into(),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()).into(),
                         ref_radius,
                         semi_angle,
                     })
@@ -582,19 +588,21 @@ impl Face {
                     let radius = ffi::geom_sphere_radius(&sphere);
 
                     SurfaceDetails::Sphere(Sphere {
-                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        location: dvec3(location.X(), location.Y(), location.Z()).into(),
                         axis_location: dvec3(
                             axis_location.X(),
                             axis_location.Y(),
                             axis_location.Z(),
-                        ),
+                        )
+                        .into(),
                         axis_direction: dvec3(
                             axis_direction.X(),
                             axis_direction.Y(),
                             axis_direction.Z(),
-                        ),
-                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
-                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
+                        )
+                        .into(),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()).into(),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()).into(),
                         radius,
                     })
                 } else {
@@ -614,19 +622,21 @@ impl Face {
                     let minor_radius = ffi::geom_torus_minor_radius(&torus);
 
                     SurfaceDetails::Torus(Torus {
-                        location: dvec3(location.X(), location.Y(), location.Z()),
+                        location: dvec3(location.X(), location.Y(), location.Z()).into(),
                         axis_location: dvec3(
                             axis_location.X(),
                             axis_location.Y(),
                             axis_location.Z(),
-                        ),
+                        )
+                        .into(),
                         axis_direction: dvec3(
                             axis_direction.X(),
                             axis_direction.Y(),
                             axis_direction.Z(),
-                        ),
-                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()),
-                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()),
+                        )
+                        .into(),
+                        x_direction: dvec3(x_dir_ptr.X(), x_dir_ptr.Y(), x_dir_ptr.Z()).into(),
+                        y_direction: dvec3(y_dir_ptr.X(), y_dir_ptr.Y(), y_dir_ptr.Z()).into(),
                         major_radius,
                         minor_radius,
                     })
@@ -674,7 +684,7 @@ impl Face {
                             (1..=nb_v_poles as i32)
                                 .map(|v| {
                                     let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
-                                    dvec3(pole.X(), pole.Y(), pole.Z())
+                                    dvec3(pole.X(), pole.Y(), pole.Z()).into()
                                 })
                                 .collect::<Vec<_>>()
                         })
@@ -734,7 +744,7 @@ impl Face {
                             (1..=nb_v_poles as i32)
                                 .map(|v| {
                                     let pole = ffi::geom_bezier_surface_pole(&bezier, u, v);
-                                    dvec3(pole.X(), pole.Y(), pole.Z())
+                                    dvec3(pole.X(), pole.Y(), pole.Z()).into()
                                 })
                                 .collect::<Vec<_>>()
                         })
@@ -883,7 +893,7 @@ impl Face {
             let mut row = Vec::with_capacity(nb_v_poles as usize);
             for v in 1..=nb_v_poles as i32 {
                 let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
-                row.push(dvec3(pole.X(), pole.Y(), pole.Z()));
+                row.push(dvec3(pole.X(), pole.Y(), pole.Z()).into());
             }
             poles.push(row);
         }

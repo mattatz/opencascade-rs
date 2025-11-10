@@ -1,8 +1,6 @@
-use glam::DVec3;
+use crate::{DVec3, BSplineCurveProfile, BezierCurveProfile};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-
-use crate::{BSplineCurveProfile, BezierCurveProfile};
 
 
 /// UV parameter bounds for a face

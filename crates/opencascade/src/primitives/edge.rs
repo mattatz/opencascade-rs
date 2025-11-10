@@ -47,8 +47,9 @@ impl ParametricCurve2d {
                     let direction = ffi::geom2d_line_direction(&line);
 
                     Curve2dDetails::Line(Line2d {
-                        origin: dvec2(location.X(), location.Y()),
-                        direction: dvec2(ffi::gp_Dir2d_X(&direction), ffi::gp_Dir2d_Y(&direction)),
+                        origin: dvec2(location.X(), location.Y()).into(),
+                        direction: dvec2(ffi::gp_Dir2d_X(&direction), ffi::gp_Dir2d_Y(&direction))
+                            .into(),
                         first_parameter: self.first,
                         last_parameter: self.last,
                     })
@@ -65,9 +66,9 @@ impl ParametricCurve2d {
                     let radius = ffi::geom2d_circle_radius(&circle);
 
                     Curve2dDetails::Circle(Circle2d {
-                        center: dvec2(location.X(), location.Y()),
-                        x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)),
-                        y_direction: dvec2(ffi::gp_Dir2d_X(&y_dir), ffi::gp_Dir2d_Y(&y_dir)),
+                        center: dvec2(location.X(), location.Y()).into(),
+                        x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)).into(),
+                        y_direction: dvec2(ffi::gp_Dir2d_X(&y_dir), ffi::gp_Dir2d_Y(&y_dir)).into(),
                         radius,
                         first_parameter: self.first,
                         last_parameter: self.last,
@@ -86,9 +87,9 @@ impl ParametricCurve2d {
                     let minor_radius = ffi::geom2d_ellipse_minor_radius(&ellipse);
 
                     Curve2dDetails::Ellipse(Ellipse2d {
-                        center: dvec2(location.X(), location.Y()),
-                        x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)),
-                        y_direction: dvec2(ffi::gp_Dir2d_X(&y_dir), ffi::gp_Dir2d_Y(&y_dir)),
+                        center: dvec2(location.X(), location.Y()).into(),
+                        x_direction: dvec2(ffi::gp_Dir2d_X(&x_dir), ffi::gp_Dir2d_Y(&x_dir)).into(),
+                        y_direction: dvec2(ffi::gp_Dir2d_X(&y_dir), ffi::gp_Dir2d_Y(&y_dir)).into(),
                         major_radius,
                         minor_radius,
                         first_parameter: self.first,
@@ -121,7 +122,7 @@ impl ParametricCurve2d {
                     let poles = (1..=nb_poles as i32)
                         .map(|i| {
                             let pole = ffi::geom2d_bspline_curve_pole(&bspline, i);
-                            dvec2(pole.X(), pole.Y())
+                            dvec2(pole.X(), pole.Y()).into()
                         })
                         .collect();
 
@@ -164,7 +165,7 @@ impl ParametricCurve2d {
                     let poles = (1..=nb_poles as i32)
                         .map(|i| {
                             let pole = ffi::geom2d_bezier_curve_pole(&bezier, i);
-                            dvec2(pole.X(), pole.Y())
+                            dvec2(pole.X(), pole.Y()).into()
                         })
                         .collect();
 
@@ -517,8 +518,8 @@ impl Edge {
                     let direction = ffi::gp_Ax1_direction(&position);
 
                     CurveDetails::Line(Line {
-                        origin: dvec3(origin.X(), origin.Y(), origin.Z()),
-                        direction: dvec3(direction.X(), direction.Y(), direction.Z()),
+                        origin: dvec3(origin.X(), origin.Y(), origin.Z()).into(),
+                        direction: dvec3(direction.X(), direction.Y(), direction.Z()).into(),
                         first_parameter: first,
                         last_parameter: last,
                     })
@@ -537,10 +538,10 @@ impl Edge {
                     let radius = ffi::geom_circle_radius(&circle);
 
                     CurveDetails::Circle(Circle {
-                        center: dvec3(center.X(), center.Y(), center.Z()),
-                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
-                        x_axis: dvec3(x_dir.X(), x_dir.Y(), x_dir.Z()),
-                        y_axis: dvec3(y_dir.X(), y_dir.Y(), y_dir.Z()),
+                        center: dvec3(center.X(), center.Y(), center.Z()).into(),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()).into(),
+                        x_axis: dvec3(x_dir.X(), x_dir.Y(), x_dir.Z()).into(),
+                        y_axis: dvec3(y_dir.X(), y_dir.Y(), y_dir.Z()).into(),
                         radius,
                         first_parameter: first,
                         last_parameter: last,
@@ -561,10 +562,10 @@ impl Edge {
                     let minor_radius = ffi::geom_ellipse_minor_radius(&ellipse);
 
                     CurveDetails::Ellipse(Ellipse {
-                        center: dvec3(center.X(), center.Y(), center.Z()),
-                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
-                        x_axis: dvec3(x_dir.X(), x_dir.Y(), x_dir.Z()),
-                        y_axis: dvec3(y_dir.X(), y_dir.Y(), y_dir.Z()),
+                        center: dvec3(center.X(), center.Y(), center.Z()).into(),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()).into(),
+                        x_axis: dvec3(x_dir.X(), x_dir.Y(), x_dir.Z()).into(),
+                        y_axis: dvec3(y_dir.X(), y_dir.Y(), y_dir.Z()).into(),
                         major_radius,
                         minor_radius,
                         first_parameter: first,
@@ -597,7 +598,7 @@ impl Edge {
                     let poles = (1..=nb_poles as i32)
                         .map(|i| {
                             let pole = ffi::geom_bspline_curve_pole(&bspline, i);
-                            dvec3(pole.X(), pole.Y(), pole.Z())
+                            dvec3(pole.X(), pole.Y(), pole.Z()).into()
                         })
                         .collect();
                     let weights = if is_rational {
@@ -639,7 +640,7 @@ impl Edge {
                     let poles = (1..=nb_poles as i32)
                         .map(|i| {
                             let pole = ffi::geom_bezier_curve_pole(&bezier, i);
-                            dvec3(pole.X(), pole.Y(), pole.Z())
+                            dvec3(pole.X(), pole.Y(), pole.Z()).into()
                         })
                         .collect();
 
@@ -674,8 +675,8 @@ impl Edge {
                     let minor_radius = ffi::geom_hyperbola_minor_radius(&hyperbola);
 
                     CurveDetails::Hyperbola(Hyperbola {
-                        center: dvec3(center.X(), center.Y(), center.Z()),
-                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        center: dvec3(center.X(), center.Y(), center.Z()).into(),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()).into(),
                         major_radius,
                         minor_radius,
                     })
@@ -692,8 +693,8 @@ impl Edge {
                     let focal = ffi::geom_parabola_focal(&parabola);
 
                     CurveDetails::Parabola(Parabola {
-                        vertex: dvec3(vertex.X(), vertex.Y(), vertex.Z()),
-                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()),
+                        vertex: dvec3(vertex.X(), vertex.Y(), vertex.Z()).into(),
+                        axis: dvec3(axis_dir.X(), axis_dir.Y(), axis_dir.Z()).into(),
                         focal,
                     })
                 } else {
