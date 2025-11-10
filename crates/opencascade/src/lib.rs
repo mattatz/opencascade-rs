@@ -11,6 +11,9 @@ pub mod workplane;
 mod law_function;
 mod make_pipe_shell;
 
+/// Re-export occt_interop crate
+pub use occt_interop::*;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("failed to write STL file")]
