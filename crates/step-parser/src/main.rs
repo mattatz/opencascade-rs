@@ -1,5 +1,5 @@
 pub mod lib;
 pub use lib::*;
 
-fn main() {
-}
+/// Dummy main function to build for WASM
+fn main() {}
