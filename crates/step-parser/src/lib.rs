@@ -2,6 +2,8 @@ use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+pub mod types;
+
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeInfo {
