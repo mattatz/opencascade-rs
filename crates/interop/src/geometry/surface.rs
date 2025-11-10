@@ -1,7 +1,6 @@
-use crate::{Vector3, BSplineCurveProfile, BezierCurveProfile};
+use crate::{BSplineCurveProfile, BezierCurveProfile, Vector3};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-
 
 /// UV parameter bounds for a face
 #[typeshare]
@@ -140,4 +139,3 @@ pub enum SurfaceDetails {
     /// Unknown or unsupported surface type
     Unknown(String),
 }
-

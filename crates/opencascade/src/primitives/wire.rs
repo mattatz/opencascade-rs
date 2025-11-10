@@ -4,7 +4,9 @@ use crate::{
     angle::{Angle, ToAngle},
     law_function::law_function_from_graph,
     make_pipe_shell::make_pipe_shell_with_law_function,
-    primitives::{make_dir, make_point, make_vec, Edge, WireEdgeIterator, Face, JoinType, Shape, Shell},
+    primitives::{
+        make_dir, make_point, make_vec, Edge, Face, JoinType, Shape, Shell, WireEdgeIterator,
+    },
     Error,
 };
 use cxx::UniquePtr;

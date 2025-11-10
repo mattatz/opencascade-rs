@@ -22,11 +22,7 @@ fn test_circle_curve_type() {
 
 #[test]
 fn test_bezier_curve_type() {
-    let points = vec![
-        dvec3(0.0, 0.0, 0.0),
-        dvec3(1.0, 1.0, 0.0),
-        dvec3(2.0, 0.0, 0.0),
-    ];
+    let points = vec![dvec3(0.0, 0.0, 0.0), dvec3(1.0, 1.0, 0.0), dvec3(2.0, 0.0, 0.0)];
     let edge = Edge::bezier(points);
     let curve_type = edge.curve_type();
 
@@ -52,11 +48,7 @@ fn test_bspline_curve_type() {
 #[test]
 fn test_arc_curve_type() {
     // Arc is typically represented as a Circle (trimmed by parameters)
-    let edge = Edge::arc(
-        dvec3(0.0, 0.0, 0.0),
-        dvec3(1.0, 1.0, 0.0),
-        dvec3(2.0, 0.0, 0.0),
-    );
+    let edge = Edge::arc(dvec3(0.0, 0.0, 0.0), dvec3(1.0, 1.0, 0.0), dvec3(2.0, 0.0, 0.0));
     let curve_type = edge.curve_type();
 
     // OpenCASCADE represents arcs as Circle curves
@@ -92,7 +84,7 @@ fn test_curve_type_pattern_matching() {
     match curve_type {
         CurveType::Line => {
             // Expected
-        }
+        },
         _ => panic!("Expected CurveType::Line"),
     }
 
@@ -102,7 +94,7 @@ fn test_curve_type_pattern_matching() {
     match curve_type {
         CurveType::Circle => {
             // Expected
-        }
+        },
         _ => panic!("Expected CurveType::Circle"),
     }
 }

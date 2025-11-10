@@ -18,10 +18,8 @@ fn test_cylinder_surface_type() {
 
     // Find a cylindrical face
     let faces: Vec<_> = shape.faces().collect();
-    let cylindrical_faces: Vec<_> = faces
-        .iter()
-        .filter(|f| f.surface_type() == SurfaceType::CylindricalSurface)
-        .collect();
+    let cylindrical_faces: Vec<_> =
+        faces.iter().filter(|f| f.surface_type() == SurfaceType::CylindricalSurface).collect();
 
     assert!(!cylindrical_faces.is_empty(), "Should have at least one cylindrical face");
 
@@ -41,10 +39,8 @@ fn test_cone_surface_type() {
 
     // Find a conical face
     let faces: Vec<_> = shape.faces().collect();
-    let conical_faces: Vec<_> = faces
-        .iter()
-        .filter(|f| f.surface_type() == SurfaceType::ConicalSurface)
-        .collect();
+    let conical_faces: Vec<_> =
+        faces.iter().filter(|f| f.surface_type() == SurfaceType::ConicalSurface).collect();
 
     assert!(!conical_faces.is_empty(), "Should have at least one conical face");
 
@@ -55,9 +51,7 @@ fn test_cone_surface_type() {
 
 #[test]
 fn test_sphere_surface_type() {
-    let shape = Shape::sphere(5.0)
-        .at(dvec3(0.0, 0.0, 0.0))
-        .build();
+    let shape = Shape::sphere(5.0).at(dvec3(0.0, 0.0, 0.0)).build();
 
     // Find a spherical face
     let faces: Vec<_> = shape.faces().collect();
@@ -70,11 +64,7 @@ fn test_sphere_surface_type() {
 
 #[test]
 fn test_torus_surface_type() {
-    let shape = Shape::torus()
-        .at(dvec3(0.0, 0.0, 0.0))
-        .radius_1(10.0)
-        .radius_2(2.0)
-        .build();
+    let shape = Shape::torus().at(dvec3(0.0, 0.0, 0.0)).radius_1(10.0).radius_2(2.0).build();
 
     // Find a toroidal face
     let faces: Vec<_> = shape.faces().collect();
@@ -88,30 +78,12 @@ fn test_torus_surface_type() {
 #[test]
 fn test_surface_type_from_string() {
     assert_eq!(SurfaceType::from("Geom_Plane"), SurfaceType::Plane);
-    assert_eq!(
-        SurfaceType::from("Geom_CylindricalSurface"),
-        SurfaceType::CylindricalSurface
-    );
-    assert_eq!(
-        SurfaceType::from("Geom_ConicalSurface"),
-        SurfaceType::ConicalSurface
-    );
-    assert_eq!(
-        SurfaceType::from("Geom_SphericalSurface"),
-        SurfaceType::SphericalSurface
-    );
-    assert_eq!(
-        SurfaceType::from("Geom_ToroidalSurface"),
-        SurfaceType::ToroidalSurface
-    );
-    assert_eq!(
-        SurfaceType::from("Geom_BSplineSurface"),
-        SurfaceType::BSplineSurface
-    );
-    assert_eq!(
-        SurfaceType::from("Geom_BezierSurface"),
-        SurfaceType::BezierSurface
-    );
+    assert_eq!(SurfaceType::from("Geom_CylindricalSurface"), SurfaceType::CylindricalSurface);
+    assert_eq!(SurfaceType::from("Geom_ConicalSurface"), SurfaceType::ConicalSurface);
+    assert_eq!(SurfaceType::from("Geom_SphericalSurface"), SurfaceType::SphericalSurface);
+    assert_eq!(SurfaceType::from("Geom_ToroidalSurface"), SurfaceType::ToroidalSurface);
+    assert_eq!(SurfaceType::from("Geom_BSplineSurface"), SurfaceType::BSplineSurface);
+    assert_eq!(SurfaceType::from("Geom_BezierSurface"), SurfaceType::BezierSurface);
 
     // Unknown type
     let unknown = SurfaceType::from("Geom_SomeUnknownSurface");
@@ -130,7 +102,7 @@ fn test_surface_type_pattern_matching() {
     match surface_type {
         SurfaceType::Plane => {
             // Expected
-        }
+        },
         _ => panic!("Expected SurfaceType::Plane"),
     }
 
@@ -141,7 +113,7 @@ fn test_surface_type_pattern_matching() {
     match surface_type {
         SurfaceType::SphericalSurface => {
             // Expected
-        }
+        },
         _ => panic!("Expected SurfaceType::SphericalSurface"),
     }
 }

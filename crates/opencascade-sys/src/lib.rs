@@ -324,9 +324,7 @@ pub mod ffi {
         pub fn handle_geom_plane_location(plane: &HandleGeomPlane) -> &gp_Pnt;
 
         // Cast surface to specific types
-        pub fn cast_surface_to_plane(
-            surface: &HandleGeomSurface,
-        ) -> UniquePtr<HandleGeomPlane>;
+        pub fn cast_surface_to_plane(surface: &HandleGeomSurface) -> UniquePtr<HandleGeomPlane>;
         pub fn cast_surface_to_cylinder(
             surface: &HandleGeomSurface,
         ) -> UniquePtr<HandleGeom_CylindricalSurface>;
@@ -359,8 +357,12 @@ pub mod ffi {
         pub fn geom_cylinder_location(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Pnt;
         pub fn geom_cylinder_axis(cylinder: &HandleGeom_CylindricalSurface) -> &gp_Ax1;
         pub fn geom_cylinder_radius(cylinder: &HandleGeom_CylindricalSurface) -> f64;
-        pub fn geom_cylinder_x_direction(cylinder: &HandleGeom_CylindricalSurface) -> UniquePtr<gp_Dir>;
-        pub fn geom_cylinder_y_direction(cylinder: &HandleGeom_CylindricalSurface) -> UniquePtr<gp_Dir>;
+        pub fn geom_cylinder_x_direction(
+            cylinder: &HandleGeom_CylindricalSurface,
+        ) -> UniquePtr<gp_Dir>;
+        pub fn geom_cylinder_y_direction(
+            cylinder: &HandleGeom_CylindricalSurface,
+        ) -> UniquePtr<gp_Dir>;
 
         // BSpline surface properties
         pub fn geom_bspline_surface_nb_u_poles(bspline: &HandleGeom_BSplineSurface) -> i32;
@@ -371,8 +373,12 @@ pub mod ffi {
         pub fn geom_bspline_surface_is_v_rational(bspline: &HandleGeom_BSplineSurface) -> bool;
         pub fn geom_bspline_surface_is_u_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
         pub fn geom_bspline_surface_is_v_periodic(bspline: &HandleGeom_BSplineSurface) -> bool;
-        pub fn geom_bspline_surface_set_u_not_periodic(bspline: Pin<&mut HandleGeom_BSplineSurface>);
-        pub fn geom_bspline_surface_set_v_not_periodic(bspline: Pin<&mut HandleGeom_BSplineSurface>);
+        pub fn geom_bspline_surface_set_u_not_periodic(
+            bspline: Pin<&mut HandleGeom_BSplineSurface>,
+        );
+        pub fn geom_bspline_surface_set_v_not_periodic(
+            bspline: Pin<&mut HandleGeom_BSplineSurface>,
+        );
 
         // BSpline surface knots and multiplicities
         pub fn geom_bspline_surface_nb_u_knots(bspline: &HandleGeom_BSplineSurface) -> i32;
@@ -486,7 +492,8 @@ pub mod ffi {
         // BSpline curve knots and multiplicities
         pub fn geom_bspline_curve_nb_knots(bspline: &HandleGeomBSplineCurve) -> i32;
         pub fn geom_bspline_curve_knot(bspline: &HandleGeomBSplineCurve, index: i32) -> f64;
-        pub fn geom_bspline_curve_multiplicity(bspline: &HandleGeomBSplineCurve, index: i32) -> i32;
+        pub fn geom_bspline_curve_multiplicity(bspline: &HandleGeomBSplineCurve, index: i32)
+            -> i32;
 
         // BSpline curve poles (control points)
         pub fn geom_bspline_curve_pole(bspline: &HandleGeomBSplineCurve, index: i32) -> &gp_Pnt;
@@ -1381,13 +1388,20 @@ pub mod ffi {
         type BRepTools_WireExplorer;
 
         #[cxx_name = "construct_unique"]
-        pub fn BRepTools_WireExplorer_ctor(wire: &TopoDS_Wire) -> UniquePtr<BRepTools_WireExplorer>;
+        pub fn BRepTools_WireExplorer_ctor(wire: &TopoDS_Wire)
+            -> UniquePtr<BRepTools_WireExplorer>;
 
         pub fn BRepTools_WireExplorer_More(explorer: &BRepTools_WireExplorer) -> bool;
         pub fn BRepTools_WireExplorer_Next(explorer: Pin<&mut BRepTools_WireExplorer>);
-        pub fn BRepTools_WireExplorer_Current(explorer: &BRepTools_WireExplorer) -> UniquePtr<TopoDS_Edge>;
-        pub fn BRepTools_WireExplorer_Orientation(explorer: &BRepTools_WireExplorer) -> TopAbs_Orientation;
-        pub fn BRepTools_WireExplorer_CurrentVertex(explorer: &BRepTools_WireExplorer) -> UniquePtr<TopoDS_Vertex>;
+        pub fn BRepTools_WireExplorer_Current(
+            explorer: &BRepTools_WireExplorer,
+        ) -> UniquePtr<TopoDS_Edge>;
+        pub fn BRepTools_WireExplorer_Orientation(
+            explorer: &BRepTools_WireExplorer,
+        ) -> TopAbs_Orientation;
+        pub fn BRepTools_WireExplorer_CurrentVertex(
+            explorer: &BRepTools_WireExplorer,
+        ) -> UniquePtr<TopoDS_Vertex>;
         pub fn BRepTools_WireExplorer_Clear(explorer: Pin<&mut BRepTools_WireExplorer>);
 
         pub fn BRep_Tool_Surface(face: &TopoDS_Face) -> UniquePtr<HandleGeomSurface>;
@@ -1407,13 +1421,17 @@ pub mod ffi {
         pub fn Geom2d_Curve_DynamicType(curve: &HandleGeom2d_Curve) -> String;
 
         // Geom2d_Line
-        pub fn cast_geom2d_curve_to_line(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_Line>;
+        pub fn cast_geom2d_curve_to_line(
+            curve: &HandleGeom2d_Curve,
+        ) -> UniquePtr<HandleGeom2d_Line>;
         pub fn HandleGeom2d_Line_IsNull(handle: &HandleGeom2d_Line) -> bool;
         pub fn geom2d_line_location(line: &HandleGeom2d_Line) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_line_direction(line: &HandleGeom2d_Line) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_Circle
-        pub fn cast_geom2d_curve_to_circle(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_Circle>;
+        pub fn cast_geom2d_curve_to_circle(
+            curve: &HandleGeom2d_Curve,
+        ) -> UniquePtr<HandleGeom2d_Circle>;
         pub fn HandleGeom2d_Circle_IsNull(handle: &HandleGeom2d_Circle) -> bool;
         pub fn geom2d_circle_location(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_circle_radius(circle: &HandleGeom2d_Circle) -> f64;
@@ -1421,7 +1439,9 @@ pub mod ffi {
         pub fn geom2d_circle_y_direction(circle: &HandleGeom2d_Circle) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_Ellipse
-        pub fn cast_geom2d_curve_to_ellipse(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_Ellipse>;
+        pub fn cast_geom2d_curve_to_ellipse(
+            curve: &HandleGeom2d_Curve,
+        ) -> UniquePtr<HandleGeom2d_Ellipse>;
         pub fn HandleGeom2d_Ellipse_IsNull(handle: &HandleGeom2d_Ellipse) -> bool;
         pub fn geom2d_ellipse_location(ellipse: &HandleGeom2d_Ellipse) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_ellipse_major_radius(ellipse: &HandleGeom2d_Ellipse) -> f64;
@@ -1430,7 +1450,9 @@ pub mod ffi {
         pub fn geom2d_ellipse_y_direction(ellipse: &HandleGeom2d_Ellipse) -> UniquePtr<gp_Dir2d>;
 
         // Geom2d_BSplineCurve
-        pub fn cast_geom2d_curve_to_bspline(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_BSplineCurve>;
+        pub fn cast_geom2d_curve_to_bspline(
+            curve: &HandleGeom2d_Curve,
+        ) -> UniquePtr<HandleGeom2d_BSplineCurve>;
         pub fn HandleGeom2d_BSplineCurve_IsNull(handle: &HandleGeom2d_BSplineCurve) -> bool;
         pub fn geom2d_bspline_curve_nb_poles(bspline: &HandleGeom2d_BSplineCurve) -> i32;
         pub fn geom2d_bspline_curve_degree(bspline: &HandleGeom2d_BSplineCurve) -> i32;
@@ -1438,23 +1460,38 @@ pub mod ffi {
         pub fn geom2d_bspline_curve_is_periodic(bspline: &HandleGeom2d_BSplineCurve) -> bool;
         pub fn geom2d_bspline_curve_nb_knots(bspline: &HandleGeom2d_BSplineCurve) -> i32;
         pub fn geom2d_bspline_curve_knot(bspline: &HandleGeom2d_BSplineCurve, index: i32) -> f64;
-        pub fn geom2d_bspline_curve_multiplicity(bspline: &HandleGeom2d_BSplineCurve, index: i32) -> i32;
-        pub fn geom2d_bspline_curve_pole(bspline: &HandleGeom2d_BSplineCurve, index: i32) -> UniquePtr<gp_Pnt2d>;
+        pub fn geom2d_bspline_curve_multiplicity(
+            bspline: &HandleGeom2d_BSplineCurve,
+            index: i32,
+        ) -> i32;
+        pub fn geom2d_bspline_curve_pole(
+            bspline: &HandleGeom2d_BSplineCurve,
+            index: i32,
+        ) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_bspline_curve_weight(bspline: &HandleGeom2d_BSplineCurve, index: i32) -> f64;
 
         // Geom2d_BezierCurve
-        pub fn cast_geom2d_curve_to_bezier(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_BezierCurve>;
+        pub fn cast_geom2d_curve_to_bezier(
+            curve: &HandleGeom2d_Curve,
+        ) -> UniquePtr<HandleGeom2d_BezierCurve>;
         pub fn HandleGeom2d_BezierCurve_IsNull(handle: &HandleGeom2d_BezierCurve) -> bool;
         pub fn geom2d_bezier_curve_nb_poles(bezier: &HandleGeom2d_BezierCurve) -> i32;
         pub fn geom2d_bezier_curve_degree(bezier: &HandleGeom2d_BezierCurve) -> i32;
         pub fn geom2d_bezier_curve_is_rational(bezier: &HandleGeom2d_BezierCurve) -> bool;
-        pub fn geom2d_bezier_curve_pole(bezier: &HandleGeom2d_BezierCurve, index: i32) -> UniquePtr<gp_Pnt2d>;
+        pub fn geom2d_bezier_curve_pole(
+            bezier: &HandleGeom2d_BezierCurve,
+            index: i32,
+        ) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_bezier_curve_weight(bezier: &HandleGeom2d_BezierCurve, index: i32) -> f64;
 
         // Geom2d_TrimmedCurve
-        pub fn cast_geom2d_curve_to_trimmed(curve: &HandleGeom2d_Curve) -> UniquePtr<HandleGeom2d_TrimmedCurve>;
+        pub fn cast_geom2d_curve_to_trimmed(
+            curve: &HandleGeom2d_Curve,
+        ) -> UniquePtr<HandleGeom2d_TrimmedCurve>;
         pub fn HandleGeom2d_TrimmedCurve_IsNull(handle: &HandleGeom2d_TrimmedCurve) -> bool;
-        pub fn geom2d_trimmed_curve_basis_curve(trimmed: &HandleGeom2d_TrimmedCurve) -> UniquePtr<HandleGeom2d_Curve>;
+        pub fn geom2d_trimmed_curve_basis_curve(
+            trimmed: &HandleGeom2d_TrimmedCurve,
+        ) -> UniquePtr<HandleGeom2d_Curve>;
         pub fn geom2d_trimmed_curve_first_parameter(trimmed: &HandleGeom2d_TrimmedCurve) -> f64;
         pub fn geom2d_trimmed_curve_last_parameter(trimmed: &HandleGeom2d_TrimmedCurve) -> f64;
 

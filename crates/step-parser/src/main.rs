@@ -4,5 +4,4 @@
 mod lib;
 use lib::*;
 
-fn main() {
-}
+fn main() {}

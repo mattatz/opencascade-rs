@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use opencascade::primitives::Shape;
 use occt_interop::{EdgeInfo, FaceInfo, SolidInfo, StepInfo, WireInfo};
+use opencascade::primitives::Shape;
 
 /// Parse STEP file from bytes and extract geometry information
 pub fn parse_step_from_bytes(bytes: &[u8]) -> Result<StepInfo, String> {
