@@ -12,6 +12,13 @@ export interface BSplineCurveProfile {
 	multiplicities: number[];
 }
 
+/** A 3D vector with double-precision floating point components */
+export interface DVec3 {
+	x: number;
+	y: number;
+	z: number;
+}
+
 /** A B-Spline curve */
 export interface BSplineCurve {
 	profile: BSplineCurveProfile;
@@ -84,6 +91,53 @@ export interface Cylinder {
 	radius: number;
 }
 
+/** A 2D vector with double-precision floating point components */
+export interface DVec2 {
+	x: number;
+	y: number;
+}
+
+/** Detailed information about a curve's geometric properties */
+export type CurveDetails = 
+	/** A line */
+	| { type: "Line", data: Line }
+	/** A circle */
+	| { type: "Circle", data: Circle }
+	/** An ellipse */
+	| { type: "Ellipse", data: Ellipse }
+	/** A B-Spline curve */
+	| { type: "BSplineCurve", data: BSplineCurve }
+	/** A Bezier curve */
+	| { type: "BezierCurve", data: BezierCurve }
+	/** A hyperbola */
+	| { type: "Hyperbola", data: Hyperbola }
+	/** A parabola */
+	| { type: "Parabola", data: Parabola }
+	/** An offset curve */
+	| { type: "OffsetCurve", data: OffsetCurve }
+	/** A trimmed curve */
+	| { type: "TrimmedCurve", data: TrimmedCurve }
+	/** Unknown or unsupported curve type */
+	| { type: "Unknown", data: string };
+
+/** The orientation of a topological shape (edge, face, etc.) */
+export enum Orientation {
+	/** Forward orientation - the default positive direction */
+	Forward = "Forward",
+	/** Reversed orientation - the opposite direction */
+	Reversed = "Reversed",
+	/** Internal orientation - internal to a solid */
+	Internal = "Internal",
+	/** External orientation - external to a solid */
+	External = "External",
+}
+
+export interface EdgeInfo {
+	id: number;
+	curve: CurveDetails;
+	orientation: Orientation;
+}
+
 /** An ellipse */
 export interface Ellipse {
 	center: DVec3;
@@ -94,6 +148,35 @@ export interface Ellipse {
 	minor_radius: number;
 	first_parameter: number;
 	last_parameter: number;
+}
+
+/** Detailed information about a surface's geometric properties */
+export type SurfaceDetails = 
+	/** A planar surface */
+	| { type: "Plane", data: Plane }
+	/** A cylindrical surface */
+	| { type: "Cylinder", data: Cylinder }
+	/** A conical surface */
+	| { type: "Cone", data: Cone }
+	/** A spherical surface */
+	| { type: "Sphere", data: Sphere }
+	/** A toroidal surface */
+	| { type: "Torus", data: Torus }
+	/** A B-Spline surface */
+	| { type: "BSpline", data: BSplineSurface }
+	/** A Bezier surface */
+	| { type: "Bezier", data: BezierSurface }
+	/** Unknown or unsupported surface type */
+	| { type: "Unknown", data: string };
+
+export interface WireInfo {
+	edges: EdgeInfo[];
+	is_outer: boolean;
+}
+
+export interface FaceInfo {
+	surface: SurfaceDetails;
+	wires: WireInfo[];
 }
 
 /** A hyperbola */
@@ -144,6 +227,10 @@ export interface Plane {
 	bounds: UVBounds;
 }
 
+export interface SolidInfo {
+	faces: FaceInfo[];
+}
+
 /** A spherical surface */
 export interface Sphere {
 	location: DVec3;
@@ -152,6 +239,10 @@ export interface Sphere {
 	x_direction: DVec3;
 	y_direction: DVec3;
 	radius: number;
+}
+
+export interface StepInfo {
+	solids: SolidInfo[];
 }
 
 /** A toroidal surface */
@@ -171,58 +262,4 @@ export interface TrimmedCurve {
 	first_parameter: number;
 	last_parameter: number;
 }
-
-/** Detailed information about a curve's geometric properties */
-export type CurveDetails = 
-	/** A line */
-	| { type: "Line", data: Line }
-	/** A circle */
-	| { type: "Circle", data: Circle }
-	/** An ellipse */
-	| { type: "Ellipse", data: Ellipse }
-	/** A B-Spline curve */
-	| { type: "BSplineCurve", data: BSplineCurve }
-	/** A Bezier curve */
-	| { type: "BezierCurve", data: BezierCurve }
-	/** A hyperbola */
-	| { type: "Hyperbola", data: Hyperbola }
-	/** A parabola */
-	| { type: "Parabola", data: Parabola }
-	/** An offset curve */
-	| { type: "OffsetCurve", data: OffsetCurve }
-	/** A trimmed curve */
-	| { type: "TrimmedCurve", data: TrimmedCurve }
-	/** Unknown or unsupported curve type */
-	| { type: "Unknown", data: string };
-
-/** The orientation of a topological shape (edge, face, etc.) */
-export enum Orientation {
-	/** Forward orientation - the default positive direction */
-	Forward = "Forward",
-	/** Reversed orientation - the opposite direction */
-	Reversed = "Reversed",
-	/** Internal orientation - internal to a solid */
-	Internal = "Internal",
-	/** External orientation - external to a solid */
-	External = "External",
-}
-
-/** Detailed information about a surface's geometric properties */
-export type SurfaceDetails = 
-	/** A planar surface */
-	| { type: "Plane", data: Plane }
-	/** A cylindrical surface */
-	| { type: "Cylinder", data: Cylinder }
-	/** A conical surface */
-	| { type: "Cone", data: Cone }
-	/** A spherical surface */
-	| { type: "Sphere", data: Sphere }
-	/** A toroidal surface */
-	| { type: "Torus", data: Torus }
-	/** A B-Spline surface */
-	| { type: "BSpline", data: BSplineSurface }
-	/** A Bezier surface */
-	| { type: "Bezier", data: BezierSurface }
-	/** Unknown or unsupported surface type */
-	| { type: "Unknown", data: string };
 

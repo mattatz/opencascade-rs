@@ -1,7 +1,5 @@
 // Re-export OpenCascade types
-export * from './opencascade';
-// Re-export step-parser types
-export * from './step_parser';
+export * from './step';
 
 /**
  * Initialize the WASM module

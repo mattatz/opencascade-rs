@@ -1,3 +1,3 @@
 #!/bin/bash
 
-typeshare ./src ../opencascade --lang=typescript --output-file=step-parser.d.ts
+typeshare ./src ../interop --lang=typescript --output-file=step-parser.d.ts

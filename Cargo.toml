@@ -1,9 +1,13 @@
 [workspace]
 members = [
-    "crates/kicad-parser", "crates/model-api",
+    "crates/kicad-parser",
+    "crates/model-api",
     "crates/opencascade",
-    "crates/opencascade-sys", "crates/step-parser",
-    "crates/viewer", "crates/wasm-example",
+    "crates/opencascade-sys",
+    "crates/step-parser",
+    "crates/interop",
+    "crates/viewer",
+    "crates/wasm-example",
     "examples",
 ]
 exclude = ["crates/occt-sys"]

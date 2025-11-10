@@ -11,11 +11,10 @@ name = "step_parser"
 path = "src/main.rs"
 
 [dependencies]
+interop = { path = "../interop" }
 opencascade = { path = "../opencascade" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-glam = { version = "0.24", features = ["serde"] }
-typeshare = "1.0"
 
 [profile.release]
 opt-level = "z"

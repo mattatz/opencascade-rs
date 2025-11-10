@@ -1,61 +1,7 @@
 #![allow(dead_code)]
 
-use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails};
-use serde::{Deserialize, Serialize};
-use typeshare::typeshare;
-
-/// A 3D vector with double-precision floating point components
-#[allow(unused)]
-#[typeshare]
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct DVec3 {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-}
-
-/// A 2D vector with double-precision floating point components
-#[allow(unused)]
-#[typeshare]
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct DVec2 {
-    pub x: f64,
-    pub y: f64,
-}
-
-#[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EdgeInfo {
-    pub id: u32,
-    pub curve: CurveDetails,
-    pub orientation: Orientation,
-}
-
-#[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WireInfo {
-    pub edges: Vec<EdgeInfo>,
-    pub is_outer: bool,
-}
-
-#[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FaceInfo {
-    pub surface: SurfaceDetails,
-    pub wires: Vec<WireInfo>,
-}
-
-#[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SolidInfo {
-    pub faces: Vec<FaceInfo>,
-}
-
-#[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StepInfo {
-    pub solids: Vec<SolidInfo>,
-}
+use interop::{EdgeInfo, FaceInfo, SolidInfo, StepInfo, WireInfo};
+use opencascade::primitives::Shape;
 
 /// Parse STEP file from bytes and extract geometry information
 pub fn parse_step_from_bytes(bytes: &[u8]) -> Result<StepInfo, String> {

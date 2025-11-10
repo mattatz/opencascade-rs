@@ -31,8 +31,7 @@ cp target/wasm32-unknown-emscripten/release/step_parser.js crates/step-parser/np
 
 # Generate TypeScript definitions
 echo "Generating TypeScript definitions..."
-typeshare crates/step-parser/src/lib.rs --lang=typescript --output-file=crates/step-parser/npm/step_parser.d.ts
-typeshare crates/opencascade --lang=typescript --output-file=crates/step-parser/npm/opencascade.d.ts
+typeshare crates/interop --lang=typescript --output-file=crates/step-parser/npm/step.d.ts
 
 # Copy README
 echo "Copying README..."
@@ -43,8 +42,7 @@ echo "✅ Build complete!"
 echo ""
 echo "Output files:"
 echo "  - crates/step-parser/npm/step_parser.wasm"
-echo "  - crates/step-parser/npm/step_parser.d.ts"
-echo "  - crates/step-parser/npm/opencascade.d.ts"
+echo "  - crates/step-parser/npm/step.d.ts"
 echo "  - crates/step-parser/npm/index.js"
 echo "  - crates/step-parser/npm/index.d.ts"
 echo ""
