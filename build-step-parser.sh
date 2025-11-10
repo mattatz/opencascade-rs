@@ -13,7 +13,41 @@ fi
 # Add wasm32-unknown-emscripten target if not already added
 rustup target add wasm32-unknown-emscripten
 
-# Build the step-parser crate, keeping object files
+# Build the step-parser crate
 echo "Building step-parser for wasm32-unknown-emscripten target..."
 cd crates/step-parser
 cargo build --bin step-parser --target wasm32-unknown-emscripten --release
+
+# Go back to root
+cd ../..
+
+# Ensure npm directory exists
+mkdir -p crates/step-parser/npm
+
+# Copy WASM and JS files to npm package directory
+echo "Copying WASM and JS files to npm package..."
+cp target/wasm32-unknown-emscripten/release/step-parser.wasm crates/step-parser/npm/step-parser.wasm
+cp target/wasm32-unknown-emscripten/release/step-parser.js crates/step-parser/npm/step-parser.js
+
+# Generate TypeScript definitions
+echo "Generating TypeScript definitions..."
+typeshare crates/step-parser/src/lib.rs --lang=typescript --output-file=crates/step-parser/npm/step-parser.d.ts
+typeshare crates/opencascade --lang=typescript --output-file=crates/step-parser/npm/opencascade.d.ts
+
+# Copy README
+echo "Copying README..."
+cp crates/step-parser/README.md crates/step-parser/npm/README.md
+
+echo ""
+echo "✅ Build complete!"
+echo ""
+echo "Output files:"
+echo "  - crates/step-parser/npm/step-parser.wasm"
+echo "  - crates/step-parser/npm/step-parser.d.ts"
+echo "  - crates/step-parser/npm/opencascade.d.ts"
+echo "  - crates/step-parser/npm/index.js"
+echo "  - crates/step-parser/npm/index.d.ts"
+echo ""
+echo "To publish to npm:"
+echo "  cd crates/step-parser/npm"
+echo "  npm publish"

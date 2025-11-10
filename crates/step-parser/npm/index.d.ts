@@ -1,0 +1,29 @@
+// Re-export OpenCascade types
+export * from './opencascade';
+// Re-export step-parser types
+export * from './step-parser';
+
+/**
+ * Initialize the WASM module
+ * @param wasmSource - Path/URL to the wasm file or raw bytes
+ */
+export function initStepParser(wasmSource: string | URL | Uint8Array): Promise<void>;
+
+/**
+ * Parse STEP file from bytes
+ * @param stepBytes - The STEP file bytes
+ * @returns JSON string with parsed geometry
+ */
+export function parseStep(stepBytes: Uint8Array): string;
+
+/**
+ * Parse STEP file and return parsed object
+ * @param stepBytes - The STEP file bytes
+ * @returns Parsed geometry object
+ */
+export function parseStepToObject(stepBytes: Uint8Array): import('./step-parser').StepInfo;
+
+/**
+ * Check if the module is initialized
+ */
+export function isInitialized(): boolean;

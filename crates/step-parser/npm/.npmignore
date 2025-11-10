@@ -1,0 +1,16 @@
+# Git
+.git/
+.gitignore
+
+# Development files
+*.rs
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Keep only the packaged files
+!step-parser.wasm
+!*.js
+!*.d.ts
+!*.md

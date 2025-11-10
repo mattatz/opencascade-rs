@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEP Parser Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .drop-zone:hover {
+            background-color: #f5f5f5;
+        }
+        .drop-zone.dragover {
+            background-color: #e3f2fd;
+            border-color: #2196F3;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            color: #d32f2f;
+        }
+        .success {
+            color: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>STEP File Parser</h1>
+    <p>Drop a STEP file or click to select</p>
+
+    <div class="drop-zone" id="dropZone">
+        <p>📁 Drop STEP file here or click to browse</p>
+        <input type="file" id="fileInput" accept=".step,.stp" class="hidden">
+    </div>
+
+    <div id="output"></div>
+
+    <script type="module">
+        import { initStepParser, parseStepToObject, isInitialized } from './index.js';
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const output = document.getElementById('output');
+
+        // Initialize WASM module
+        async function init() {
+            try {
+                output.textContent = 'Loading WASM module...';
+                await initStepParser('./step-parser.wasm');
+                output.innerHTML = '<span class="success">✓ WASM module loaded. Ready to parse STEP files.</span>';
+            } catch (error) {
+                output.innerHTML = `<span class="error">Failed to load WASM module: ${error.message}</span>`;
+            }
+        }
+
+        // Parse STEP file
+        async function parseFile(file) {
+            if (!isInitialized()) {
+                output.innerHTML = '<span class="error">WASM module not initialized</span>';
+                return;
+            }
+
+            try {
+                output.textContent = `Parsing ${file.name}...`;
+
+                const arrayBuffer = await file.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+
+                const start = performance.now();
+                const geometry = parseStepToObject(bytes);
+                const elapsed = performance.now() - start;
+
+                // Display results
+                let result = `<span class="success">✓ Parsed successfully in ${elapsed.toFixed(2)}ms</span>\n\n`;
+                result += `File: ${file.name}\n`;
+                result += `Size: ${(file.size / 1024).toFixed(2)} KB\n\n`;
+                result += `Solids: ${geometry.solids.length}\n`;
+
+                geometry.solids.forEach((solid, i) => {
+                    result += `\nSolid ${i + 1}:\n`;
+                    result += `  Faces: ${solid.faces.length}\n`;
+
+                    solid.faces.forEach((face, j) => {
+                        result += `    Face ${j + 1}: ${face.surface_type}, ${face.wires.length} wire(s)\n`;
+                        face.wires.forEach((wire, k) => {
+                            result += `      Wire ${k + 1}: ${wire.edges.length} edge(s) (${wire.is_outer ? 'outer' : 'inner'})\n`;
+                        });
+                    });
+                });
+
+                result += '\n\n--- Full JSON ---\n';
+                result += JSON.stringify(geometry, null, 2);
+
+                output.innerHTML = result;
+            } catch (error) {
+                output.innerHTML = `<span class="error">Error parsing file: ${error.message}</span>`;
+                console.error(error);
+            }
+        }
+
+        // Event handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                parseFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                parseFile(file);
+            }
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

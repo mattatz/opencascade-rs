@@ -1,0 +1,46 @@
+{
+  "name": "step-parser",
+  "version": "0.1.0",
+  "description": "STEP file parser for JavaScript/TypeScript, powered by OpenCascade and Rust/WASM",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "step-parser.d.ts",
+    "opencascade.d.ts",
+    "step-parser.wasm",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./step-parser.wasm": "./step-parser.wasm"
+  },
+  "scripts": {
+    "build": "cd ../../.. && ./build-step-parser.sh",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "step",
+    "cad",
+    "opencascade",
+    "wasm",
+    "3d",
+    "geometry",
+    "parser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mattatz/opencascade-rs.git",
+    "directory": "crates/step-parser"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
