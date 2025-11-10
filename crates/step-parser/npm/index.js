@@ -1,8 +1,8 @@
 /**
- * @typedef {import('./step-parser').StepInfo} StepInfo
+ * @typedef {import('./step_parser').StepInfo} StepInfo
  */
 
-import createStepParserModule from './step-parser.js';
+import createStepParserModule from './step_parser.js';
 
 let Module = null;
 
@@ -22,7 +22,7 @@ export async function initStepParser(options = {}) {
         locateFile: options.locateFile || ((path) => {
             if (path.endsWith('.wasm')) {
                 // Use import.meta.url to resolve relative to this module
-                return new URL('./step-parser.wasm', import.meta.url).href;
+                return new URL('./step_parser.wasm', import.meta.url).href;
             }
             return path;
         })

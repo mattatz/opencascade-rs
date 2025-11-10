@@ -1,13 +1,15 @@
 // Re-export OpenCascade types
 export * from './opencascade';
 // Re-export step-parser types
-export * from './step-parser';
+export * from './step_parser';
 
 /**
  * Initialize the WASM module
  * @param wasmSource - Path/URL to the wasm file or raw bytes
  */
-export function initStepParser(wasmSource: string | URL | Uint8Array): Promise<void>;
+export function initStepParser(options: {
+  locateFile: (path: string) => string;
+}): Promise<void>;
 
 /**
  * Parse STEP file from bytes

@@ -70,7 +70,11 @@
         async function init() {
             try {
                 output.textContent = 'Loading WASM module...';
-                await initStepParser('./step-parser.wasm');
+                await initStepParser({
+                    locateFile: (path) => { 
+                        return new URL('./step_parser.wasm', import.meta.url).href;
+                    }
+                });
                 output.innerHTML = '<span class="success">✓ WASM module loaded. Ready to parse STEP files.</span>';
             } catch (error) {
                 output.innerHTML = `<span class="error">Failed to load WASM module: ${error.message}</span>`;

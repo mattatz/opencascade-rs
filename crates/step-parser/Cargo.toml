@@ -7,7 +7,7 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [[bin]]
-name = "step-parser"
+name = "step_parser"
 path = "src/main.rs"
 
 [dependencies]
