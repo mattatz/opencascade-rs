@@ -26,7 +26,7 @@ pub struct DVec2 {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeInfo {
-    pub id: usize,
+    pub id: u32,
     pub curve: CurveDetails,
     pub orientation: Orientation,
 }
@@ -113,7 +113,7 @@ fn extract_faces_from_shape(shape: &Shape) -> Vec<FaceInfo> {
                 let curve_details = edge.curve_details();
                 let orientation = edge.orientation();
 
-                edges.push(EdgeInfo { id: edge.id(), curve: curve_details, orientation });
+                edges.push(EdgeInfo { id: edge.id() as u32, curve: curve_details, orientation });
             }
 
             wires.push(WireInfo { edges, is_outer: wire_with_role.is_outer });

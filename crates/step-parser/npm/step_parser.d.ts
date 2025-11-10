@@ -16,7 +16,8 @@ export interface DVec3 {
 }
 
 export interface EdgeInfo {
-	curve_details: CurveDetails;
+	id: number;
+	curve: CurveDetails;
 	orientation: Orientation;
 }
 
@@ -26,8 +27,7 @@ export interface WireInfo {
 }
 
 export interface FaceInfo {
-	surface_details: SurfaceDetails;
-	surface_type: string;
+	surface: SurfaceDetails;
 	wires: WireInfo[];
 }
 

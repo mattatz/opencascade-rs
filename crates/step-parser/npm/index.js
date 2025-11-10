@@ -32,9 +32,9 @@ export async function initStepParser(options = {}) {
 }
 
 /**
- * Parse STEP file from bytes
+ * Parse STEP file from bytes and return parsed object
  * @param {Uint8Array} stepBytes - The STEP file bytes
- * @returns {string} JSON string with parsed geometry
+ * @returns {StepInfo} Parsed geometry object
  */
 export function parseStep(stepBytes) {
     if (!Module) {
@@ -75,17 +75,7 @@ export function parseStep(stepBytes) {
     // Free the result string
     free_step(resultPtr);
 
-    return resultStr;
-}
-
-/**
- * Parse STEP file and return parsed object
- * @param {Uint8Array} stepBytes - The STEP file bytes
- * @returns {StepInfo} Parsed geometry object
- */
-export function parseStepToObject(stepBytes) {
-    const jsonStr = parseStep(stepBytes);
-    return JSON.parse(jsonStr);
+    return JSON.parse(resultStr);
 }
 
 /**

@@ -16,14 +16,7 @@ export function initStepParser(options: {
  * @param stepBytes - The STEP file bytes
  * @returns JSON string with parsed geometry
  */
-export function parseStep(stepBytes: Uint8Array): string;
-
-/**
- * Parse STEP file and return parsed object
- * @param stepBytes - The STEP file bytes
- * @returns Parsed geometry object
- */
-export function parseStepToObject(stepBytes: Uint8Array): import('./step-parser').StepInfo;
+export function parseStep(stepBytes: Uint8Array): StepInfo;
 
 /**
  * Check if the module is initialized
