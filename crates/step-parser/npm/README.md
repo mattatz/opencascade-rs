@@ -1,4 +1,4 @@
-# @opencascade-rs/step-parser
+# step-parser
 
 A high-performance STEP file parser for JavaScript/TypeScript, powered by OpenCascade and Rust/WebAssembly.
 
@@ -13,7 +13,7 @@ A high-performance STEP file parser for JavaScript/TypeScript, powered by OpenCa
 ## Installation
 
 ```bash
-npm install @opencascade-rs/step-parser
+npm install step-parser
 ```
 
 ## Usage
@@ -21,18 +21,17 @@ npm install @opencascade-rs/step-parser
 ### Browser Example
 
 ```typescript
-import { initStepParser, parseStepToObject } from '@opencascade-rs/step-parser';
-import wasmUrl from '@opencascade-rs/step-parser/step-parser.wasm?url';
+import { initStepParser, parseStep } from 'step-parser';
 
 // Initialize the WASM module (do this once)
-await initStepParser(wasmUrl);
+await initStepParser();
 
 // Load STEP file
 const response = await fetch('model.step');
 const stepBytes = new Uint8Array(await response.arrayBuffer());
 
 // Parse STEP file
-const geometry = parseStepToObject(stepBytes);
+const geometry = parseStep(stepBytes);
 
 console.log(`Parsed ${geometry.solids.length} solids`);
 for (const solid of geometry.solids) {
@@ -44,24 +43,26 @@ for (const solid of geometry.solids) {
 
 ```typescript
 import { readFileSync } from 'fs';
-import { initStepParser, parseStepToObject } from '@opencascade-rs/step-parser';
+import { initStepParser, parseStep } from 'step-parser';
 
-// Load WASM module from file
-const wasmBytes = readFileSync('./node_modules/@opencascade-rs/step-parser/step-parser.wasm');
-await initStepParser(wasmBytes);
+// Initialize WASM module
+await initStepParser();
 
 // Load and parse STEP file
 const stepBytes = readFileSync('model.step');
-const geometry = parseStepToObject(stepBytes);
+const geometry = parseStep(stepBytes);
 ```
 
 ## API
 
-### `initStepParser(wasmSource: string | URL | Uint8Array): Promise<void>`
+### `initStepParser(options?: Object): Promise<void>`
 
 Initialize the WASM module. Must be called before parsing any STEP files.
 
-### `parseStepToObject(stepBytes: Uint8Array): StepInfo`
+Options:
+- `locateFile?: (path: string) => string` - Custom function to locate WASM file (optional)
+
+### `parseStep(stepBytes: Uint8Array): StepInfo`
 
 Parse a STEP file and return the result as a typed object.
 

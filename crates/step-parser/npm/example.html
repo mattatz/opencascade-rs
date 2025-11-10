@@ -60,7 +60,7 @@
     <div id="output"></div>
 
     <script type="module">
-        import { initStepParser, parseStepToObject, isInitialized } from './index.js';
+        import { initStepParser, parseStep, isInitialized } from './index.js';
 
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
@@ -95,7 +95,7 @@
                 const bytes = new Uint8Array(arrayBuffer);
 
                 const start = performance.now();
-                const geometry = parseStepToObject(bytes);
+                const geometry = parseStep(bytes);
                 const elapsed = performance.now() - start;
 
                 // Display results
