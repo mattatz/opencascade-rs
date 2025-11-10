@@ -1,6 +1,6 @@
 {
   "name": "step-parser",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "description": "STEP file parser for JavaScript/TypeScript, powered by OpenCascade and Rust/WASM",
   "type": "module",
   "main": "./index.js",
@@ -10,8 +10,7 @@
     "index.d.ts",
     "step_parser.js",
     "step_parser.wasm",
-    "step.d.ts",
-    "README.md"
+    "step.d.ts"
   ],
   "exports": {
     ".": {

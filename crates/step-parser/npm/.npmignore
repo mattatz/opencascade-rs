@@ -10,7 +10,7 @@
 .DS_Store
 
 # Keep only the packaged files
-!step-parser.wasm
+!step_parser.wasm
 !*.js
 !*.d.ts
 !*.md

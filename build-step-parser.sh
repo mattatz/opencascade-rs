@@ -33,10 +33,6 @@ cp target/wasm32-unknown-emscripten/release/step_parser.js crates/step-parser/np
 echo "Generating TypeScript definitions..."
 typeshare crates/interop --lang=typescript --output-file=crates/step-parser/npm/step.d.ts
 
-# Copy README
-echo "Copying README..."
-cp crates/step-parser/README.md crates/step-parser/npm/README.md
-
 echo ""
 echo "✅ Build complete!"
 echo ""
