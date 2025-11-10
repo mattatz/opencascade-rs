@@ -498,9 +498,7 @@ pub enum EdgeType {
 }
 
 /// The specific geometric curve type (e.g., Geom_Line, Geom_Circle)
-#[typeshare]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", content = "data")]
 pub enum CurveType {
     /// Geom_Line - A line curve
     Line,

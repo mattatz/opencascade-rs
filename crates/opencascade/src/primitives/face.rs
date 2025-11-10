@@ -153,9 +153,7 @@ pub enum SurfaceDetails {
 }
 
 /// The specific geometric surface type (e.g., Geom_Plane, Geom_CylindricalSurface)
-#[typeshare]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", content = "data")]
 pub enum SurfaceType {
     /// Geom_Plane - A planar surface
     Plane,
