@@ -650,6 +650,14 @@ impl Edge {
         Self { inner }
     }
 
+    /// Get a unique ID for this edge based on its underlying TShape.
+    /// Edges that share the same geometric entity will have the same ID.
+    /// This is useful for identifying edge connectivity in BREP reconstruction.
+    pub fn id(&self) -> usize {
+        let shape = ffi::cast_edge_to_shape(&self.inner);
+        ffi::TopoDS_Shape_get_tshape_id(shape)
+    }
+
     fn from_make_edge(mut make_edge: UniquePtr<ffi::BRepBuilderAPI_MakeEdge>) -> Self {
         Self::from_edge(make_edge.pin_mut().Edge())
     }

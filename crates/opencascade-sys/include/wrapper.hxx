@@ -654,6 +654,11 @@ inline const TopoDS_Shape &cast_shell_to_shape(const TopoDS_Shell &shell) { retu
 inline const TopoDS_Shape &cast_solid_to_shape(const TopoDS_Solid &solid) { return solid; }
 inline const TopoDS_Shape &cast_compound_to_shape(const TopoDS_Compound &compound) { return compound; }
 
+// Get unique ID for a shape based on its TShape pointer
+inline uintptr_t TopoDS_Shape_get_tshape_id(const TopoDS_Shape &shape) {
+  return reinterpret_cast<uintptr_t>(shape.TShape().get());
+}
+
 // Compound shapes
 inline std::unique_ptr<TopoDS_Shape> TopoDS_Compound_as_shape(std::unique_ptr<TopoDS_Compound> compound) {
   return compound;

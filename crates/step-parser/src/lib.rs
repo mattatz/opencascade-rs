@@ -26,7 +26,8 @@ pub struct DVec2 {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EdgeInfo {
-    pub curve_details: CurveDetails,
+    pub id: usize,
+    pub curve: CurveDetails,
     pub orientation: Orientation,
 }
 
@@ -40,8 +41,7 @@ pub struct WireInfo {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FaceInfo {
-    pub surface_details: SurfaceDetails,
-    pub surface_type: String,
+    pub surface: SurfaceDetails,
     pub wires: Vec<WireInfo>,
 }
 
@@ -99,8 +99,7 @@ fn extract_faces_from_shape(shape: &Shape) -> Vec<FaceInfo> {
     let mut faces = Vec::new();
 
     for face in shape.faces() {
-        let surface_details = face.surface_details();
-        let surface_type = format!("{}", face.surface_type());
+        let surface = face.surface_details();
 
         // Extract wires from the face
         let mut wires = Vec::new();
@@ -114,13 +113,13 @@ fn extract_faces_from_shape(shape: &Shape) -> Vec<FaceInfo> {
                 let curve_details = edge.curve_details();
                 let orientation = edge.orientation();
 
-                edges.push(EdgeInfo { curve_details, orientation });
+                edges.push(EdgeInfo { id: edge.id(), curve: curve_details, orientation });
             }
 
             wires.push(WireInfo { edges, is_outer: wire_with_role.is_outer });
         }
 
-        faces.push(FaceInfo { surface_details, surface_type, wires });
+        faces.push(FaceInfo { surface, wires });
     }
 
     faces
@@ -208,12 +207,7 @@ mod tests {
                         for (i, solid) in geometry.solids.iter().enumerate() {
                             println!("    Solid {}: {} faces", i, solid.faces.len());
                             for (j, face) in solid.faces.iter().enumerate() {
-                                println!(
-                                    "      Face {}: {} wires, surface type: {}",
-                                    j,
-                                    face.wires.len(),
-                                    face.surface_type
-                                );
+                                println!("      Face {}: {} wires", j, face.wires.len(),);
                                 for (k, wire) in face.wires.iter().enumerate() {
                                     println!(
                                         "        Wire {} ({}): {} edges",
@@ -221,6 +215,9 @@ mod tests {
                                         if wire.is_outer { "outer" } else { "inner" },
                                         wire.edges.len()
                                     );
+                                    let edges =
+                                        wire.edges.iter().map(|edge| edge.id).collect::<Vec<_>>();
+                                    println!("          Edges: {:?}", edges);
                                 }
                             }
                         }

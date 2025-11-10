@@ -653,6 +653,8 @@ pub mod ffi {
         pub fn cast_solid_to_shape(wire: &TopoDS_Solid) -> &TopoDS_Shape;
         pub fn cast_compound_to_shape(wire: &TopoDS_Compound) -> &TopoDS_Shape;
 
+        pub fn TopoDS_Shape_get_tshape_id(shape: &TopoDS_Shape) -> usize;
+
         pub fn TopoDS_cast_to_vertex(shape: &TopoDS_Shape) -> &TopoDS_Vertex;
         pub fn TopoDS_cast_to_wire(shape: &TopoDS_Shape) -> &TopoDS_Wire;
         pub fn TopoDS_cast_to_edge(shape: &TopoDS_Shape) -> &TopoDS_Edge;
