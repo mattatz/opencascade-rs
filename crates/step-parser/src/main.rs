@@ -1,4 +1,8 @@
-use step_parser::*;
+#![allow(unused_imports)]
+#![allow(special_module_name)]
 
-/// Dummy main function to build for WASM
-fn main() {}
+mod lib;
+use lib::*;
+
+fn main() {
+}

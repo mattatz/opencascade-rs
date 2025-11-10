@@ -12,9 +12,9 @@ rustflags = [
     "-C",
     "link-arg=-sALLOW_MEMORY_GROWTH=1",
     "-C",
-    "link-arg=-sEXPORTED_RUNTIME_METHODS=[\"UTF8ToString\",\"cwrap\",\"ccall\", \"HEAPU8\"]",
+    "link-arg=-sEXPORTED_RUNTIME_METHODS=[\"UTF8ToString\",\"cwrap\",\"ccall\",\"HEAPU8\"]",
     "-C",
-    "link-arg=-sEXPORTED_FUNCTIONS=[\"_malloc\",\"_free\", \"_parse_step\", \"_free_step\"]",
+    "link-arg=-sEXPORTED_FUNCTIONS=[\"_malloc\",\"_free\",\"_parse_step\",\"_free_step\"]",
 ]
 
 [env]
