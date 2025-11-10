@@ -11,7 +11,7 @@ name = "step-parser"
 path = "src/main.rs"
 
 [dependencies]
-opencascade = { path = "../opencascade" }
+opencascade = { path = "../opencascade", features = ["typeshare"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 glam = { version = "0.24", features = ["serde"] }

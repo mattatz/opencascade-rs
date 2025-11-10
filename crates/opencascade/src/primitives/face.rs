@@ -12,10 +12,11 @@ use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "typeshare")]
 use typeshare::typeshare;
 
 /// UV parameter bounds for a face
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct UVBounds {
     pub u_min: f64,
@@ -47,7 +48,7 @@ impl UVBounds {
 }
 
 /// A planar surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Plane {
     pub location: DVec3,
@@ -60,7 +61,7 @@ pub struct Plane {
 }
 
 /// A cylindrical surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cylinder {
     pub location: DVec3,
@@ -72,7 +73,7 @@ pub struct Cylinder {
 }
 
 /// A conical surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cone {
     pub location: DVec3,
@@ -85,7 +86,7 @@ pub struct Cone {
 }
 
 /// A spherical surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sphere {
     pub location: DVec3,
@@ -97,7 +98,7 @@ pub struct Sphere {
 }
 
 /// A toroidal surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Torus {
     pub location: DVec3,
@@ -110,7 +111,7 @@ pub struct Torus {
 }
 
 /// A B-Spline surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineSurface {
     pub u_profile: BSplineCurveProfile,
@@ -120,7 +121,7 @@ pub struct BSplineSurface {
 }
 
 /// A Bezier surface
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierSurface {
     pub u_profile: BezierCurveProfile,
@@ -130,7 +131,7 @@ pub struct BezierSurface {
 }
 
 /// Detailed information about a surface's geometric properties
-#[typeshare]
+#[cfg_attr(feature = "typeshare", typeshare)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum SurfaceDetails {
@@ -153,7 +154,9 @@ pub enum SurfaceDetails {
 }
 
 /// The specific geometric surface type (e.g., Geom_Plane, Geom_CylindricalSurface)
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "typeshare", typeshare)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum SurfaceType {
     /// Geom_Plane - A planar surface
     Plane,
