@@ -2,7 +2,8 @@ use opencascade::primitives::{CurveDetails, Orientation, Shape, SurfaceDetails};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-pub mod types;
+mod types;
+use types::*;
 
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,11 +73,7 @@ fn extract_geometry(shape: &Shape) -> Result<StepInfo, String> {
 fn extract_solid_from_shape(shape: &Shape) -> Option<SolidInfo> {
     let faces = extract_faces_from_shape(shape);
 
-    if faces.is_empty() {
-        None
-    } else {
-        Some(SolidInfo { faces })
-    }
+    if faces.is_empty() { None } else { Some(SolidInfo { faces }) }
 }
 
 /// Extract all faces from a shape and their hierarchical structure
@@ -99,23 +96,13 @@ fn extract_faces_from_shape(shape: &Shape) -> Vec<FaceInfo> {
                 let curve_details = edge.curve_details();
                 let orientation = edge.orientation();
 
-                edges.push(EdgeInfo {
-                    curve_details,
-                    orientation,
-                });
+                edges.push(EdgeInfo { curve_details, orientation });
             }
 
-            wires.push(WireInfo {
-                edges,
-                is_outer: wire_with_role.is_outer,
-            });
+            wires.push(WireInfo { edges, is_outer: wire_with_role.is_outer });
         }
 
-        faces.push(FaceInfo {
-            surface_details,
-            surface_type,
-            wires,
-        });
+        faces.push(FaceInfo { surface_details, surface_type, wires });
     }
 
     faces
@@ -201,11 +188,7 @@ mod tests {
                     Ok(geometry) => {
                         println!("  Found {} solids", geometry.solids.len());
                         for (i, solid) in geometry.solids.iter().enumerate() {
-                            println!(
-                                "    Solid {}: {} faces",
-                                i,
-                                solid.faces.len()
-                            );
+                            println!("    Solid {}: {} faces", i, solid.faces.len());
                             for (j, face) in solid.faces.iter().enumerate() {
                                 println!(
                                     "      Face {}: {} wires, surface type: {}",
