@@ -3,7 +3,6 @@ use cxx::UniquePtr;
 use glam::{dvec2, dvec3, DVec2, DVec3};
 use opencascade_sys::ffi;
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "typeshare")]
 use typeshare::typeshare;
 
 use super::make_vec;
@@ -105,7 +104,7 @@ pub enum Curve2dDetails {
 }
 
 /// A line
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line {
     pub origin: DVec3,
@@ -132,7 +131,7 @@ impl Line {
 }
 
 /// A circle
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Circle {
     pub center: DVec3,
@@ -145,7 +144,7 @@ pub struct Circle {
 }
 
 /// An ellipse
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ellipse {
     pub center: DVec3,
@@ -159,7 +158,7 @@ pub struct Ellipse {
 }
 
 /// A B-Spline curve profile
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurveProfile {
     pub nb_poles: u32,
@@ -181,7 +180,7 @@ impl BSplineCurveProfile {
 }
 
 /// A B-Spline curve
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
@@ -192,7 +191,7 @@ pub struct BSplineCurve {
 }
 
 /// A Bezier curve profile
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurveProfile {
     pub nb_poles: u32,
@@ -200,7 +199,7 @@ pub struct BezierCurveProfile {
 }
 
 /// A Bezier curve
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurve {
     pub profile: BezierCurveProfile,
@@ -211,7 +210,7 @@ pub struct BezierCurve {
 }
 
 /// A hyperbola
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hyperbola {
     pub center: DVec3,
@@ -221,7 +220,7 @@ pub struct Hyperbola {
 }
 
 /// A parabola
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parabola {
     pub vertex: DVec3,
@@ -230,7 +229,7 @@ pub struct Parabola {
 }
 
 /// An offset curve
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OffsetCurve {
     pub basis_curve_type: String,
@@ -238,7 +237,7 @@ pub struct OffsetCurve {
 }
 
 /// A trimmed curve
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrimmedCurve {
     pub basis_curve_type: String,
@@ -247,7 +246,7 @@ pub struct TrimmedCurve {
 }
 
 /// Detailed information about a curve's geometric properties
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum CurveDetails {
@@ -499,7 +498,9 @@ pub enum EdgeType {
 }
 
 /// The specific geometric curve type (e.g., Geom_Line, Geom_Circle)
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[typeshare]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data")]
 pub enum CurveType {
     /// Geom_Line - A line curve
     Line,
@@ -588,7 +589,7 @@ impl From<ffi::GeomAbs_CurveType> for EdgeType {
 }
 
 /// The orientation of a topological shape (edge, face, etc.)
-#[cfg_attr(feature = "typeshare", typeshare)]
+#[typeshare]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Orientation {
     /// Forward orientation - the default positive direction

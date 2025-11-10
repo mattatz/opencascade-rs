@@ -14,7 +14,7 @@ glam = { version = "0.24", features = ["bytemuck", "serde"] }
 kicad-parser = { path = "../kicad-parser" }
 thiserror = "1"
 serde = { version = "1.0", features = ["derive"] }
-typeshare = { version = "1.0", optional = true }
+typeshare = "1.0"
 
 [dev-dependencies]
 serde_json = "1.0"
@@ -22,4 +22,3 @@ serde_json = "1.0"
 [features]
 default = ["builtin"]
 builtin = ["opencascade-sys/builtin"]
-typeshare = ["dep:typeshare"]
