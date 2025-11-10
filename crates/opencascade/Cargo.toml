@@ -9,7 +9,7 @@ repository = "https://github.com/bschwind/opencascade-rs"
 
 [dependencies]
 cxx = "1"
-interop = { path = "../interop", features = ["glam"] }
+occt-interop = { path = "../interop", features = ["glam"] }
 opencascade-sys = { version = "0.2", path = "../opencascade-sys" }
 glam = { version = "0.24", features = ["bytemuck", "serde"] }
 kicad-parser = { path = "../kicad-parser" }

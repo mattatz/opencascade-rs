@@ -13,7 +13,7 @@ export interface BSplineCurveProfile {
 }
 
 /** A 3D vector with double-precision floating point components */
-export interface DVec3 {
+export interface Vector3 {
 	x: number;
 	y: number;
 	z: number;
@@ -22,7 +22,7 @@ export interface DVec3 {
 /** A B-Spline curve */
 export interface BSplineCurve {
 	profile: BSplineCurveProfile;
-	poles: DVec3[];
+	poles: Vector3[];
 	weights?: number[];
 	first_parameter: number;
 	last_parameter: number;
@@ -32,7 +32,7 @@ export interface BSplineCurve {
 export interface BSplineSurface {
 	u_profile: BSplineCurveProfile;
 	v_profile: BSplineCurveProfile;
-	poles: DVec3[][];
+	poles: Vector3[][];
 	weights?: number[][];
 }
 
@@ -45,7 +45,7 @@ export interface BezierCurveProfile {
 /** A Bezier curve */
 export interface BezierCurve {
 	profile: BezierCurveProfile;
-	poles: DVec3[];
+	poles: Vector3[];
 	weights?: number[];
 	first_parameter: number;
 	last_parameter: number;
@@ -55,16 +55,16 @@ export interface BezierCurve {
 export interface BezierSurface {
 	u_profile: BezierCurveProfile;
 	v_profile: BezierCurveProfile;
-	poles: DVec3[][];
+	poles: Vector3[][];
 	weights?: number[][];
 }
 
 /** A circle */
 export interface Circle {
-	center: DVec3;
-	axis: DVec3;
-	x_axis: DVec3;
-	y_axis: DVec3;
+	center: Vector3;
+	axis: Vector3;
+	x_axis: Vector3;
+	y_axis: Vector3;
 	radius: number;
 	first_parameter: number;
 	last_parameter: number;
@@ -72,29 +72,23 @@ export interface Circle {
 
 /** A conical surface */
 export interface Cone {
-	location: DVec3;
-	axis_location: DVec3;
-	axis_direction: DVec3;
-	x_direction: DVec3;
-	y_direction: DVec3;
+	location: Vector3;
+	axis_location: Vector3;
+	axis_direction: Vector3;
+	x_direction: Vector3;
+	y_direction: Vector3;
 	ref_radius: number;
 	semi_angle: number;
 }
 
 /** A cylindrical surface */
 export interface Cylinder {
-	location: DVec3;
-	axis_location: DVec3;
-	axis_direction: DVec3;
-	x_direction: DVec3;
-	y_direction: DVec3;
+	location: Vector3;
+	axis_location: Vector3;
+	axis_direction: Vector3;
+	x_direction: Vector3;
+	y_direction: Vector3;
 	radius: number;
-}
-
-/** A 2D vector with double-precision floating point components */
-export interface DVec2 {
-	x: number;
-	y: number;
 }
 
 /** Detailed information about a curve's geometric properties */
@@ -140,10 +134,10 @@ export interface EdgeInfo {
 
 /** An ellipse */
 export interface Ellipse {
-	center: DVec3;
-	axis: DVec3;
-	x_axis: DVec3;
-	y_axis: DVec3;
+	center: Vector3;
+	axis: Vector3;
+	x_axis: Vector3;
+	y_axis: Vector3;
 	major_radius: number;
 	minor_radius: number;
 	first_parameter: number;
@@ -181,16 +175,16 @@ export interface FaceInfo {
 
 /** A hyperbola */
 export interface Hyperbola {
-	center: DVec3;
-	axis: DVec3;
+	center: Vector3;
+	axis: Vector3;
 	major_radius: number;
 	minor_radius: number;
 }
 
 /** A line */
 export interface Line {
-	origin: DVec3;
-	direction: DVec3;
+	origin: Vector3;
+	direction: Vector3;
 	first_parameter: number;
 	last_parameter: number;
 }
@@ -203,8 +197,8 @@ export interface OffsetCurve {
 
 /** A parabola */
 export interface Parabola {
-	vertex: DVec3;
-	axis: DVec3;
+	vertex: Vector3;
+	axis: Vector3;
 	focal: number;
 }
 
@@ -218,11 +212,11 @@ export interface UVBounds {
 
 /** A planar surface */
 export interface Plane {
-	location: DVec3;
-	axis_location: DVec3;
-	axis_direction: DVec3;
-	x_direction: DVec3;
-	y_direction: DVec3;
+	location: Vector3;
+	axis_location: Vector3;
+	axis_direction: Vector3;
+	x_direction: Vector3;
+	y_direction: Vector3;
 	/** UV parameter bounds of the face (not the infinite plane) */
 	bounds: UVBounds;
 }
@@ -233,11 +227,11 @@ export interface SolidInfo {
 
 /** A spherical surface */
 export interface Sphere {
-	location: DVec3;
-	axis_location: DVec3;
-	axis_direction: DVec3;
-	x_direction: DVec3;
-	y_direction: DVec3;
+	location: Vector3;
+	axis_location: Vector3;
+	axis_direction: Vector3;
+	x_direction: Vector3;
+	y_direction: Vector3;
 	radius: number;
 }
 
@@ -247,11 +241,11 @@ export interface StepInfo {
 
 /** A toroidal surface */
 export interface Torus {
-	location: DVec3;
-	axis_location: DVec3;
-	axis_direction: DVec3;
-	x_direction: DVec3;
-	y_direction: DVec3;
+	location: Vector3;
+	axis_location: Vector3;
+	axis_direction: Vector3;
+	x_direction: Vector3;
+	y_direction: Vector3;
 	major_radius: number;
 	minor_radius: number;
 }
@@ -261,5 +255,11 @@ export interface TrimmedCurve {
 	basis_curve_type: string;
 	first_parameter: number;
 	last_parameter: number;
+}
+
+/** A 2D vector with double-precision floating point components */
+export interface Vector2 {
+	x: number;
+	y: number;
 }
 

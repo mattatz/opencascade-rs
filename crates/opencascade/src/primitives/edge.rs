@@ -1,7 +1,7 @@
 use crate::primitives::{make_axis_2, make_point, Face};
 use cxx::UniquePtr;
 use glam::{dvec2, dvec3, DVec2, DVec3};
-use interop::*;
+use occt_interop::*;
 use opencascade_sys::ffi;
 use serde::{Deserialize, Serialize};
 

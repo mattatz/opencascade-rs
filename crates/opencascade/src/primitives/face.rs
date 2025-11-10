@@ -10,7 +10,7 @@ use crate::{
 };
 use cxx::UniquePtr;
 use glam::{dvec3, DVec3};
-use interop::*;
+use occt_interop::*;
 use opencascade_sys::ffi;
 use serde::{Deserialize, Serialize};
 

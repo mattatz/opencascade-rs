@@ -1,6 +1,6 @@
 {
   "name": "step-parser",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "STEP file parser for JavaScript/TypeScript, powered by OpenCascade and Rust/WASM",
   "type": "module",
   "main": "./index.js",
