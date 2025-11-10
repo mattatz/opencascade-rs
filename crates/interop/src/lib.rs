@@ -1,7 +1,7 @@
-pub mod dvec;
+pub mod vector;
 pub mod geometry;
 pub mod topology;
 
-pub use dvec::*;
+pub use vector::*;
 pub use geometry::*;
 pub use topology::*;

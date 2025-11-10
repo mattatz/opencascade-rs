@@ -1,4 +1,4 @@
-use crate::{DVec2, DVec3};
+use crate::{Vector2, Vector3};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -30,8 +30,8 @@ impl std::fmt::Display for Orientation {
 /// A 2D line
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line2d {
-    pub origin: DVec2,
-    pub direction: DVec2,
+    pub origin: Vector2,
+    pub direction: Vector2,
     pub first_parameter: f64,
     pub last_parameter: f64,
 }
@@ -39,9 +39,9 @@ pub struct Line2d {
 /// A 2D circle
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Circle2d {
-    pub center: DVec2,
-    pub x_direction: DVec2,
-    pub y_direction: DVec2,
+    pub center: Vector2,
+    pub x_direction: Vector2,
+    pub y_direction: Vector2,
     pub radius: f64,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -50,9 +50,9 @@ pub struct Circle2d {
 /// A 2D ellipse
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ellipse2d {
-    pub center: DVec2,
-    pub x_direction: DVec2,
-    pub y_direction: DVec2,
+    pub center: Vector2,
+    pub x_direction: Vector2,
+    pub y_direction: Vector2,
     pub major_radius: f64,
     pub minor_radius: f64,
     pub first_parameter: f64,
@@ -63,7 +63,7 @@ pub struct Ellipse2d {
 #[derive(Debug, Clone)]
 pub struct BSplineCurve2d {
     pub profile: BSplineCurveProfile,
-    pub poles: Vec<DVec2>,
+    pub poles: Vec<Vector2>,
     pub weights: Option<Vec<f64>>,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -73,7 +73,7 @@ pub struct BSplineCurve2d {
 #[derive(Debug, Clone)]
 pub struct BezierCurve2d {
     pub profile: BezierCurveProfile,
-    pub poles: Vec<DVec2>,
+    pub poles: Vec<Vector2>,
     pub weights: Option<Vec<f64>>,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -110,8 +110,8 @@ pub enum Curve2dDetails {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Line {
-    pub origin: DVec3,
-    pub direction: DVec3,
+    pub origin: Vector3,
+    pub direction: Vector3,
     pub first_parameter: f64,
     pub last_parameter: f64,
 }
@@ -120,10 +120,10 @@ pub struct Line {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Circle {
-    pub center: DVec3,
-    pub axis: DVec3,
-    pub x_axis: DVec3,
-    pub y_axis: DVec3,
+    pub center: Vector3,
+    pub axis: Vector3,
+    pub x_axis: Vector3,
+    pub y_axis: Vector3,
     pub radius: f64,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -133,10 +133,10 @@ pub struct Circle {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ellipse {
-    pub center: DVec3,
-    pub axis: DVec3,
-    pub x_axis: DVec3,
-    pub y_axis: DVec3,
+    pub center: Vector3,
+    pub axis: Vector3,
+    pub x_axis: Vector3,
+    pub y_axis: Vector3,
     pub major_radius: f64,
     pub minor_radius: f64,
     pub first_parameter: f64,
@@ -170,7 +170,7 @@ impl BSplineCurveProfile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BSplineCurve {
     pub profile: BSplineCurveProfile,
-    pub poles: Vec<DVec3>,
+    pub poles: Vec<Vector3>,
     pub weights: Option<Vec<f64>>,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -189,7 +189,7 @@ pub struct BezierCurveProfile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BezierCurve {
     pub profile: BezierCurveProfile,
-    pub poles: Vec<DVec3>,
+    pub poles: Vec<Vector3>,
     pub weights: Option<Vec<f64>>,
     pub first_parameter: f64,
     pub last_parameter: f64,
@@ -199,8 +199,8 @@ pub struct BezierCurve {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hyperbola {
-    pub center: DVec3,
-    pub axis: DVec3,
+    pub center: Vector3,
+    pub axis: Vector3,
     pub major_radius: f64,
     pub minor_radius: f64,
 }
@@ -209,8 +209,8 @@ pub struct Hyperbola {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Parabola {
-    pub vertex: DVec3,
-    pub axis: DVec3,
+    pub vertex: Vector3,
+    pub axis: Vector3,
     pub focal: f64,
 }
 

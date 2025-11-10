@@ -1,4 +1,4 @@
-use crate::{DVec3, BSplineCurveProfile, BezierCurveProfile};
+use crate::{Vector3, BSplineCurveProfile, BezierCurveProfile};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -39,11 +39,11 @@ impl UVBounds {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Plane {
-    pub location: DVec3,
-    pub axis_location: DVec3,
-    pub axis_direction: DVec3,
-    pub x_direction: DVec3,
-    pub y_direction: DVec3,
+    pub location: Vector3,
+    pub axis_location: Vector3,
+    pub axis_direction: Vector3,
+    pub x_direction: Vector3,
+    pub y_direction: Vector3,
     /// UV parameter bounds of the face (not the infinite plane)
     pub bounds: UVBounds,
 }
@@ -52,11 +52,11 @@ pub struct Plane {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cylinder {
-    pub location: DVec3,
-    pub axis_location: DVec3,
-    pub axis_direction: DVec3,
-    pub x_direction: DVec3,
-    pub y_direction: DVec3,
+    pub location: Vector3,
+    pub axis_location: Vector3,
+    pub axis_direction: Vector3,
+    pub x_direction: Vector3,
+    pub y_direction: Vector3,
     pub radius: f64,
 }
 
@@ -64,11 +64,11 @@ pub struct Cylinder {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Cone {
-    pub location: DVec3,
-    pub axis_location: DVec3,
-    pub axis_direction: DVec3,
-    pub x_direction: DVec3,
-    pub y_direction: DVec3,
+    pub location: Vector3,
+    pub axis_location: Vector3,
+    pub axis_direction: Vector3,
+    pub x_direction: Vector3,
+    pub y_direction: Vector3,
     pub ref_radius: f64,
     pub semi_angle: f64,
 }
@@ -77,11 +77,11 @@ pub struct Cone {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sphere {
-    pub location: DVec3,
-    pub axis_location: DVec3,
-    pub axis_direction: DVec3,
-    pub x_direction: DVec3,
-    pub y_direction: DVec3,
+    pub location: Vector3,
+    pub axis_location: Vector3,
+    pub axis_direction: Vector3,
+    pub x_direction: Vector3,
+    pub y_direction: Vector3,
     pub radius: f64,
 }
 
@@ -89,11 +89,11 @@ pub struct Sphere {
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Torus {
-    pub location: DVec3,
-    pub axis_location: DVec3,
-    pub axis_direction: DVec3,
-    pub x_direction: DVec3,
-    pub y_direction: DVec3,
+    pub location: Vector3,
+    pub axis_location: Vector3,
+    pub axis_direction: Vector3,
+    pub x_direction: Vector3,
+    pub y_direction: Vector3,
     pub major_radius: f64,
     pub minor_radius: f64,
 }
@@ -104,7 +104,7 @@ pub struct Torus {
 pub struct BSplineSurface {
     pub u_profile: BSplineCurveProfile,
     pub v_profile: BSplineCurveProfile,
-    pub poles: Vec<Vec<DVec3>>,
+    pub poles: Vec<Vec<Vector3>>,
     pub weights: Option<Vec<Vec<f64>>>,
 }
 
@@ -114,7 +114,7 @@ pub struct BSplineSurface {
 pub struct BezierSurface {
     pub u_profile: BezierCurveProfile,
     pub v_profile: BezierCurveProfile,
-    pub poles: Vec<Vec<DVec3>>,
+    pub poles: Vec<Vec<Vector3>>,
     pub weights: Option<Vec<Vec<f64>>>,
 }
 
