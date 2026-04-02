@@ -40,6 +40,8 @@
 #include <BRepPrimAPI_MakeTorus.hxx>
 #include <BRepTools.hxx>
 #include <BRepTools_WireExplorer.hxx>
+#include <BRep_Builder.hxx>
+#include <BinTools.hxx>
 #include <GCE2d_MakeSegment.hxx>
 #include <GCPnts_TangentialDeflection.hxx>
 #include <GC_MakeArcOfCircle.hxx>
@@ -1080,6 +1082,32 @@ inline std::unique_ptr<TopoDS_Vertex> BRepTools_WireExplorer_CurrentVertex(const
 
 inline void BRepTools_WireExplorer_Clear(BRepTools_WireExplorer &explorer) {
   explorer.Clear();
+}
+
+inline bool write_brep_text(const TopoDS_Shape &shape, rust::String path) {
+  return BRepTools::Write(shape, path.c_str());
+}
+
+inline std::unique_ptr<TopoDS_Shape> read_brep_text(rust::String path) {
+  BRep_Builder builder;
+  auto shape = std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape());
+  if (BRepTools::Read(*shape, path.c_str(), builder)) {
+    return shape;
+  }
+  return std::unique_ptr<TopoDS_Shape>(nullptr);
+}
+
+// BinTools
+inline bool write_brep_bin(const TopoDS_Shape &shape, rust::String path) {
+  return BinTools::Write(shape, path.c_str());
+}
+
+inline std::unique_ptr<TopoDS_Shape> read_brep_bin(rust::String path) {
+  auto shape = std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape());
+  if (BinTools::Read(*shape, path.c_str())) {
+    return shape;
+  }
+  return std::unique_ptr<TopoDS_Shape>(nullptr);
 }
 
 // Collections

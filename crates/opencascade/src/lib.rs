@@ -28,6 +28,10 @@ pub enum Error {
     StepWriteFailed,
     #[error("failed to write IGES file")]
     IgesWriteFailed,
+    #[error("failed to read BREP file")]
+    BrepReadFailed,
+    #[error("failed to write BREP file")]
+    BrepWriteFailed,
     #[error("failed to triangulate Shape")]
     TriangulationFailed,
     #[error("encountered a face with no triangulation")]

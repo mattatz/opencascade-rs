@@ -593,6 +593,47 @@ impl Shape {
         }
     }
 
+    pub fn write_brep_text(&self, path: impl AsRef<Path>) -> Result<(), Error> {
+        let success =
+            ffi::write_brep_text(&self.inner, path.as_ref().to_string_lossy().to_string());
+
+        if success {
+            Ok(())
+        } else {
+            Err(Error::BrepWriteFailed)
+        }
+    }
+
+    pub fn read_brep_text(path: impl AsRef<Path>) -> Result<Self, Error> {
+        let inner = ffi::read_brep_text(path.as_ref().to_string_lossy().to_string());
+
+        if inner.is_null() {
+            Err(Error::BrepReadFailed)
+        } else {
+            Ok(Self { inner })
+        }
+    }
+
+    pub fn write_brep_bin(&self, path: impl AsRef<Path>) -> Result<(), Error> {
+        let success = ffi::write_brep_bin(&self.inner, path.as_ref().to_string_lossy().to_string());
+
+        if success {
+            Ok(())
+        } else {
+            Err(Error::BrepWriteFailed)
+        }
+    }
+
+    pub fn read_brep_bin(path: impl AsRef<Path>) -> Result<Self, Error> {
+        let inner = ffi::read_brep_bin(path.as_ref().to_string_lossy().to_string());
+
+        if inner.is_null() {
+            Err(Error::BrepReadFailed)
+        } else {
+            Ok(Self { inner })
+        }
+    }
+
     #[must_use]
     pub fn union(&self, other: &Shape) -> BooleanShape {
         let mut fuse_operation = ffi::BRepAlgoAPI_Fuse_ctor(&self.inner, &other.inner);
