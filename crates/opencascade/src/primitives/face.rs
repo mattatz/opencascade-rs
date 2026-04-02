@@ -89,7 +89,7 @@ impl AsRef<Face> for Face {
 }
 
 impl Face {
-    pub(crate) fn from_face(face: &ffi::TopoDS_Face) -> Self {
+    pub fn from_face(face: &ffi::TopoDS_Face) -> Self {
         let inner = ffi::TopoDS_Face_to_owned(face);
 
         Self { inner }

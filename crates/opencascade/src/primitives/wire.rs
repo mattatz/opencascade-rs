@@ -14,7 +14,7 @@ use glam::{dvec3, DVec3};
 use opencascade_sys::ffi;
 
 pub struct Wire {
-    pub(crate) inner: UniquePtr<ffi::TopoDS_Wire>,
+    pub inner: UniquePtr<ffi::TopoDS_Wire>,
 }
 
 impl AsRef<Wire> for Wire {

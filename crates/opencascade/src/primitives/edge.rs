@@ -343,7 +343,7 @@ impl Edge {
         &self.inner
     }
 
-    pub(crate) fn from_edge(edge: &ffi::TopoDS_Edge) -> Self {
+    pub fn from_edge(edge: &ffi::TopoDS_Edge) -> Self {
         let inner = ffi::TopoDS_Edge_to_owned(edge);
 
         Self { inner }
@@ -357,7 +357,7 @@ impl Edge {
         ffi::TopoDS_Shape_get_tshape_id(shape)
     }
 
-    fn from_make_edge(mut make_edge: UniquePtr<ffi::BRepBuilderAPI_MakeEdge>) -> Self {
+    pub fn from_make_edge(mut make_edge: UniquePtr<ffi::BRepBuilderAPI_MakeEdge>) -> Self {
         Self::from_edge(make_edge.pin_mut().Edge())
     }
 
