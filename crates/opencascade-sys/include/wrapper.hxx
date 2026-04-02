@@ -88,7 +88,12 @@
 #include <Standard_Type.hxx>
 #include <StlAPI_Writer.hxx>
 #include <TColgp_Array1OfDir.hxx>
+#include <TColgp_Array1OfPnt.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
+#include <TColStd_Array1OfReal.hxx>
+#include <TColStd_Array1OfInteger.hxx>
+#include <TColStd_Array2OfReal.hxx>
+#include <Geom_BSplineCurve.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopTools_HSequenceOfShape.hxx>
@@ -1183,4 +1188,114 @@ inline std::unique_ptr<gp_Pnt> Bnd_Box_CornerMax(const Bnd_Box &box) {
 // BRepBndLib
 inline void BRepBndLib_Add(const TopoDS_Shape &shape, Bnd_Box &box, const Standard_Boolean useTriangulation) {
   BRepBndLib::Add(shape, box, useTriangulation);
+}
+
+// ============================================
+// Array types for BSpline construction
+// ============================================
+
+// TColStd_Array1OfReal
+inline std::unique_ptr<TColStd_Array1OfReal> TColStd_Array1OfReal_ctor(int lower, int upper) {
+  return std::unique_ptr<TColStd_Array1OfReal>(new TColStd_Array1OfReal(lower, upper));
+}
+inline void TColStd_Array1OfReal_SetValue(TColStd_Array1OfReal &arr, int index, double value) {
+  arr.SetValue(index, value);
+}
+
+// TColStd_Array1OfInteger
+inline std::unique_ptr<TColStd_Array1OfInteger> TColStd_Array1OfInteger_ctor(int lower, int upper) {
+  return std::unique_ptr<TColStd_Array1OfInteger>(new TColStd_Array1OfInteger(lower, upper));
+}
+inline void TColStd_Array1OfInteger_SetValue(TColStd_Array1OfInteger &arr, int index, int value) {
+  arr.SetValue(index, value);
+}
+
+// TColStd_Array2OfReal (for surface weights)
+inline std::unique_ptr<TColStd_Array2OfReal> TColStd_Array2OfReal_ctor(int row_lower, int row_upper, int col_lower, int col_upper) {
+  return std::unique_ptr<TColStd_Array2OfReal>(new TColStd_Array2OfReal(row_lower, row_upper, col_lower, col_upper));
+}
+inline void TColStd_Array2OfReal_SetValue(TColStd_Array2OfReal &arr, int row, int col, double value) {
+  arr.SetValue(row, col, value);
+}
+
+// TColgp_Array1OfPnt (non-handle, for curve poles)
+inline std::unique_ptr<TColgp_Array1OfPnt> TColgp_Array1OfPnt_ctor(int lower, int upper) {
+  return std::unique_ptr<TColgp_Array1OfPnt>(new TColgp_Array1OfPnt(lower, upper));
+}
+inline void TColgp_Array1OfPnt_SetValue(TColgp_Array1OfPnt &arr, int index, const gp_Pnt &pnt) {
+  arr.SetValue(index, pnt);
+}
+
+// ============================================
+// BSpline surface construction
+// ============================================
+
+inline std::unique_ptr<HandleGeom_BSplineSurface> Geom_BSplineSurface_ctor(
+    const TColgp_Array2OfPnt &poles,
+    const TColStd_Array1OfReal &u_knots,
+    const TColStd_Array1OfReal &v_knots,
+    const TColStd_Array1OfInteger &u_mults,
+    const TColStd_Array1OfInteger &v_mults,
+    int u_degree, int v_degree,
+    bool u_periodic, bool v_periodic) {
+  Handle(Geom_BSplineSurface) surf = new Geom_BSplineSurface(
+      poles, u_knots, v_knots, u_mults, v_mults, u_degree, v_degree, u_periodic, v_periodic);
+  return std::unique_ptr<HandleGeom_BSplineSurface>(new HandleGeom_BSplineSurface(surf));
+}
+
+inline std::unique_ptr<HandleGeom_BSplineSurface> Geom_BSplineSurface_ctor_weighted(
+    const TColgp_Array2OfPnt &poles,
+    const TColStd_Array2OfReal &weights,
+    const TColStd_Array1OfReal &u_knots,
+    const TColStd_Array1OfReal &v_knots,
+    const TColStd_Array1OfInteger &u_mults,
+    const TColStd_Array1OfInteger &v_mults,
+    int u_degree, int v_degree,
+    bool u_periodic, bool v_periodic) {
+  Handle(Geom_BSplineSurface) surf = new Geom_BSplineSurface(
+      poles, weights, u_knots, v_knots, u_mults, v_mults, u_degree, v_degree, u_periodic, v_periodic);
+  return std::unique_ptr<HandleGeom_BSplineSurface>(new HandleGeom_BSplineSurface(surf));
+}
+
+inline std::unique_ptr<HandleGeomSurface> bspline_surface_to_geom_surface(const HandleGeom_BSplineSurface &bspline) {
+  Handle(Geom_Surface) surface = bspline;
+  return std::unique_ptr<HandleGeomSurface>(new HandleGeomSurface(surface));
+}
+
+// ============================================
+// BSpline curve construction
+// ============================================
+
+inline std::unique_ptr<HandleGeomBSplineCurve> Geom_BSplineCurve_ctor(
+    const TColgp_Array1OfPnt &poles,
+    const TColStd_Array1OfReal &knots,
+    const TColStd_Array1OfInteger &mults,
+    int degree,
+    bool periodic) {
+  Handle(Geom_BSplineCurve) curve = new Geom_BSplineCurve(poles, knots, mults, degree, periodic);
+  return std::unique_ptr<HandleGeomBSplineCurve>(new HandleGeomBSplineCurve(curve));
+}
+
+inline std::unique_ptr<HandleGeomBSplineCurve> Geom_BSplineCurve_ctor_weighted(
+    const TColgp_Array1OfPnt &poles,
+    const TColStd_Array1OfReal &weights,
+    const TColStd_Array1OfReal &knots,
+    const TColStd_Array1OfInteger &mults,
+    int degree,
+    bool periodic) {
+  Handle(Geom_BSplineCurve) curve = new Geom_BSplineCurve(poles, weights, knots, mults, degree, periodic);
+  return std::unique_ptr<HandleGeomBSplineCurve>(new HandleGeomBSplineCurve(curve));
+}
+
+inline std::unique_ptr<HandleGeomCurve> bspline_curve_to_geom_curve(const HandleGeomBSplineCurve &bspline) {
+  Handle(Geom_Curve) curve = bspline;
+  return std::unique_ptr<HandleGeomCurve>(new HandleGeomCurve(curve));
+}
+
+// ============================================
+// BRepBuilderAPI_MakeFace - add interior wire
+// ============================================
+
+inline void BRepBuilderAPI_MakeFace_Add(BRepBuilderAPI_MakeFace &maker, const TopoDS_Wire &wire) {
+  maker.Add(wire);
 }

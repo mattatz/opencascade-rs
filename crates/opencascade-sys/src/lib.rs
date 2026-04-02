@@ -255,6 +255,99 @@ pub mod ffi {
         ) -> UniquePtr<TColgp_Array2OfPnt>;
         pub fn SetValue(self: Pin<&mut TColgp_Array2OfPnt>, row: i32, column: i32, item: &gp_Pnt);
 
+        // TColgp_Array1OfPnt (non-handle, for BSpline curve poles)
+        type TColgp_Array1OfPnt;
+        pub fn TColgp_Array1OfPnt_ctor(lower: i32, upper: i32) -> UniquePtr<TColgp_Array1OfPnt>;
+        pub fn TColgp_Array1OfPnt_SetValue(
+            arr: Pin<&mut TColgp_Array1OfPnt>,
+            index: i32,
+            pnt: &gp_Pnt,
+        );
+
+        // TColStd_Array1OfReal (for knots)
+        type TColStd_Array1OfReal;
+        pub fn TColStd_Array1OfReal_ctor(lower: i32, upper: i32) -> UniquePtr<TColStd_Array1OfReal>;
+        pub fn TColStd_Array1OfReal_SetValue(
+            arr: Pin<&mut TColStd_Array1OfReal>,
+            index: i32,
+            value: f64,
+        );
+
+        // TColStd_Array1OfInteger (for multiplicities)
+        type TColStd_Array1OfInteger;
+        pub fn TColStd_Array1OfInteger_ctor(
+            lower: i32,
+            upper: i32,
+        ) -> UniquePtr<TColStd_Array1OfInteger>;
+        pub fn TColStd_Array1OfInteger_SetValue(
+            arr: Pin<&mut TColStd_Array1OfInteger>,
+            index: i32,
+            value: i32,
+        );
+
+        // TColStd_Array2OfReal (for surface weights)
+        type TColStd_Array2OfReal;
+        pub fn TColStd_Array2OfReal_ctor(
+            row_lower: i32,
+            row_upper: i32,
+            col_lower: i32,
+            col_upper: i32,
+        ) -> UniquePtr<TColStd_Array2OfReal>;
+        pub fn TColStd_Array2OfReal_SetValue(
+            arr: Pin<&mut TColStd_Array2OfReal>,
+            row: i32,
+            col: i32,
+            value: f64,
+        );
+
+        // BSpline surface construction
+        pub fn Geom_BSplineSurface_ctor(
+            poles: &TColgp_Array2OfPnt,
+            u_knots: &TColStd_Array1OfReal,
+            v_knots: &TColStd_Array1OfReal,
+            u_mults: &TColStd_Array1OfInteger,
+            v_mults: &TColStd_Array1OfInteger,
+            u_degree: i32,
+            v_degree: i32,
+            u_periodic: bool,
+            v_periodic: bool,
+        ) -> UniquePtr<HandleGeom_BSplineSurface>;
+        pub fn Geom_BSplineSurface_ctor_weighted(
+            poles: &TColgp_Array2OfPnt,
+            weights: &TColStd_Array2OfReal,
+            u_knots: &TColStd_Array1OfReal,
+            v_knots: &TColStd_Array1OfReal,
+            u_mults: &TColStd_Array1OfInteger,
+            v_mults: &TColStd_Array1OfInteger,
+            u_degree: i32,
+            v_degree: i32,
+            u_periodic: bool,
+            v_periodic: bool,
+        ) -> UniquePtr<HandleGeom_BSplineSurface>;
+        pub fn bspline_surface_to_geom_surface(
+            bspline: &HandleGeom_BSplineSurface,
+        ) -> UniquePtr<HandleGeomSurface>;
+
+        // BSpline curve construction
+        pub fn Geom_BSplineCurve_ctor(
+            poles: &TColgp_Array1OfPnt,
+            knots: &TColStd_Array1OfReal,
+            mults: &TColStd_Array1OfInteger,
+            degree: i32,
+            periodic: bool,
+        ) -> UniquePtr<HandleGeomBSplineCurve>;
+        pub fn Geom_BSplineCurve_ctor_weighted(
+            poles: &TColgp_Array1OfPnt,
+            weights: &TColStd_Array1OfReal,
+            knots: &TColStd_Array1OfReal,
+            mults: &TColStd_Array1OfInteger,
+            degree: i32,
+            periodic: bool,
+        ) -> UniquePtr<HandleGeomBSplineCurve>;
+        pub fn bspline_curve_to_geom_curve(
+            bspline: &HandleGeomBSplineCurve,
+        ) -> UniquePtr<HandleGeomCurve>;
+
         type TColgp_HArray1OfPnt;
         #[cxx_name = "construct_unique"]
         pub fn TColgp_HArray1OfPnt_ctor(
@@ -828,6 +921,10 @@ pub mod ffi {
         pub fn Shape(self: Pin<&mut BRepBuilderAPI_MakeFace>) -> &TopoDS_Shape;
         pub fn Build(self: Pin<&mut BRepBuilderAPI_MakeFace>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepBuilderAPI_MakeFace) -> bool;
+        pub fn BRepBuilderAPI_MakeFace_Add(
+            maker: Pin<&mut BRepBuilderAPI_MakeFace>,
+            wire: &TopoDS_Wire,
+        );
 
         // BRepAdaptor
         type BRepAdaptor_Curve;
