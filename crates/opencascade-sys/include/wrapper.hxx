@@ -1299,3 +1299,38 @@ inline std::unique_ptr<HandleGeomCurve> bspline_curve_to_geom_curve(const Handle
 inline void BRepBuilderAPI_MakeFace_Add(BRepBuilderAPI_MakeFace &maker, const TopoDS_Wire &wire) {
   maker.Add(wire);
 }
+
+// ============================================
+// Geom2d_BSplineCurve construction (for PCurves / trim curves)
+// ============================================
+
+inline std::unique_ptr<HandleGeom2d_BSplineCurve> Geom2d_BSplineCurve_ctor(
+    const TColgp_Array1OfPnt2d &poles,
+    const TColStd_Array1OfReal &knots,
+    const TColStd_Array1OfInteger &mults,
+    int degree,
+    bool periodic) {
+  Handle(Geom2d_BSplineCurve) curve = new Geom2d_BSplineCurve(poles, knots, mults, degree, periodic);
+  return std::unique_ptr<HandleGeom2d_BSplineCurve>(new HandleGeom2d_BSplineCurve(curve));
+}
+
+inline std::unique_ptr<HandleGeom2d_BSplineCurve> Geom2d_BSplineCurve_ctor_weighted(
+    const TColgp_Array1OfPnt2d &poles,
+    const TColStd_Array1OfReal &weights,
+    const TColStd_Array1OfReal &knots,
+    const TColStd_Array1OfInteger &mults,
+    int degree,
+    bool periodic) {
+  Handle(Geom2d_BSplineCurve) curve = new Geom2d_BSplineCurve(poles, weights, knots, mults, degree, periodic);
+  return std::unique_ptr<HandleGeom2d_BSplineCurve>(new HandleGeom2d_BSplineCurve(curve));
+}
+
+inline std::unique_ptr<HandleGeom2d_Curve> bspline2d_curve_to_geom2d_curve(const HandleGeom2d_BSplineCurve &bspline) {
+  Handle(Geom2d_Curve) curve = bspline;
+  return std::unique_ptr<HandleGeom2d_Curve>(new HandleGeom2d_Curve(curve));
+}
+
+// BRepLib::SameParameter - ensure edge consistency after PCurve construction
+inline void BRepLib_SameParameter(const TopoDS_Edge &edge, double tolerance) {
+  BRepLib::SameParameter(edge, tolerance);
+}

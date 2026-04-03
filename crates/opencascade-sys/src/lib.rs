@@ -1567,6 +1567,27 @@ pub mod ffi {
         ) -> UniquePtr<gp_Pnt2d>;
         pub fn geom2d_bspline_curve_weight(bspline: &HandleGeom2d_BSplineCurve, index: i32) -> f64;
 
+        // Geom2d_BSplineCurve construction
+        pub fn Geom2d_BSplineCurve_ctor(
+            poles: &TColgp_Array1OfPnt2d,
+            knots: &TColStd_Array1OfReal,
+            mults: &TColStd_Array1OfInteger,
+            degree: i32,
+            periodic: bool,
+        ) -> UniquePtr<HandleGeom2d_BSplineCurve>;
+        pub fn Geom2d_BSplineCurve_ctor_weighted(
+            poles: &TColgp_Array1OfPnt2d,
+            weights: &TColStd_Array1OfReal,
+            knots: &TColStd_Array1OfReal,
+            mults: &TColStd_Array1OfInteger,
+            degree: i32,
+            periodic: bool,
+        ) -> UniquePtr<HandleGeom2d_BSplineCurve>;
+        pub fn bspline2d_curve_to_geom2d_curve(
+            bspline: &HandleGeom2d_BSplineCurve,
+        ) -> UniquePtr<HandleGeom2d_Curve>;
+        pub fn BRepLib_SameParameter(edge: &TopoDS_Edge, tolerance: f64);
+
         // Geom2d_BezierCurve
         pub fn cast_geom2d_curve_to_bezier(
             curve: &HandleGeom2d_Curve,
