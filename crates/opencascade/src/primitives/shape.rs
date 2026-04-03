@@ -12,7 +12,7 @@ use opencascade_sys::ffi;
 use std::path::Path;
 
 pub struct Shape {
-    pub(crate) inner: UniquePtr<ffi::TopoDS_Shape>,
+    pub inner: UniquePtr<ffi::TopoDS_Shape>,
 }
 
 impl std::fmt::Debug for Shape {

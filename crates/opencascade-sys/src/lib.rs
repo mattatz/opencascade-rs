@@ -830,6 +830,24 @@ pub mod ffi {
         pub fn BRep_Builder_ctor() -> UniquePtr<BRep_Builder>;
 
         pub fn BRep_Builder_upcast_to_topods_builder(builder: &BRep_Builder) -> &TopoDS_Builder;
+        pub fn BRep_Builder_MakeFace(
+            builder: &BRep_Builder,
+            face: Pin<&mut TopoDS_Face>,
+            surface: &HandleGeomSurface,
+            tolerance: f64,
+        );
+        pub fn BRep_Builder_Add_Wire(
+            builder: &TopoDS_Builder,
+            face: Pin<&mut TopoDS_Face>,
+            wire: &TopoDS_Wire,
+        );
+        pub fn BRep_Builder_UpdateEdge(
+            builder: &BRep_Builder,
+            edge: Pin<&mut TopoDS_Edge>,
+            pcurve: &HandleGeom2d_Curve,
+            face: &TopoDS_Face,
+            tolerance: f64,
+        );
         pub fn MakeCompound(self: &TopoDS_Builder, compound: Pin<&mut TopoDS_Compound>);
         pub fn MakeShell(self: &TopoDS_Builder, compound: Pin<&mut TopoDS_Shell>);
         pub fn Add(self: &TopoDS_Builder, shape: Pin<&mut TopoDS_Shape>, compound: &TopoDS_Shape);
@@ -925,6 +943,11 @@ pub mod ffi {
             maker: Pin<&mut BRepBuilderAPI_MakeFace>,
             wire: &TopoDS_Wire,
         );
+        pub fn BRepBuilderAPI_MakeFace_surface_wire(
+            surface: &HandleGeomSurface,
+            wire: &TopoDS_Wire,
+            inside: bool,
+        ) -> UniquePtr<BRepBuilderAPI_MakeFace>;
 
         // BRepAdaptor
         type BRepAdaptor_Curve;

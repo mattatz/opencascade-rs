@@ -79,7 +79,7 @@ impl std::fmt::Display for SurfaceType {
 }
 
 pub struct Face {
-    pub(crate) inner: UniquePtr<ffi::TopoDS_Face>,
+    pub inner: UniquePtr<ffi::TopoDS_Face>,
 }
 
 impl AsRef<Face> for Face {

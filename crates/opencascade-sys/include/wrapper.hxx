@@ -1300,6 +1300,15 @@ inline void BRepBuilderAPI_MakeFace_Add(BRepBuilderAPI_MakeFace &maker, const To
   maker.Add(wire);
 }
 
+// BRepBuilderAPI_MakeFace from surface + outer wire
+inline std::unique_ptr<BRepBuilderAPI_MakeFace> BRepBuilderAPI_MakeFace_surface_wire(
+    const HandleGeomSurface &surface,
+    const TopoDS_Wire &wire,
+    bool inside) {
+  return std::unique_ptr<BRepBuilderAPI_MakeFace>(
+    new BRepBuilderAPI_MakeFace(surface, wire, inside));
+}
+
 // ============================================
 // Geom2d_BSplineCurve construction (for PCurves / trim curves)
 // ============================================
@@ -1334,3 +1343,22 @@ inline std::unique_ptr<HandleGeom2d_Curve> bspline2d_curve_to_geom2d_curve(const
 inline void BRepLib_SameParameter(const TopoDS_Edge &edge, double tolerance) {
   BRepLib::SameParameter(edge, tolerance);
 }
+
+// BRep_Builder::MakeFace - create an empty face with a surface
+inline void BRep_Builder_MakeFace(const BRep_Builder &builder, TopoDS_Face &face,
+                                   const HandleGeomSurface &surface, double tolerance) {
+  builder.MakeFace(face, surface, tolerance);
+}
+
+// BRep_Builder::Add - add a wire to a face
+inline void BRep_Builder_Add_Wire(const TopoDS_Builder &builder, TopoDS_Face &face, const TopoDS_Wire &wire) {
+  builder.Add(face, wire);
+}
+
+// BRep_Builder::UpdateEdge - add a PCurve (2D curve on surface) to an edge
+inline void BRep_Builder_UpdateEdge(const BRep_Builder &builder, TopoDS_Edge &edge,
+                                     const HandleGeom2d_Curve &pcurve, const TopoDS_Face &face,
+                                     double tolerance) {
+  builder.UpdateEdge(edge, pcurve, face, tolerance);
+}
+
