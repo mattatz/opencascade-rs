@@ -176,6 +176,11 @@ inline std::unique_ptr<gp_Pnt> HandleGeomCurve_Value(const HandleGeomCurve &curv
   return std::unique_ptr<gp_Pnt>(new gp_Pnt(curve->Value(U)));
 }
 
+inline std::unique_ptr<gp_Pnt> HandleGeomSurface_Value(const HandleGeomSurface &surface, const Standard_Real U,
+                                                       const Standard_Real V) {
+  return std::unique_ptr<gp_Pnt>(new gp_Pnt(surface->Value(U, V)));
+}
+
 inline std::unique_ptr<gp_Pnt> GCPnts_TangentialDeflection_Value(const GCPnts_TangentialDeflection &approximator,
                                                                  Standard_Integer i) {
   return std::unique_ptr<gp_Pnt>(new gp_Pnt(approximator.Value(i)));

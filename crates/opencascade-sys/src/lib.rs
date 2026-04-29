@@ -158,6 +158,12 @@ pub mod ffi {
 
         pub fn HandleGeomCurve_Value(curve: &HandleGeomCurve, u: f64) -> UniquePtr<gp_Pnt>;
 
+        pub fn HandleGeomSurface_Value(
+            surface: &HandleGeomSurface,
+            u: f64,
+            v: f64,
+        ) -> UniquePtr<gp_Pnt>;
+
         // Collections
         type TopTools_ListOfShape;
 
@@ -266,7 +272,8 @@ pub mod ffi {
 
         // TColStd_Array1OfReal (for knots)
         type TColStd_Array1OfReal;
-        pub fn TColStd_Array1OfReal_ctor(lower: i32, upper: i32) -> UniquePtr<TColStd_Array1OfReal>;
+        pub fn TColStd_Array1OfReal_ctor(lower: i32, upper: i32)
+            -> UniquePtr<TColStd_Array1OfReal>;
         pub fn TColStd_Array1OfReal_SetValue(
             arr: Pin<&mut TColStd_Array1OfReal>,
             index: i32,

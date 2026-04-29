@@ -440,6 +440,16 @@ impl Face {
         FaceOrientation::from(self.inner.Orientation())
     }
 
+    /// Evaluate the underlying surface at the given (u, v) parameters.
+    /// Returns the 3D point on the surface as defined by OpenCascade — useful
+    /// for verifying parameterization preservation when converting to other
+    /// NURBS representations.
+    pub fn point_at(&self, u: f64, v: f64) -> DVec3 {
+        let surface = ffi::BRep_Tool_Surface(&self.inner);
+        let point = ffi::HandleGeomSurface_Value(&surface, u, v);
+        dvec3(point.X(), point.Y(), point.Z())
+    }
+
     /// Get the UV parameter bounds of the face
     pub fn uv_bounds(&self) -> UVBounds {
         let mut u_min = 0.0;
