@@ -477,6 +477,7 @@ inline int geom_bspline_curve_nb_poles(const HandleGeomBSplineCurve &bspline) { 
 inline int geom_bspline_curve_degree(const HandleGeomBSplineCurve &bspline) { return bspline->Degree(); }
 inline bool geom_bspline_curve_is_rational(const HandleGeomBSplineCurve &bspline) { return bspline->IsRational(); }
 inline bool geom_bspline_curve_is_periodic(const HandleGeomBSplineCurve &bspline) { return bspline->IsPeriodic(); }
+inline void geom_bspline_curve_set_not_periodic(HandleGeomBSplineCurve &bspline) { bspline->SetNotPeriodic(); }
 
 // BSpline curve knots and multiplicities
 inline int geom_bspline_curve_nb_knots(const HandleGeomBSplineCurve &bspline) { return bspline->NbKnots(); }
@@ -819,6 +820,10 @@ inline bool geom2d_bspline_curve_is_rational(const HandleGeom2d_BSplineCurve &bs
 
 inline bool geom2d_bspline_curve_is_periodic(const HandleGeom2d_BSplineCurve &bspline) {
   return bspline->IsPeriodic();
+}
+
+inline void geom2d_bspline_curve_set_not_periodic(HandleGeom2d_BSplineCurve &bspline) {
+  bspline->SetNotPeriodic();
 }
 
 inline Standard_Integer geom2d_bspline_curve_nb_knots(const HandleGeom2d_BSplineCurve &bspline) {

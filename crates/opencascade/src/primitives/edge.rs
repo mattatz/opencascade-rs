@@ -100,8 +100,16 @@ impl ParametricCurve2d {
                 }
             },
             "Geom2d_BSplineCurve" => {
-                let bspline = ffi::cast_geom2d_curve_to_bspline(&self.curve);
+                let mut bspline = ffi::cast_geom2d_curve_to_bspline(&self.curve);
                 if !ffi::HandleGeom2d_BSplineCurve_IsNull(&bspline) {
+                    // Periodic curves are unfolded to a non-periodic equivalent here so
+                    // downstream consumers always receive a standard non-periodic NURBS
+                    // representation. OCC's `SetNotPeriodic` (BSplCLib::Unperiodize) is
+                    // the authoritative algorithm for this.
+                    if ffi::geom2d_bspline_curve_is_periodic(&bspline) {
+                        ffi::geom2d_bspline_curve_set_not_periodic(bspline.pin_mut());
+                    }
+
                     let nb_poles = ffi::geom2d_bspline_curve_nb_poles(&bspline) as u32;
                     let degree = ffi::geom2d_bspline_curve_degree(&bspline) as u32;
                     let is_rational = ffi::geom2d_bspline_curve_is_rational(&bspline);
@@ -576,8 +584,16 @@ impl Edge {
                 }
             },
             CurveType::BSplineCurve => {
-                let bspline = ffi::cast_curve_to_bspline_curve(&curve);
+                let mut bspline = ffi::cast_curve_to_bspline_curve(&curve);
                 if !bspline.IsNull() {
+                    // Periodic curves are unfolded to a non-periodic equivalent here so
+                    // downstream consumers always receive a standard non-periodic NURBS
+                    // representation. OCC's `SetNotPeriodic` (BSplCLib::Unperiodize) is
+                    // the authoritative algorithm for this.
+                    if ffi::geom_bspline_curve_is_periodic(&bspline) {
+                        ffi::geom_bspline_curve_set_not_periodic(bspline.pin_mut());
+                    }
+
                     let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline) as u32;
                     let degree = ffi::geom_bspline_curve_degree(&bspline) as u32;
                     let is_rational = ffi::geom_bspline_curve_is_rational(&bspline);
