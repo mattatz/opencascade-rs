@@ -18,3 +18,7 @@ occt-sys = { path = "../occt-sys", optional = true }
 
 [features]
 builtin = ["occt-sys"]
+# Build OCCT as shared libraries (dylib/dll/so) instead of static archives.
+# Required for LGPL-2.1 compliant dynamic linking in commercial distributions.
+# Implies `builtin` — OCCT is built from source either way.
+builtin-shared = ["builtin"]

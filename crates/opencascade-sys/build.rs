@@ -35,6 +35,8 @@ fn main() {
     let target = std::env::var("TARGET").expect("No TARGET environment variable defined");
     let is_windows = target.to_lowercase().contains("windows");
     let is_windows_gnu = target.to_lowercase().contains("windows-gnu");
+    let is_macos = target.to_lowercase().contains("apple-darwin");
+    let is_linux = target.to_lowercase().contains("linux");
 
     let occt_config = OcctConfig::detect();
 
@@ -47,6 +49,25 @@ fn main() {
 
     if is_windows {
         println!("cargo:rustc-link-lib=dylib=user32");
+    }
+
+    // Expose the resolved OCCT library directory so downstream build tooling
+    // (e.g. the Tauri bundler) can locate the shared libraries that need to be
+    // shipped alongside the host binary.
+    println!("cargo:occt_lib_dir={}", occt_config.library_dir.to_str().unwrap());
+
+    if occt_config.is_dynamic {
+        // Tell the linker to look for the OCCT shared libraries next to the
+        // executable at runtime. On macOS apps these dylibs live in
+        // `<app>.app/Contents/Frameworks/`; on Linux they sit next to the
+        // executable. Windows resolves DLLs via the executable's directory by
+        // default, so no rpath is needed there.
+        if is_macos {
+            println!("cargo:rustc-link-arg=-Wl,-rpath,@executable_path/../Frameworks");
+            println!("cargo:rustc-link-arg=-Wl,-rpath,@loader_path");
+        } else if is_linux {
+            println!("cargo:rustc-link-arg=-Wl,-rpath,$ORIGIN");
+        }
     }
 
     let mut build = cxx_build::bridge("src/lib.rs");
@@ -86,9 +107,14 @@ impl OcctConfig {
         println!("cargo:rerun-if-env-changed=DEP_OCCT_ROOT");
 
         // Add path to builtin OCCT
-        #[cfg(feature = "builtin")]
+        #[cfg(all(feature = "builtin", not(feature = "builtin-shared")))]
         {
             occt_sys::build_occt();
+            std::env::set_var("DEP_OCCT_ROOT", occt_sys::occt_path().as_os_str());
+        }
+        #[cfg(feature = "builtin-shared")]
+        {
+            occt_sys::build_occt_shared();
             std::env::set_var("DEP_OCCT_ROOT", occt_sys::occt_path().as_os_str());
         }
 
