@@ -84,6 +84,7 @@
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <ShapeAnalysis_FreeBounds.hxx>
+#include <ShapeConstruct.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <Standard_Type.hxx>
 #include <StlAPI_Writer.hxx>
@@ -245,6 +246,23 @@ inline std::unique_ptr<HandleGeom_BSplineSurface> cast_surface_to_bspline(const 
 }
 
 // Convert any surface to BSpline surface
+inline std::unique_ptr<HandleGeom_BSplineSurface> convert_surface_to_bspline_with_bounds(
+    const HandleGeomSurface &surface,
+    double u_min, double u_max,
+    double v_min, double v_max) {
+  try {
+    Handle(Geom_BSplineSurface) converted = ShapeConstruct::ConvertSurfaceToBSpline(
+        surface, u_min, u_max, v_min, v_max,
+        1e-6, GeomAbs_C1, 100, 14);
+    if (converted.IsNull()) {
+      return std::unique_ptr<HandleGeom_BSplineSurface>();
+    }
+    return std::unique_ptr<HandleGeom_BSplineSurface>(new HandleGeom_BSplineSurface(converted));
+  } catch (...) {
+    return std::unique_ptr<HandleGeom_BSplineSurface>();
+  }
+}
+
 inline std::unique_ptr<HandleGeom_BSplineSurface> convert_surface_to_bspline(const HandleGeomSurface &surface) {
   // Try direct cast first
   Handle(Geom_BSplineSurface) bspline = Handle(Geom_BSplineSurface)::DownCast(surface);
@@ -1124,6 +1142,7 @@ inline std::unique_ptr<TopoDS_Shape> read_brep_bin(rust::String path) {
   }
   return std::unique_ptr<TopoDS_Shape>(nullptr);
 }
+
 
 // Collections
 inline void map_shapes(const TopoDS_Shape &S, const TopAbs_ShapeEnum T, TopTools_IndexedMapOfShape &M) {

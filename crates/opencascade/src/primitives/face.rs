@@ -943,6 +943,103 @@ impl Face {
             weights,
         })
     }
+
+    pub fn to_bspline_surface_with_bounds(
+        &self,
+        u_min: f64,
+        u_max: f64,
+        v_min: f64,
+        v_max: f64,
+        non_periodic: bool,
+    ) -> Option<BSplineSurface> {
+        let surface = ffi::BRep_Tool_Surface(&self.inner);
+        let mut bspline =
+            ffi::convert_surface_to_bspline_with_bounds(&surface, u_min, u_max, v_min, v_max);
+
+        if bspline.is_null() || bspline.IsNull() {
+            return None;
+        }
+
+        if non_periodic {
+            if ffi::geom_bspline_surface_is_u_periodic(&bspline) {
+                ffi::geom_bspline_surface_set_u_not_periodic(bspline.pin_mut());
+            }
+            if ffi::geom_bspline_surface_is_v_periodic(&bspline) {
+                ffi::geom_bspline_surface_set_v_not_periodic(bspline.pin_mut());
+            }
+        }
+
+        let nb_u_poles = ffi::geom_bspline_surface_nb_u_poles(&bspline);
+        let nb_v_poles = ffi::geom_bspline_surface_nb_v_poles(&bspline);
+        let u_degree = ffi::geom_bspline_surface_u_degree(&bspline) as u32;
+        let v_degree = ffi::geom_bspline_surface_v_degree(&bspline) as u32;
+        let is_u_rational = ffi::geom_bspline_surface_is_u_rational(&bspline);
+        let is_v_rational = ffi::geom_bspline_surface_is_v_rational(&bspline);
+        let is_u_periodic = ffi::geom_bspline_surface_is_u_periodic(&bspline);
+        let is_v_periodic = ffi::geom_bspline_surface_is_v_periodic(&bspline);
+
+        let nb_u_knots = ffi::geom_bspline_surface_nb_u_knots(&bspline) as usize;
+        let nb_v_knots = ffi::geom_bspline_surface_nb_v_knots(&bspline) as usize;
+
+        let mut u_knots = Vec::with_capacity(nb_u_knots);
+        let mut u_multiplicities = Vec::with_capacity(nb_u_knots);
+        for i in 1..=nb_u_knots as i32 {
+            u_knots.push(ffi::geom_bspline_surface_u_knot(&bspline, i));
+            u_multiplicities.push(ffi::geom_bspline_surface_u_multiplicity(&bspline, i) as u32);
+        }
+
+        let mut v_knots = Vec::with_capacity(nb_v_knots);
+        let mut v_multiplicities = Vec::with_capacity(nb_v_knots);
+        for i in 1..=nb_v_knots as i32 {
+            v_knots.push(ffi::geom_bspline_surface_v_knot(&bspline, i));
+            v_multiplicities.push(ffi::geom_bspline_surface_v_multiplicity(&bspline, i) as u32);
+        }
+
+        let mut poles = Vec::with_capacity(nb_u_poles as usize);
+        for u in 1..=nb_u_poles as i32 {
+            let mut row = Vec::with_capacity(nb_v_poles as usize);
+            for v in 1..=nb_v_poles as i32 {
+                let pole = ffi::geom_bspline_surface_pole(&bspline, u, v);
+                row.push(dvec3(pole.X(), pole.Y(), pole.Z()).into());
+            }
+            poles.push(row);
+        }
+
+        let weights = if is_u_rational || is_v_rational {
+            let mut weights = Vec::with_capacity(nb_u_poles as usize);
+            for u in 1..=nb_u_poles as i32 {
+                let mut row = Vec::with_capacity(nb_v_poles as usize);
+                for v in 1..=nb_v_poles as i32 {
+                    row.push(ffi::geom_bspline_surface_weight(&bspline, u, v));
+                }
+                weights.push(row);
+            }
+            Some(weights)
+        } else {
+            None
+        };
+
+        Some(BSplineSurface {
+            u_profile: BSplineCurveProfile {
+                nb_poles: nb_u_poles as u32,
+                degree: u_degree,
+                is_rational: is_u_rational,
+                is_periodic: is_u_periodic,
+                knots: u_knots,
+                multiplicities: u_multiplicities,
+            },
+            v_profile: BSplineCurveProfile {
+                nb_poles: nb_v_poles as u32,
+                degree: v_degree,
+                is_rational: is_v_rational,
+                is_periodic: is_v_periodic,
+                knots: v_knots,
+                multiplicities: v_multiplicities,
+            },
+            poles,
+            weights,
+        })
+    }
 }
 
 pub struct CompoundFace {

@@ -434,6 +434,13 @@ pub mod ffi {
         pub fn convert_surface_to_bspline(
             surface: &HandleGeomSurface,
         ) -> UniquePtr<HandleGeom_BSplineSurface>;
+        pub fn convert_surface_to_bspline_with_bounds(
+            surface: &HandleGeomSurface,
+            u_min: f64,
+            u_max: f64,
+            v_min: f64,
+            v_max: f64,
+        ) -> UniquePtr<HandleGeom_BSplineSurface>;
         pub fn cast_surface_to_bezier(
             surface: &HandleGeomSurface,
         ) -> UniquePtr<HandleGeomBezierSurface>;
@@ -1894,7 +1901,6 @@ pub mod ffi {
         // BinTools
         pub fn write_brep_bin(shape: &TopoDS_Shape, path: String) -> bool;
         pub fn read_brep_bin(path: String) -> UniquePtr<TopoDS_Shape>;
-
         // Cleaning
         type ShapeUpgrade_UnifySameDomain;
 
