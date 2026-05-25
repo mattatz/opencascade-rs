@@ -702,6 +702,25 @@ impl Shape {
         Self::from_shape(upgrader.Shape())
     }
 
+    pub fn reverse(&mut self) {
+        self.inner.pin_mut().Reverse();
+    }
+
+    #[must_use]
+    pub fn general_transform(&self, matrix: &[[f64; 4]; 3]) -> Self {
+        let mut gtrsf = ffi::new_gp_GTrsf();
+        for (row, cols) in matrix.iter().enumerate() {
+            for (col, &val) in cols.iter().enumerate() {
+                gtrsf
+                    .pin_mut()
+                    .SetValue((row + 1) as i32, (col + 1) as i32, val);
+            }
+        }
+        let copy = true;
+        let mut builder = ffi::BRepBuilderAPI_GTransform_ctor(&self.inner, &gtrsf, copy);
+        Self::from_shape(builder.pin_mut().Shape())
+    }
+
     pub fn set_global_translation(&mut self, translation: DVec3) {
         let mut transform = ffi::new_transform();
         let translation_vec = make_vec(translation);

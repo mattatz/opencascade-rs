@@ -821,6 +821,7 @@ pub mod ffi {
         pub fn IsNull(self: &TopoDS_Shape) -> bool;
         pub fn IsEqual(self: &TopoDS_Shape, other: &TopoDS_Shape) -> bool;
         pub fn ShapeType(self: &TopoDS_Shape) -> TopAbs_ShapeEnum;
+        pub fn Reverse(self: Pin<&mut TopoDS_Shape>);
 
         type TopAbs_Orientation;
         pub fn Orientation(self: &TopoDS_Shape) -> TopAbs_Orientation;

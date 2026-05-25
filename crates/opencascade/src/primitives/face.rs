@@ -363,6 +363,16 @@ impl Face {
         dvec3(normal.X(), normal.Y(), normal.Z())
     }
 
+    pub fn normal_at_uv(&self, u: f64, v: f64) -> DVec3 {
+        let mut p = ffi::new_point(0.0, 0.0, 0.0);
+        let mut normal = ffi::new_vec(0.0, 1.0, 0.0);
+
+        let face = ffi::BRepGProp_Face_ctor(&self.inner);
+        face.Normal(u, v, p.pin_mut(), normal.pin_mut());
+
+        dvec3(normal.X(), normal.Y(), normal.Z())
+    }
+
     pub fn normal_at_center(&self) -> DVec3 {
         let center = self.center_of_mass();
         self.normal_at(center)
