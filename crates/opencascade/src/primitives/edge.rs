@@ -491,6 +491,70 @@ impl Edge {
         ffi::BRepAdaptor_Curve_is_closed(&curve)
     }
 
+    /// Convert the underlying curve to a BSplineCurve, returning its details.
+    /// Works for any curve type (Line, Circle, Ellipse, etc.) via GeomConvert.
+    pub fn to_bspline_curve_details(&self) -> Option<BSplineCurve> {
+        let mut first = 0.0_f64;
+        let mut last = 0.0_f64;
+        let curve_handle = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
+        if curve_handle.IsNull() {
+            return None;
+        }
+
+        let mut bspline_handle = ffi::GeomConvert_CurveToBSplineCurve(&curve_handle);
+        if bspline_handle.IsNull() {
+            return None;
+        }
+
+        if ffi::geom_bspline_curve_is_periodic(&bspline_handle) {
+            ffi::geom_bspline_curve_set_not_periodic(bspline_handle.pin_mut());
+        }
+
+        let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline_handle) as u32;
+        let degree = ffi::geom_bspline_curve_degree(&bspline_handle) as u32;
+        let is_rational = ffi::geom_bspline_curve_is_rational(&bspline_handle);
+        let is_periodic = ffi::geom_bspline_curve_is_periodic(&bspline_handle);
+
+        let nb_knots = ffi::geom_bspline_curve_nb_knots(&bspline_handle);
+        let mut knots = Vec::with_capacity(nb_knots as usize);
+        let mut multiplicities = Vec::with_capacity(nb_knots as usize);
+        for i in 1..=nb_knots {
+            knots.push(ffi::geom_bspline_curve_knot(&bspline_handle, i));
+            multiplicities.push(ffi::geom_bspline_curve_multiplicity(&bspline_handle, i) as u32);
+        }
+
+        let poles = (1..=nb_poles as i32)
+            .map(|i| {
+                let pole = ffi::geom_bspline_curve_pole(&bspline_handle, i);
+                dvec3(pole.X(), pole.Y(), pole.Z()).into()
+            })
+            .collect();
+        let weights = if is_rational {
+            Some(
+                (1..=nb_poles as i32)
+                    .map(|i| ffi::geom_bspline_curve_weight(&bspline_handle, i))
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        Some(BSplineCurve {
+            profile: BSplineCurveProfile {
+                nb_poles,
+                degree,
+                is_rational,
+                is_periodic,
+                knots,
+                multiplicities,
+            },
+            poles,
+            weights,
+            first_parameter: first,
+            last_parameter: last,
+        })
+    }
+
     pub fn find_closest_point(&self, point: DVec3) -> Option<(DVec3, f64)> {
         self.find_closest_point_xyz(point.x, point.y, point.z)
             .map(|((x, y, z), t)| (dvec3(x, y, z), t))

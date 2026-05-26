@@ -629,6 +629,19 @@ inline bool BRepAdaptor_Curve_is_closed(const BRepAdaptor_Curve &curve) {
   return curve.IsClosed();
 }
 
+inline std::unique_ptr<HandleGeomBSplineCurve> GeomConvert_CurveToBSplineCurve(
+    const HandleGeomCurve &curve) {
+  try {
+    Handle(Geom_BSplineCurve) converted = GeomConvert::CurveToBSplineCurve(curve);
+    if (converted.IsNull()) {
+      return std::unique_ptr<HandleGeomBSplineCurve>();
+    }
+    return std::unique_ptr<HandleGeomBSplineCurve>(new HandleGeomBSplineCurve(converted));
+  } catch (...) {
+    return std::unique_ptr<HandleGeomBSplineCurve>();
+  }
+}
+
 // GeomAPI_ProjectPointOnCurve
 inline std::unique_ptr<GeomAPI_ProjectPointOnCurve> GeomAPI_ProjectPointOnCurve_ctor(
     const gp_Pnt &point, const HandleGeomCurve &curve) {

@@ -983,6 +983,11 @@ pub mod ffi {
         pub fn BRepAdaptor_Curve_is_closed(curve: &BRepAdaptor_Curve) -> bool;
         pub fn GetType(self: &BRepAdaptor_Curve) -> GeomAbs_CurveType;
 
+        // GeomConvert
+        pub fn GeomConvert_CurveToBSplineCurve(
+            curve: &HandleGeomCurve,
+        ) -> UniquePtr<HandleGeomBSplineCurve>;
+
         // GeomAPI_ProjectPointOnCurve
         type GeomAPI_ProjectPointOnCurve;
 
