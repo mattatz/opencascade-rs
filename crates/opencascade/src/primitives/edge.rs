@@ -502,7 +502,7 @@ impl Edge {
         }
 
         let mut bspline_handle = ffi::GeomConvert_CurveToBSplineCurve(&curve_handle);
-        if bspline_handle.IsNull() {
+        if bspline_handle.is_null() || bspline_handle.IsNull() {
             return None;
         }
 
