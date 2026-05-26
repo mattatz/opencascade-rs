@@ -2,6 +2,11 @@
 #include <sstream>
 #include <fstream>
 #include <cstdio>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 #include <BOPAlgo_GlueEnum.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAlgoAPI_Common.hxx>
@@ -1056,19 +1061,32 @@ inline IFSelect_ReturnStatus read_iges(IGESControl_Reader &reader, rust::String 
 
 inline IFSelect_ReturnStatus read_iges_from_bytes(IGESControl_Reader &reader, rust::Slice<const uint8_t> data) {
   // IGESControl_Reader does not support ReadStream, so use a temporary file.
-  char tmp_path[] = "/tmp/occ_iges_XXXXXX";
-  int fd = mkstemp(tmp_path);
+#ifdef _WIN32
+  char tmp_path[MAX_PATH];
+  if (GetTempPathA(MAX_PATH, tmp_path) == 0) {
+    return IFSelect_ReturnStatus::IFSelect_RetFail;
+  }
+  char tmp_file[MAX_PATH];
+  if (GetTempFileNameA(tmp_path, "iges", 0, tmp_file) == 0) {
+    return IFSelect_ReturnStatus::IFSelect_RetFail;
+  }
+#else
+  char tmp_file[] = "/tmp/occ_iges_XXXXXX";
+  int fd = mkstemp(tmp_file);
   if (fd == -1) {
     return IFSelect_ReturnStatus::IFSelect_RetFail;
   }
-  auto written = write(fd, data.data(), data.size());
   close(fd);
-  if (written < 0 || static_cast<size_t>(written) != data.size()) {
-    std::remove(tmp_path);
-    return IFSelect_ReturnStatus::IFSelect_RetFail;
+#endif
+  {
+    std::ofstream ofs(tmp_file, std::ios::binary);
+    if (!ofs) {
+      return IFSelect_ReturnStatus::IFSelect_RetFail;
+    }
+    ofs.write(reinterpret_cast<const char*>(data.data()), data.size());
   }
-  auto status = reader.ReadFile(tmp_path);
-  std::remove(tmp_path);
+  auto status = reader.ReadFile(tmp_file);
+  std::remove(tmp_file);
   return status;
 }
 
