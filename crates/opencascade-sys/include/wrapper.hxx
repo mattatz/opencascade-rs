@@ -498,6 +498,7 @@ inline int geom_bspline_curve_degree(const HandleGeomBSplineCurve &bspline) { re
 inline bool geom_bspline_curve_is_rational(const HandleGeomBSplineCurve &bspline) { return bspline->IsRational(); }
 inline bool geom_bspline_curve_is_periodic(const HandleGeomBSplineCurve &bspline) { return bspline->IsPeriodic(); }
 inline void geom_bspline_curve_set_not_periodic(HandleGeomBSplineCurve &bspline) { bspline->SetNotPeriodic(); }
+inline void geom_bspline_curve_segment(HandleGeomBSplineCurve &bspline, Standard_Real u1, Standard_Real u2) { bspline->Segment(u1, u2); }
 
 // BSpline curve knots and multiplicities
 inline int geom_bspline_curve_nb_knots(const HandleGeomBSplineCurve &bspline) { return bspline->NbKnots(); }

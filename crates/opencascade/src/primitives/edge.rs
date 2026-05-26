@@ -510,6 +510,9 @@ impl Edge {
             ffi::geom_bspline_curve_set_not_periodic(bspline_handle.pin_mut());
         }
 
+        // Clamp: trim to the edge's parameter range so end knots get full multiplicity
+        ffi::geom_bspline_curve_segment(bspline_handle.pin_mut(), first, last);
+
         let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline_handle) as u32;
         let degree = ffi::geom_bspline_curve_degree(&bspline_handle) as u32;
         let is_rational = ffi::geom_bspline_curve_is_rational(&bspline_handle);
