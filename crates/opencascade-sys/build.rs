@@ -1,7 +1,7 @@
 /// Minimum compatible version of OpenCASCADE library (major, minor)
 ///
 /// Pre-installed OpenCASCADE library will be checked for compatibility using semver rules.
-const OCCT_VERSION: (u8, u8) = (7, 8);
+const OCCT_VERSION: (u8, u8) = (7, 9);
 
 /// The list of used OpenCASCADE libraries which needs to be linked with.
 const OCCT_LIBS: &[&str] = &[
