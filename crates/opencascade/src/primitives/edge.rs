@@ -491,6 +491,39 @@ impl Edge {
         ffi::BRepAdaptor_Curve_is_closed(&curve)
     }
 
+    pub fn find_closest_point(&self, point: DVec3) -> Option<(DVec3, f64)> {
+        let mut first = 0.0_f64;
+        let mut last = 0.0_f64;
+        let curve_handle = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
+        if curve_handle.IsNull() {
+            return None;
+        }
+        let p = ffi::new_point(point.x, point.y, point.z);
+        let proj = ffi::GeomAPI_ProjectPointOnCurve_ctor(&p, &curve_handle);
+        if ffi::GeomAPI_ProjectPointOnCurve_NbPoints(&proj) == 0 {
+            return None;
+        }
+        let nearest = ffi::GeomAPI_ProjectPointOnCurve_NearestPoint(&proj);
+        let param = ffi::GeomAPI_ProjectPointOnCurve_LowerDistanceParameter(&proj);
+        Some((dvec3(nearest.X(), nearest.Y(), nearest.Z()), param))
+    }
+
+    pub fn trimmed(&self, u1: f64, u2: f64) -> Option<Edge> {
+        let mut first = 0.0_f64;
+        let mut last = 0.0_f64;
+        let curve_handle = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
+        if curve_handle.IsNull() {
+            return None;
+        }
+        let trimmed = ffi::Geom_TrimmedCurve_ctor(&curve_handle, u1, u2);
+        if trimmed.IsNull() {
+            return None;
+        }
+        let geom_curve = ffi::new_HandleGeomCurve_from_HandleGeom_TrimmedCurve(&trimmed);
+        let make_edge = ffi::BRepBuilderAPI_MakeEdge_HandleGeomCurve(&geom_curve);
+        Some(Edge::from_make_edge(make_edge))
+    }
+
     pub fn approximation_segments(&self) -> ApproximationSegmentIterator {
         let adaptor_curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
         let approximator = ffi::GCPnts_TangentialDeflection_ctor(&adaptor_curve, 0.1, 0.1);

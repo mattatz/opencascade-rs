@@ -985,6 +985,37 @@ pub mod ffi {
         pub fn BRepAdaptor_Curve_is_closed(curve: &BRepAdaptor_Curve) -> bool;
         pub fn GetType(self: &BRepAdaptor_Curve) -> GeomAbs_CurveType;
 
+        // GeomAPI_ProjectPointOnCurve
+        type GeomAPI_ProjectPointOnCurve;
+
+        pub fn GeomAPI_ProjectPointOnCurve_ctor(
+            point: &gp_Pnt,
+            curve: &HandleGeomCurve,
+        ) -> UniquePtr<GeomAPI_ProjectPointOnCurve>;
+        pub fn GeomAPI_ProjectPointOnCurve_NbPoints(
+            proj: &GeomAPI_ProjectPointOnCurve,
+        ) -> i32;
+        pub fn GeomAPI_ProjectPointOnCurve_NearestPoint(
+            proj: &GeomAPI_ProjectPointOnCurve,
+        ) -> UniquePtr<gp_Pnt>;
+        pub fn GeomAPI_ProjectPointOnCurve_LowerDistanceParameter(
+            proj: &GeomAPI_ProjectPointOnCurve,
+        ) -> f64;
+
+        // Geom_TrimmedCurve construction
+        pub fn Geom_TrimmedCurve_ctor(
+            curve: &HandleGeomCurve,
+            u1: f64,
+            u2: f64,
+        ) -> UniquePtr<HandleGeomTrimmedCurve>;
+
+        // Geom_OffsetCurve construction
+        pub fn Geom_OffsetCurve_ctor(
+            curve: &HandleGeomCurve,
+            offset: f64,
+            direction: &gp_Dir,
+        ) -> UniquePtr<HandleGeom_OffsetCurve>;
+
         // Primitives
         type BRepPrimAPI_MakePrism;
 

@@ -55,6 +55,7 @@
 #include <Geom2d_BezierCurve.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
 #include <GeomAPI_Interpolate.hxx>
+#include <GeomAPI_ProjectPointOnCurve.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <GeomAbs_CurveType.hxx>
 #include <GeomAbs_JoinType.hxx>
@@ -626,6 +627,42 @@ inline Standard_Real BRepAdaptor_Curve_length(const BRepAdaptor_Curve &curve) {
 
 inline bool BRepAdaptor_Curve_is_closed(const BRepAdaptor_Curve &curve) {
   return curve.IsClosed();
+}
+
+// GeomAPI_ProjectPointOnCurve
+inline std::unique_ptr<GeomAPI_ProjectPointOnCurve> GeomAPI_ProjectPointOnCurve_ctor(
+    const gp_Pnt &point, const HandleGeomCurve &curve) {
+  return std::unique_ptr<GeomAPI_ProjectPointOnCurve>(
+      new GeomAPI_ProjectPointOnCurve(point, curve));
+}
+
+inline Standard_Integer GeomAPI_ProjectPointOnCurve_NbPoints(
+    const GeomAPI_ProjectPointOnCurve &proj) {
+  return proj.NbPoints();
+}
+
+inline std::unique_ptr<gp_Pnt> GeomAPI_ProjectPointOnCurve_NearestPoint(
+    const GeomAPI_ProjectPointOnCurve &proj) {
+  return std::unique_ptr<gp_Pnt>(new gp_Pnt(proj.NearestPoint()));
+}
+
+inline Standard_Real GeomAPI_ProjectPointOnCurve_LowerDistanceParameter(
+    const GeomAPI_ProjectPointOnCurve &proj) {
+  return proj.LowerDistanceParameter();
+}
+
+// Geom_TrimmedCurve construction
+inline std::unique_ptr<HandleGeomTrimmedCurve> Geom_TrimmedCurve_ctor(
+    const HandleGeomCurve &curve, const Standard_Real u1, const Standard_Real u2) {
+  return std::unique_ptr<HandleGeomTrimmedCurve>(
+      new HandleGeomTrimmedCurve(new Geom_TrimmedCurve(curve, u1, u2)));
+}
+
+// Geom_OffsetCurve construction
+inline std::unique_ptr<HandleGeom_OffsetCurve> Geom_OffsetCurve_ctor(
+    const HandleGeomCurve &curve, const Standard_Real offset, const gp_Dir &direction) {
+  return std::unique_ptr<HandleGeom_OffsetCurve>(
+      new HandleGeom_OffsetCurve(new Geom_OffsetCurve(curve, offset, direction)));
 }
 
 // BRepLib
