@@ -1,4 +1,4 @@
-use crate::primitives::{make_axis_2, make_point, Face};
+use crate::primitives::{make_axis_2, make_point, Face, Shape};
 use cxx::UniquePtr;
 use glam::{dvec2, dvec3, DVec2, DVec3};
 use occt_interop::*;
@@ -556,6 +556,19 @@ impl Edge {
             first_parameter: first,
             last_parameter: last,
         })
+    }
+
+    pub fn extrude(&self, dir: DVec3) -> Shape {
+        self.extrude_xyz(dir.x, dir.y, dir.z)
+    }
+
+    pub fn extrude_xyz(&self, x: f64, y: f64, z: f64) -> Shape {
+        let inner_shape = ffi::cast_edge_to_shape(&self.inner);
+        let prism_vec = ffi::new_vec(x, y, z);
+        let mut make_solid =
+            ffi::BRepPrimAPI_MakePrism_ctor(inner_shape, &prism_vec, false, true);
+        let extruded_shape = make_solid.pin_mut().Shape();
+        Shape::from_shape(extruded_shape)
     }
 
     pub fn find_closest_point(&self, point: DVec3) -> Option<(DVec3, f64)> {
