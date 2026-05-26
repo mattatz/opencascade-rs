@@ -562,11 +562,27 @@ impl Shape {
 
         let status = ffi::read_iges(reader.pin_mut(), path.as_ref().to_string_lossy().to_string());
 
+        if status != ffi::IFSelect_ReturnStatus::IFSelect_RetDone {
+            return Err(Error::IgesReadFailed);
+        }
+
         reader.pin_mut().TransferRoots(&ffi::Message_ProgressRange_ctor());
+
+        let inner = ffi::one_shape_iges(&reader);
+
+        Ok(Self { inner })
+    }
+
+    pub fn read_iges_from_bytes(data: &[u8]) -> Result<Self, Error> {
+        let mut reader = ffi::IGESControl_Reader_ctor();
+
+        let status = ffi::read_iges_from_bytes(reader.pin_mut(), data);
 
         if status != ffi::IFSelect_ReturnStatus::IFSelect_RetDone {
             return Err(Error::IgesReadFailed);
         }
+
+        reader.pin_mut().TransferRoots(&ffi::Message_ProgressRange_ctor());
 
         let inner = ffi::one_shape_iges(&reader);
 

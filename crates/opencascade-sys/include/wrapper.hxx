@@ -1052,6 +1052,12 @@ inline IFSelect_ReturnStatus read_iges(IGESControl_Reader &reader, rust::String 
   return reader.ReadFile(theFileName.c_str());
 }
 
+inline IFSelect_ReturnStatus read_iges_from_bytes(IGESControl_Reader &reader, rust::Slice<const uint8_t> data) {
+  std::string str(reinterpret_cast<const char*>(data.data()), data.size());
+  std::istringstream stream(str);
+  return reader.ReadStream("memory_stream.igs", stream);
+}
+
 inline std::unique_ptr<TopoDS_Shape> one_shape_step(const STEPControl_Reader &reader) {
   return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(reader.OneShape()));
 }

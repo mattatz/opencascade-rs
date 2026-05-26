@@ -1763,6 +1763,10 @@ pub mod ffi {
             reader: Pin<&mut IGESControl_Reader>,
             filename: String,
         ) -> IFSelect_ReturnStatus;
+        pub fn read_iges_from_bytes(
+            reader: Pin<&mut IGESControl_Reader>,
+            data: &[u8],
+        ) -> IFSelect_ReturnStatus;
         pub fn TransferRoots(
             self: Pin<&mut STEPControl_Reader>,
             progress: &Message_ProgressRange,

@@ -565,8 +565,7 @@ impl Edge {
     pub fn extrude_xyz(&self, x: f64, y: f64, z: f64) -> Shape {
         let inner_shape = ffi::cast_edge_to_shape(&self.inner);
         let prism_vec = ffi::new_vec(x, y, z);
-        let mut make_solid =
-            ffi::BRepPrimAPI_MakePrism_ctor(inner_shape, &prism_vec, false, true);
+        let mut make_solid = ffi::BRepPrimAPI_MakePrism_ctor(inner_shape, &prism_vec, false, true);
         let extruded_shape = make_solid.pin_mut().Shape();
         Shape::from_shape(extruded_shape)
     }
