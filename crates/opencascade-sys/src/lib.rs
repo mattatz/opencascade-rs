@@ -975,6 +975,14 @@ pub mod ffi {
         pub fn FirstParameter(self: &BRepAdaptor_Curve) -> f64;
         pub fn LastParameter(self: &BRepAdaptor_Curve) -> f64;
         pub fn BRepAdaptor_Curve_value(curve: &BRepAdaptor_Curve, u: f64) -> UniquePtr<gp_Pnt>;
+        pub fn BRepAdaptor_Curve_D1(
+            curve: &BRepAdaptor_Curve,
+            u: f64,
+            p: Pin<&mut gp_Pnt>,
+            v1: Pin<&mut gp_Vec>,
+        );
+        pub fn BRepAdaptor_Curve_length(curve: &BRepAdaptor_Curve) -> f64;
+        pub fn BRepAdaptor_Curve_is_closed(curve: &BRepAdaptor_Curve) -> bool;
         pub fn GetType(self: &BRepAdaptor_Curve) -> GeomAbs_CurveType;
 
         // Primitives

@@ -43,6 +43,7 @@
 #include <BRep_Builder.hxx>
 #include <BinTools.hxx>
 #include <GCE2d_MakeSegment.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
 #include <GCPnts_TangentialDeflection.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <GC_MakeSegment.hxx>
@@ -613,6 +614,18 @@ inline std::unique_ptr<HandleGeomTrimmedCurve> GC_MakeArcOfCircle_Value(const GC
 
 inline std::unique_ptr<gp_Pnt> BRepAdaptor_Curve_value(const BRepAdaptor_Curve &curve, const Standard_Real U) {
   return std::unique_ptr<gp_Pnt>(new gp_Pnt(curve.Value(U)));
+}
+
+inline void BRepAdaptor_Curve_D1(const BRepAdaptor_Curve &curve, const Standard_Real U, gp_Pnt &P, gp_Vec &V1) {
+  curve.D1(U, P, V1);
+}
+
+inline Standard_Real BRepAdaptor_Curve_length(const BRepAdaptor_Curve &curve) {
+  return GCPnts_AbscissaPoint::Length(curve);
+}
+
+inline bool BRepAdaptor_Curve_is_closed(const BRepAdaptor_Curve &curve) {
+  return curve.IsClosed();
 }
 
 // BRepLib

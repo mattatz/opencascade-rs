@@ -462,6 +462,35 @@ impl Edge {
         dvec3(point.X(), point.Y(), point.Z())
     }
 
+    pub fn point_at(&self, t: f64) -> DVec3 {
+        let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
+        let point = ffi::BRepAdaptor_Curve_value(&curve, t);
+        dvec3(point.X(), point.Y(), point.Z())
+    }
+
+    pub fn tangent_at(&self, t: f64) -> DVec3 {
+        let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
+        let mut p = ffi::new_point(0.0, 0.0, 0.0);
+        let mut v1 = ffi::new_vec(0.0, 0.0, 0.0);
+        ffi::BRepAdaptor_Curve_D1(&curve, t, p.pin_mut(), v1.pin_mut());
+        dvec3(v1.X(), v1.Y(), v1.Z())
+    }
+
+    pub fn param_range(&self) -> (f64, f64) {
+        let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
+        (curve.FirstParameter(), curve.LastParameter())
+    }
+
+    pub fn curve_length(&self) -> f64 {
+        let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
+        ffi::BRepAdaptor_Curve_length(&curve)
+    }
+
+    pub fn is_closed(&self) -> bool {
+        let curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
+        ffi::BRepAdaptor_Curve_is_closed(&curve)
+    }
+
     pub fn approximation_segments(&self) -> ApproximationSegmentIterator {
         let adaptor_curve = ffi::BRepAdaptor_Curve_ctor(&self.inner);
         let approximator = ffi::GCPnts_TangentialDeflection_ctor(&adaptor_curve, 0.1, 0.1);
