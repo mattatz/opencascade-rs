@@ -595,9 +595,7 @@ pub mod ffi {
         pub fn geom_bspline_curve_degree(bspline: &HandleGeomBSplineCurve) -> i32;
         pub fn geom_bspline_curve_is_rational(bspline: &HandleGeomBSplineCurve) -> bool;
         pub fn geom_bspline_curve_is_periodic(bspline: &HandleGeomBSplineCurve) -> bool;
-        pub fn geom_bspline_curve_set_not_periodic(
-            bspline: Pin<&mut HandleGeomBSplineCurve>,
-        );
+        pub fn geom_bspline_curve_set_not_periodic(bspline: Pin<&mut HandleGeomBSplineCurve>);
 
         // BSpline curve knots and multiplicities
         pub fn geom_bspline_curve_nb_knots(bspline: &HandleGeomBSplineCurve) -> i32;
@@ -992,9 +990,7 @@ pub mod ffi {
             point: &gp_Pnt,
             curve: &HandleGeomCurve,
         ) -> UniquePtr<GeomAPI_ProjectPointOnCurve>;
-        pub fn GeomAPI_ProjectPointOnCurve_NbPoints(
-            proj: &GeomAPI_ProjectPointOnCurve,
-        ) -> i32;
+        pub fn GeomAPI_ProjectPointOnCurve_NbPoints(proj: &GeomAPI_ProjectPointOnCurve) -> i32;
         pub fn GeomAPI_ProjectPointOnCurve_NearestPoint(
             proj: &GeomAPI_ProjectPointOnCurve,
         ) -> UniquePtr<gp_Pnt>;
@@ -1635,9 +1631,7 @@ pub mod ffi {
         pub fn geom2d_bspline_curve_degree(bspline: &HandleGeom2d_BSplineCurve) -> i32;
         pub fn geom2d_bspline_curve_is_rational(bspline: &HandleGeom2d_BSplineCurve) -> bool;
         pub fn geom2d_bspline_curve_is_periodic(bspline: &HandleGeom2d_BSplineCurve) -> bool;
-        pub fn geom2d_bspline_curve_set_not_periodic(
-            bspline: Pin<&mut HandleGeom2d_BSplineCurve>,
-        );
+        pub fn geom2d_bspline_curve_set_not_periodic(bspline: Pin<&mut HandleGeom2d_BSplineCurve>);
         pub fn geom2d_bspline_curve_nb_knots(bspline: &HandleGeom2d_BSplineCurve) -> i32;
         pub fn geom2d_bspline_curve_knot(bspline: &HandleGeom2d_BSplineCurve, index: i32) -> f64;
         pub fn geom2d_bspline_curve_multiplicity(

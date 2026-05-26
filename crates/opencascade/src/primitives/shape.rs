@@ -634,7 +634,6 @@ impl Shape {
         }
     }
 
-
     #[must_use]
     pub fn union(&self, other: &Shape) -> BooleanShape {
         let mut fuse_operation = ffi::BRepAlgoAPI_Fuse_ctor(&self.inner, &other.inner);
@@ -711,9 +710,7 @@ impl Shape {
         let mut gtrsf = ffi::new_gp_GTrsf();
         for (row, cols) in matrix.iter().enumerate() {
             for (col, &val) in cols.iter().enumerate() {
-                gtrsf
-                    .pin_mut()
-                    .SetValue((row + 1) as i32, (col + 1) as i32, val);
+                gtrsf.pin_mut().SetValue((row + 1) as i32, (col + 1) as i32, val);
             }
         }
         let copy = true;

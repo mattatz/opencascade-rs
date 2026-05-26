@@ -234,7 +234,8 @@ impl GameApp for ViewerApp {
                             v_knot_count, v_mult_sum
                         );
 
-                        println!("    Poles ({}x{} grid): {:?}",
+                        println!(
+                            "    Poles ({}x{} grid): {:?}",
                             bspline.poles.len(),
                             bspline.poles.first().map(|v| v.len()).unwrap_or(0),
                             bspline.poles
@@ -248,7 +249,8 @@ impl GameApp for ViewerApp {
                         println!("    V Direction:");
                         println!("      Control Points: {}", bezier.v_profile.nb_poles);
                         println!("      Degree: {}", bezier.v_profile.degree);
-                        println!("    Poles ({}x{} grid): {:?}",
+                        println!(
+                            "    Poles ({}x{} grid): {:?}",
                             bezier.poles.len(),
                             bezier.poles.first().map(|v| v.len()).unwrap_or(0),
                             bezier.poles
