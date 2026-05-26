@@ -492,20 +492,25 @@ impl Edge {
     }
 
     pub fn find_closest_point(&self, point: DVec3) -> Option<(DVec3, f64)> {
+        self.find_closest_point_xyz(point.x, point.y, point.z)
+            .map(|((x, y, z), t)| (dvec3(x, y, z), t))
+    }
+
+    pub fn find_closest_point_xyz(&self, x: f64, y: f64, z: f64) -> Option<((f64, f64, f64), f64)> {
         let mut first = 0.0_f64;
         let mut last = 0.0_f64;
         let curve_handle = ffi::BRep_Tool_Curve(&self.inner, &mut first, &mut last);
         if curve_handle.IsNull() {
             return None;
         }
-        let p = ffi::new_point(point.x, point.y, point.z);
+        let p = ffi::new_point(x, y, z);
         let proj = ffi::GeomAPI_ProjectPointOnCurve_ctor(&p, &curve_handle);
         if ffi::GeomAPI_ProjectPointOnCurve_NbPoints(&proj) == 0 {
             return None;
         }
         let nearest = ffi::GeomAPI_ProjectPointOnCurve_NearestPoint(&proj);
         let param = ffi::GeomAPI_ProjectPointOnCurve_LowerDistanceParameter(&proj);
-        Some((dvec3(nearest.X(), nearest.Y(), nearest.Z()), param))
+        Some(((nearest.X(), nearest.Y(), nearest.Z()), param))
     }
 
     pub fn trimmed(&self, u1: f64, u2: f64) -> Option<Edge> {
