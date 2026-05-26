@@ -1,5 +1,7 @@
 #include "rust/cxx.h"
 #include <sstream>
+#include <fstream>
+#include <cstdio>
 #include <BOPAlgo_GlueEnum.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAlgoAPI_Common.hxx>
@@ -1053,9 +1055,21 @@ inline IFSelect_ReturnStatus read_iges(IGESControl_Reader &reader, rust::String 
 }
 
 inline IFSelect_ReturnStatus read_iges_from_bytes(IGESControl_Reader &reader, rust::Slice<const uint8_t> data) {
-  std::string str(reinterpret_cast<const char*>(data.data()), data.size());
-  std::istringstream stream(str);
-  return reader.ReadStream("memory_stream.igs", stream);
+  // IGESControl_Reader does not support ReadStream, so use a temporary file.
+  char tmp_path[] = "/tmp/occ_iges_XXXXXX";
+  int fd = mkstemp(tmp_path);
+  if (fd == -1) {
+    return IFSelect_ReturnStatus::IFSelect_RetFail;
+  }
+  auto written = write(fd, data.data(), data.size());
+  close(fd);
+  if (written < 0 || static_cast<size_t>(written) != data.size()) {
+    std::remove(tmp_path);
+    return IFSelect_ReturnStatus::IFSelect_RetFail;
+  }
+  auto status = reader.ReadFile(tmp_path);
+  std::remove(tmp_path);
+  return status;
 }
 
 inline std::unique_ptr<TopoDS_Shape> one_shape_step(const STEPControl_Reader &reader) {
