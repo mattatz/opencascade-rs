@@ -721,6 +721,21 @@ impl Shape {
         self.inner.pin_mut().Reverse();
     }
 
+    /// Returns an independent deep copy of this shape (geometry copied) without
+    /// its mesh triangulation.
+    ///
+    /// `BRepMesh_IncrementalMesh` stores the triangulation into the shape's
+    /// shared `TShape`, so meshing a shape mutates every other shape that shares
+    /// that `TShape` (e.g. faces/edges extracted from it). Working on this copy
+    /// keeps the original untouched, avoiding use-after-free crashes on drop.
+    #[must_use]
+    pub fn copy(&self) -> Self {
+        let copy_geom = true;
+        let copy_mesh = false;
+        let mut builder = ffi::BRepBuilderAPI_Copy_ctor(&self.inner, copy_geom, copy_mesh);
+        Self::from_shape(builder.pin_mut().Shape())
+    }
+
     #[must_use]
     pub fn general_transform(&self, matrix: &[[f64; 4]; 3]) -> Self {
         let mut gtrsf = ffi::new_gp_GTrsf();
