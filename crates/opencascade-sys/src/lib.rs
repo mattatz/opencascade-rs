@@ -1494,6 +1494,31 @@ pub mod ffi {
         pub fn Build(self: Pin<&mut BRepBuilderAPI_MakeSolid>, progress: &Message_ProgressRange);
         pub fn IsDone(self: &BRepBuilderAPI_MakeSolid) -> bool;
 
+        type BRepBuilderAPI_Sewing;
+
+        #[cxx_name = "construct_unique"]
+        pub fn BRepBuilderAPI_Sewing_ctor(tolerance: f64) -> UniquePtr<BRepBuilderAPI_Sewing>;
+
+        pub fn Add(self: Pin<&mut BRepBuilderAPI_Sewing>, shape: &TopoDS_Shape);
+        pub fn Perform(self: Pin<&mut BRepBuilderAPI_Sewing>, progress: &Message_ProgressRange);
+        pub fn SewedShape(self: &BRepBuilderAPI_Sewing) -> &TopoDS_Shape;
+        // Sewing diagnostics: free edges remain when faces don't stitch (open
+        // shell); contiguous edges are successfully shared between two faces.
+        pub fn NbFreeEdges(self: &BRepBuilderAPI_Sewing) -> i32;
+        pub fn NbContigousEdges(self: &BRepBuilderAPI_Sewing) -> i32;
+        pub fn NbMultipleEdges(self: &BRepBuilderAPI_Sewing) -> i32;
+
+        // Build a solid from a closed shell and orient it outward (positive
+        // volume), ready for BRepAlgoAPI_* booleans.
+        pub fn make_oriented_solid(shell: &TopoDS_Shell) -> UniquePtr<TopoDS_Shape>;
+
+        // Repair a shape: rebuild missing p-curves, fix edges/tolerances.
+        pub fn shapefix_shape(shape: &TopoDS_Shape, precision: f64) -> UniquePtr<TopoDS_Shape>;
+
+        // Reversed copy of a wire (flip orientation) — turns a hole boundary
+        // into the opposite winding so MakeFace subtracts it.
+        pub fn reverse_wire(wire: &TopoDS_Wire) -> UniquePtr<TopoDS_Wire>;
+
         type BRepBuilderAPI_MakeShapeOnMesh;
 
         #[cxx_name = "construct_unique"]

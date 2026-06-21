@@ -20,6 +20,8 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeShapeOnMesh.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
+#include <BRepBuilderAPI_Sewing.hxx>
+#include <ShapeFix_Shape.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
@@ -1474,6 +1476,36 @@ inline std::unique_ptr<HandleGeom2d_Curve> bspline2d_curve_to_geom2d_curve(const
 // BRepLib::SameParameter - ensure edge consistency after PCurve construction
 inline void BRepLib_SameParameter(const TopoDS_Edge &edge, double tolerance) {
   BRepLib::SameParameter(edge, tolerance);
+}
+
+// Return a reversed copy of a wire (flips its orientation). Used to turn a hole
+// boundary into the opposite winding so MakeFace treats it as a hole, not as
+// extra material.
+inline std::unique_ptr<TopoDS_Wire> reverse_wire(const TopoDS_Wire &wire) {
+  return std::unique_ptr<TopoDS_Wire>(new TopoDS_Wire(TopoDS::Wire(wire.Reversed())));
+}
+
+// Repair a shape (add missing p-curves, fix edge consistency, tolerances, …).
+// Trimmed faces built from 3D wires alone lack the UV p-curves OCCT needs for
+// sewing/booleans/mass-props; ShapeFix_Shape reconstructs them by projection.
+inline std::unique_ptr<TopoDS_Shape> shapefix_shape(const TopoDS_Shape &shape,
+                                                    double precision) {
+  Handle(ShapeFix_Shape) fixer = new ShapeFix_Shape(shape);
+  fixer->SetPrecision(precision);
+  fixer->Perform();
+  return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(fixer->Shape()));
+}
+
+// Build a solid from a (closed) shell and orient it so material is inside —
+// i.e. outward face normals / positive volume. A shell sewn from independent
+// faces can come out inverted; BRepLib::OrientClosedSolid fixes the solid so it
+// is a valid operand for BRepAlgoAPI_* booleans.
+inline std::unique_ptr<TopoDS_Shape> make_oriented_solid(const TopoDS_Shell &shell) {
+  BRepBuilderAPI_MakeSolid maker(shell);
+  maker.Build();
+  TopoDS_Solid solid = maker.Solid();
+  BRepLib::OrientClosedSolid(solid);
+  return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(solid));
 }
 
 // BRep_Builder::MakeFace - create an empty face with a surface
