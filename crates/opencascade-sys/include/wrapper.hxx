@@ -123,6 +123,31 @@
 #include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
 
+#include <Standard_Failure.hxx>
+#include <exception>
+
+// Make `Result`-returning cxx bindings catch OpenCASCADE exceptions.
+//
+// cxx's default `trycatch` only catches `std::exception`, but OCCT's
+// `Standard_Failure` derives from `Standard_Transient`, not `std::exception`, so
+// an OCCT raise (e.g. an impossible `BRepFilletAPI_MakeFillet::Build`) would
+// escape uncaught and abort the process via std::terminate. Defining our own
+// `trycatch` overload disables cxx's SFINAE default and lets every Result-typed
+// binding surface OCCT failures as a normal Rust `Err`.
+namespace rust {
+namespace behavior {
+template <typename Try, typename Fail>
+static void trycatch(Try &&func, Fail &&fail) noexcept try {
+  func();
+} catch (const Standard_Failure &e) {
+  const char *msg = e.GetMessageString();
+  fail(msg != nullptr && *msg != '\0' ? msg : "OpenCASCADE operation failed");
+} catch (const std::exception &e) {
+  fail(e.what());
+}
+} // namespace behavior
+} // namespace rust
+
 // Generic template constructor
 template <typename T, typename... Args> std::unique_ptr<T> construct_unique(Args... args) {
   return std::unique_ptr<T>(new T(args...));
