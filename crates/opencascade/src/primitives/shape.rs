@@ -749,6 +749,27 @@ impl Shape {
         Self::from_shape(builder.pin_mut().Shape())
     }
 
+    /// Apply a rigid (or similarity) transform via `BRepBuilderAPI_Transform`.
+    ///
+    /// Unlike [`Self::general_transform`] (`gp_GTrsf`/`BRepBuilderAPI_GTransform`),
+    /// which refits analytic surfaces to B-splines and so perturbs the geometry
+    /// even for an identity transform, this preserves analytic surfaces exactly
+    /// (a transformed cylinder stays a cylinder). The `matrix` must be a
+    /// rigid/similarity transform (orthogonal up to a uniform scale); OCC's
+    /// `gp_Trsf::SetValues` throws otherwise.
+    #[must_use]
+    pub fn transform(&self, matrix: &[[f64; 4]; 3]) -> Self {
+        let mut trsf = ffi::new_transform();
+        let m = matrix;
+        trsf.pin_mut().SetValues(
+            m[0][0], m[0][1], m[0][2], m[0][3], m[1][0], m[1][1], m[1][2], m[1][3], m[2][0],
+            m[2][1], m[2][2], m[2][3],
+        );
+        let copy = true;
+        let mut builder = ffi::BRepBuilderAPI_Transform_ctor(&self.inner, &trsf, copy);
+        Self::from_shape(builder.pin_mut().Shape())
+    }
+
     pub fn set_global_translation(&mut self, translation: DVec3) {
         let mut transform = ffi::new_transform();
         let translation_vec = make_vec(translation);
