@@ -1169,7 +1169,12 @@ pub mod ffi {
         );
 
         pub fn Shape(self: Pin<&mut BRepFilletAPI_MakeFillet>) -> &TopoDS_Shape;
-        pub fn Build(self: Pin<&mut BRepFilletAPI_MakeFillet>, progress: &Message_ProgressRange);
+        // Returns Result so an impossible fillet (OCCT raises Standard_Failure)
+        // surfaces as a catchable error instead of aborting via std::terminate.
+        pub fn Build(
+            self: Pin<&mut BRepFilletAPI_MakeFillet>,
+            progress: &Message_ProgressRange,
+        ) -> Result<()>;
         pub fn IsDone(self: &BRepFilletAPI_MakeFillet) -> bool;
 
         type BRepFilletAPI_MakeFillet2d;
@@ -1213,7 +1218,12 @@ pub mod ffi {
         #[rust_name = "add_edge"]
         pub fn Add(self: Pin<&mut BRepFilletAPI_MakeChamfer>, distance: f64, edge: &TopoDS_Edge);
         pub fn Shape(self: Pin<&mut BRepFilletAPI_MakeChamfer>) -> &TopoDS_Shape;
-        pub fn Build(self: Pin<&mut BRepFilletAPI_MakeChamfer>, progress: &Message_ProgressRange);
+        // Returns Result so an impossible chamfer (OCCT raises Standard_Failure)
+        // surfaces as a catchable error instead of aborting via std::terminate.
+        pub fn Build(
+            self: Pin<&mut BRepFilletAPI_MakeChamfer>,
+            progress: &Message_ProgressRange,
+        ) -> Result<()>;
         pub fn IsDone(self: &BRepFilletAPI_MakeChamfer) -> bool;
 
         // Offset
