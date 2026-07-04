@@ -507,11 +507,13 @@ impl Edge {
         }
 
         if ffi::geom_bspline_curve_is_periodic(&bspline_handle) {
-            ffi::geom_bspline_curve_set_not_periodic(bspline_handle.pin_mut());
+            ffi::geom_bspline_curve_set_not_periodic(bspline_handle.pin_mut()).ok()?;
         }
 
-        // Clamp: trim to the edge's parameter range so end knots get full multiplicity
-        ffi::geom_bspline_curve_segment(bspline_handle.pin_mut(), first, last);
+        // Clamp: trim to the edge's parameter range so end knots get full multiplicity.
+        // OCCT raises (e.g. Standard_ConstructionError) when [first, last] falls
+        // outside the unfolded knot span; treat those edges as not convertible.
+        ffi::geom_bspline_curve_segment(bspline_handle.pin_mut(), first, last).ok()?;
 
         let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline_handle) as u32;
         let degree = ffi::geom_bspline_curve_degree(&bspline_handle) as u32;
@@ -736,8 +738,10 @@ impl Edge {
                     // downstream consumers always receive a standard non-periodic NURBS
                     // representation. OCC's `SetNotPeriodic` (BSplCLib::Unperiodize) is
                     // the authoritative algorithm for this.
+                    // Unperiodize can raise on degenerate knot layouts; keep the
+                    // periodic representation in that case.
                     if ffi::geom_bspline_curve_is_periodic(&bspline) {
-                        ffi::geom_bspline_curve_set_not_periodic(bspline.pin_mut());
+                        let _ = ffi::geom_bspline_curve_set_not_periodic(bspline.pin_mut());
                     }
 
                     let nb_poles = ffi::geom_bspline_curve_nb_poles(&bspline) as u32;

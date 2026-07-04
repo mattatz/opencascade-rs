@@ -595,12 +595,14 @@ pub mod ffi {
         pub fn geom_bspline_curve_degree(bspline: &HandleGeomBSplineCurve) -> i32;
         pub fn geom_bspline_curve_is_rational(bspline: &HandleGeomBSplineCurve) -> bool;
         pub fn geom_bspline_curve_is_periodic(bspline: &HandleGeomBSplineCurve) -> bool;
-        pub fn geom_bspline_curve_set_not_periodic(bspline: Pin<&mut HandleGeomBSplineCurve>);
+        pub fn geom_bspline_curve_set_not_periodic(
+            bspline: Pin<&mut HandleGeomBSplineCurve>,
+        ) -> Result<()>;
         pub fn geom_bspline_curve_segment(
             bspline: Pin<&mut HandleGeomBSplineCurve>,
             u1: f64,
             u2: f64,
-        );
+        ) -> Result<()>;
 
         // BSpline curve knots and multiplicities
         pub fn geom_bspline_curve_nb_knots(bspline: &HandleGeomBSplineCurve) -> i32;
