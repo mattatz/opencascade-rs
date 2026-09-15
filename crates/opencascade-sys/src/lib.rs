@@ -1771,6 +1771,9 @@ pub mod ffi {
             face: &TopoDS_Face,
             location: Pin<&mut TopLoc_Location>,
         ) -> UniquePtr<HandlePoly_Triangulation>;
+        pub fn BRep_Tool_PolygonOnTriangulation_nodes(
+            edge: &TopoDS_Edge,
+        ) -> UniquePtr<CxxVector<f64>>;
 
         type BRepIntCurveSurface_Inter;
 

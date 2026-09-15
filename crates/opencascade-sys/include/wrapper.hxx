@@ -1030,6 +1030,30 @@ inline std::unique_ptr<HandlePoly_Triangulation> BRep_Tool_Triangulation(const T
       new opencascade::handle<Poly_Triangulation>(BRep_Tool::Triangulation(face, location)));
 }
 
+// World-space nodes of the edge's first polygon on a triangulation, i.e. the
+// mesh nodes a neighbouring face's BRepMesh run placed along this edge,
+// flattened xyz. Empty when no meshed face contains the edge.
+inline std::unique_ptr<std::vector<double>> BRep_Tool_PolygonOnTriangulation_nodes(const TopoDS_Edge &edge) {
+  Handle(Poly_PolygonOnTriangulation) polygon;
+  Handle(Poly_Triangulation) triangulation;
+  TopLoc_Location location;
+  BRep_Tool::PolygonOnTriangulation(edge, polygon, triangulation, location, 1);
+  std::unique_ptr<std::vector<double>> out(new std::vector<double>());
+  if (polygon.IsNull() || triangulation.IsNull()) {
+    return out;
+  }
+  const gp_Trsf trsf = location.Transformation();
+  const TColStd_Array1OfInteger &nodes = polygon->Nodes();
+  out->reserve(nodes.Length() * 3);
+  for (Standard_Integer i = nodes.Lower(); i <= nodes.Upper(); ++i) {
+    const gp_Pnt p = triangulation->Node(nodes(i)).Transformed(trsf);
+    out->push_back(p.X());
+    out->push_back(p.Y());
+    out->push_back(p.Z());
+  }
+  return out;
+}
+
 inline std::unique_ptr<TopoDS_Shape> ExplorerCurrentShape(const TopExp_Explorer &explorer) {
   return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(explorer.Current()));
 }
