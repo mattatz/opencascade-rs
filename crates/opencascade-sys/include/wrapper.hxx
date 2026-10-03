@@ -1557,6 +1557,22 @@ inline std::unique_ptr<TopoDS_Shape> make_oriented_solid(const TopoDS_Shell &she
   return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(solid));
 }
 
+// BRepOffsetAPI_MakePipeShell::SetMode(const gp_Dir&) — constant-binormal
+// trihedron (GeomFill_ConstantBiNormal). cxx cannot express the overload.
+inline void BRepOffsetAPI_MakePipeShell_SetBiNormalMode(BRepOffsetAPI_MakePipeShell &shell,
+                                                        const gp_Dir &binormal) {
+  shell.SetMode(binormal);
+}
+
+// Start / end sections of a built pipe shell (returned by value by OCCT).
+inline std::unique_ptr<TopoDS_Shape> BRepOffsetAPI_MakePipeShell_FirstShape(BRepOffsetAPI_MakePipeShell &shell) {
+  return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(shell.FirstShape()));
+}
+
+inline std::unique_ptr<TopoDS_Shape> BRepOffsetAPI_MakePipeShell_LastShape(BRepOffsetAPI_MakePipeShell &shell) {
+  return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(shell.LastShape()));
+}
+
 // BRep_Builder::MakeFace - create an empty face with a surface
 inline void BRep_Builder_MakeFace(const BRep_Builder &builder, TopoDS_Face &face,
                                    const HandleGeomSurface &surface, double tolerance) {

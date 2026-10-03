@@ -296,7 +296,10 @@ impl Face {
         let mut make_pipe_shell =
             make_pipe_shell_with_law_function(&profile_wire, &path.inner, &law_handle);
 
-        make_pipe_shell.pin_mut().Build(&ffi::Message_ProgressRange_ctor());
+        make_pipe_shell
+            .pin_mut()
+            .Build(&ffi::Message_ProgressRange_ctor())
+            .expect("pipe shell build failed");
         make_pipe_shell.pin_mut().MakeSolid();
         let pipe_shape = make_pipe_shell.pin_mut().Shape();
         let result_solid = ffi::TopoDS_cast_to_solid(pipe_shape);

@@ -1069,7 +1069,12 @@ pub mod ffi {
         ) -> UniquePtr<BRepPrimAPI_MakeRevol>;
 
         pub fn Shape(self: Pin<&mut BRepPrimAPI_MakeRevol>) -> &TopoDS_Shape;
-        pub fn Build(self: Pin<&mut BRepPrimAPI_MakeRevol>, progress: &Message_ProgressRange);
+        // Returns Result so degenerate input (OCCT raises Standard_Failure)
+        // surfaces as a catchable error instead of aborting via std::terminate.
+        pub fn Build(
+            self: Pin<&mut BRepPrimAPI_MakeRevol>,
+            progress: &Message_ProgressRange,
+        ) -> Result<()>;
         pub fn IsDone(self: &BRepPrimAPI_MakeRevol) -> bool;
 
         #[rust_name = "add_edge"]
@@ -1307,9 +1312,26 @@ pub mod ffi {
             with_correction: bool,
         );
 
-        pub fn Build(self: Pin<&mut BRepOffsetAPI_MakePipeShell>, progress: &Message_ProgressRange);
+        // Constant-binormal trihedron: `SetMode(const gp_Dir&)` overload.
+        pub fn BRepOffsetAPI_MakePipeShell_SetBiNormalMode(
+            shell: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+            binormal: &gp_Dir,
+        );
+
+        // Returns Result so a degenerate sweep (OCCT raises Standard_Failure)
+        // surfaces as a catchable error instead of aborting via std::terminate.
+        pub fn Build(
+            self: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+            progress: &Message_ProgressRange,
+        ) -> Result<()>;
         pub fn MakeSolid(self: Pin<&mut BRepOffsetAPI_MakePipeShell>) -> bool;
         pub fn Shape(self: Pin<&mut BRepOffsetAPI_MakePipeShell>) -> &TopoDS_Shape;
+        pub fn BRepOffsetAPI_MakePipeShell_FirstShape(
+            shell: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+        ) -> UniquePtr<TopoDS_Shape>;
+        pub fn BRepOffsetAPI_MakePipeShell_LastShape(
+            shell: Pin<&mut BRepOffsetAPI_MakePipeShell>,
+        ) -> UniquePtr<TopoDS_Shape>;
 
         // Lofting
         type BRepOffsetAPI_ThruSections;
@@ -1319,10 +1341,24 @@ pub mod ffi {
             is_solid: bool,
         ) -> UniquePtr<BRepOffsetAPI_ThruSections>;
 
+        // `ruled = true` joins consecutive sections with ruled (degree-1) faces
+        // instead of one smoothed surface through all of them.
+        #[cxx_name = "construct_unique"]
+        pub fn BRepOffsetAPI_ThruSections_ctor_ruled(
+            is_solid: bool,
+            ruled: bool,
+        ) -> UniquePtr<BRepOffsetAPI_ThruSections>;
+
         pub fn AddWire(self: Pin<&mut BRepOffsetAPI_ThruSections>, wire: &TopoDS_Wire);
         pub fn CheckCompatibility(self: Pin<&mut BRepOffsetAPI_ThruSections>, check: bool);
+        pub fn SetMaxDegree(self: Pin<&mut BRepOffsetAPI_ThruSections>, max_degree: i32);
         pub fn Shape(self: Pin<&mut BRepOffsetAPI_ThruSections>) -> &TopoDS_Shape;
-        pub fn Build(self: Pin<&mut BRepOffsetAPI_ThruSections>, progress: &Message_ProgressRange);
+        // Returns Result so degenerate input (OCCT raises Standard_Failure)
+        // surfaces as a catchable error instead of aborting via std::terminate.
+        pub fn Build(
+            self: Pin<&mut BRepOffsetAPI_ThruSections>,
+            progress: &Message_ProgressRange,
+        ) -> Result<()>;
         pub fn IsDone(self: &BRepOffsetAPI_ThruSections) -> bool;
 
         pub type BRepAlgoAPI_BuilderAlgo;
@@ -1608,6 +1644,15 @@ pub mod ffi {
         pub fn TopExp_Explorer_ctor(
             shape: &TopoDS_Shape,
             to_find: TopAbs_ShapeEnum,
+        ) -> UniquePtr<TopExp_Explorer>;
+
+        // Skips sub-shapes nested inside a `to_avoid` shape (e.g. the faces
+        // that belong to no solid).
+        #[cxx_name = "construct_unique"]
+        pub fn TopExp_Explorer_ctor_avoid(
+            shape: &TopoDS_Shape,
+            to_find: TopAbs_ShapeEnum,
+            to_avoid: TopAbs_ShapeEnum,
         ) -> UniquePtr<TopExp_Explorer>;
 
         pub fn More(self: &TopExp_Explorer) -> bool;
