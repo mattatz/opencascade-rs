@@ -170,6 +170,19 @@ pub mod ffi {
         #[cxx_name = "construct_unique"]
         pub fn new_list_of_shape() -> UniquePtr<TopTools_ListOfShape>;
         pub fn shape_list_append_face(list: Pin<&mut TopTools_ListOfShape>, face: &TopoDS_Face);
+        pub fn shape_list_append_shape(list: Pin<&mut TopTools_ListOfShape>, shape: &TopoDS_Shape);
+
+        // Boolean of `arguments` with `tools` in one pass (0 = fuse, 1 = cut,
+        // 2 = common), non-destructive. Errors surface as `Err`; `warnings`
+        // receives the algorithm's warning report (empty when clean).
+        pub fn boolean_operation(
+            arguments: &TopTools_ListOfShape,
+            tools: &TopTools_ListOfShape,
+            operation: i32,
+            fuzzy_value: f64,
+            run_parallel: bool,
+            warnings: &mut String,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
         pub fn Size(self: &TopTools_ListOfShape) -> i32;
 
         #[cxx_name = "list_to_vector"]

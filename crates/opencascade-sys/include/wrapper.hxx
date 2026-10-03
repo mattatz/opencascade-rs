@@ -231,6 +231,53 @@ inline std::unique_ptr<HandleGeomPlane> new_HandleGeomPlane_from_HandleGeomSurfa
 
 // Collections
 inline void shape_list_append_face(TopTools_ListOfShape &list, const TopoDS_Face &face) { list.Append(face); }
+inline void shape_list_append_shape(TopTools_ListOfShape &list, const TopoDS_Shape &shape) { list.Append(shape); }
+
+// Boolean of `arguments` with `tools` in one pass, with the options the
+// two-shape BRepAlgoAPI constructors do not expose. `operation`: 0 = fuse,
+// 1 = cut, 2 = common. The inputs are left untouched (non-destructive mode).
+// Throws when the algorithm reports errors; `warnings` receives its warning
+// report (empty when clean).
+inline std::unique_ptr<TopoDS_Shape> boolean_operation(const TopTools_ListOfShape &arguments,
+                                                       const TopTools_ListOfShape &tools, int operation,
+                                                       double fuzzy_value, bool run_parallel,
+                                                       rust::String &warnings) {
+  auto run = [&](BRepAlgoAPI_BooleanOperation &algo) {
+    algo.SetArguments(arguments);
+    algo.SetTools(tools);
+    algo.SetFuzzyValue(fuzzy_value);
+    algo.SetRunParallel(run_parallel);
+    algo.SetNonDestructive(true);
+    algo.Build();
+    if (algo.HasErrors()) {
+      std::ostringstream report;
+      algo.DumpErrors(report);
+      throw std::runtime_error(report.str());
+    }
+    if (algo.HasWarnings()) {
+      std::ostringstream report;
+      algo.DumpWarnings(report);
+      warnings = rust::String(report.str());
+    }
+    return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(algo.Shape()));
+  };
+  switch (operation) {
+  case 0: {
+    BRepAlgoAPI_Fuse algo;
+    return run(algo);
+  }
+  case 1: {
+    BRepAlgoAPI_Cut algo;
+    return run(algo);
+  }
+  case 2: {
+    BRepAlgoAPI_Common algo;
+    return run(algo);
+  }
+  default:
+    throw std::runtime_error("unknown boolean operation");
+  }
+}
 
 // Geometry
 inline const gp_Pnt &handle_geom_plane_location(const HandleGeomPlane &plane) { return plane->Location(); }
