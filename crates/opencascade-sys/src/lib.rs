@@ -183,6 +183,15 @@ pub mod ffi {
             run_parallel: bool,
             warnings: &mut String,
         ) -> Result<UniquePtr<TopoDS_Shape>>;
+        // Split `arguments` by `tools` (BRepAlgoAPI_Splitter); the tools are
+        // not part of the result.
+        pub fn split_shape(
+            arguments: &TopTools_ListOfShape,
+            tools: &TopTools_ListOfShape,
+            fuzzy_value: f64,
+            run_parallel: bool,
+            warnings: &mut String,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
         pub fn Size(self: &TopTools_ListOfShape) -> i32;
 
         #[cxx_name = "list_to_vector"]
@@ -1594,6 +1603,51 @@ pub mod ffi {
         // Repair a shape: rebuild missing p-curves, fix edges/tolerances.
         pub fn shapefix_shape(shape: &TopoDS_Shape, precision: f64) -> UniquePtr<TopoDS_Shape>;
 
+        // Instance a periodic unit cell (living in `bounds` =
+        // [min_x, min_y, min_z, max_x, max_y, max_z]) over `cells` (flat
+        // (i, j, k) triples relative to the template). Boundary vertices and
+        // edges are shared between neighbouring cells by construction, no
+        // sewing. Caps (planar faces on the box faces) are kept only where no
+        // neighbour exists. Closed components become oriented solids. Errors
+        // on a non-periodic template; `report` receives counts.
+        // Widen vertex tolerances to the ends of their edges' curves and
+        // pcurves.
+        pub fn heal_vertex_tolerances(shape: &TopoDS_Shape);
+
+        pub fn assemble_periodic_cells(
+            cell: &TopoDS_Shape,
+            bounds: &[f64],
+            cells: &[i32],
+            tolerance: f64,
+            report: &mut String,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
+
+        // As `assemble_periodic_cells`, keeping only the material inside
+        // `body` (`keep_outside` = false) or outside it (true): cells the
+        // body surface touches get one boolean each, stitched exactly
+        // through the booleans' history. `body` is in template coordinates.
+        pub fn clip_periodic_cells(
+            cell: &TopoDS_Shape,
+            bounds: &[f64],
+            cells: &[i32],
+            body: &TopoDS_Shape,
+            keep_outside: bool,
+            tolerance: f64,
+            report: &mut String,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
+
+        // A point strictly inside `solid` (grid scan classified by
+        // BRepClass3d); errors when none is found.
+        pub fn point_inside_solid(solid: &TopoDS_Shape, tolerance: f64) -> Result<UniquePtr<gp_Pnt>>;
+
+        // BRepCheck_Analyzer validity of a shape.
+        pub fn brep_check_valid(shape: &TopoDS_Shape) -> bool;
+        // Sub-shapes BRepCheck_Analyzer flags, one per line ("valid" if none).
+        pub fn brep_check_report(shape: &TopoDS_Shape) -> String;
+
+        // Edges referenced by exactly one face (degenerated edges excluded).
+        pub fn count_free_edges(shape: &TopoDS_Shape) -> i32;
+
         // Reversed copy of a wire (flip orientation) — turns a hole boundary
         // into the opposite winding so MakeFace subtracts it.
         pub fn reverse_wire(wire: &TopoDS_Wire) -> UniquePtr<TopoDS_Wire>;
@@ -1798,6 +1852,40 @@ pub mod ffi {
             bspline: &HandleGeom2d_BSplineCurve,
         ) -> UniquePtr<HandleGeom2d_Curve>;
         pub fn BRepLib_SameParameter(edge: &TopoDS_Edge, tolerance: f64);
+        // Edge on `curve` between two existing vertices (same vertex twice
+        // for a closed curve).
+        pub fn make_edge_on_curve(
+            curve: &HandleGeomCurve,
+            v1: &TopoDS_Vertex,
+            v2: &TopoDS_Vertex,
+        ) -> Result<UniquePtr<TopoDS_Edge>>;
+        pub fn make_plane_surface(
+            origin: &gp_Pnt,
+            normal: &gp_Dir,
+            x_dir: &gp_Dir,
+        ) -> UniquePtr<HandleGeomSurface>;
+        // Closed shell from the faces of one connected component.
+        pub fn make_shell_from_faces(faces: &TopTools_ListOfShape) -> Result<UniquePtr<TopoDS_Shell>>;
+        // Solid bounded by `outer` with the cavity shells removed.
+        pub fn make_solid_from_shells(
+            outer: &TopoDS_Shell,
+            cavities: &TopTools_ListOfShape,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
+        pub fn point_in_solid(solid: &TopoDS_Shape, point: &gp_Pnt, tolerance: f64) -> bool;
+        #[allow(clippy::too_many_arguments)]
+        pub fn make_face_with_pcurves(
+            surface: &HandleGeomSurface,
+            edges: &TopTools_ListOfShape,
+            wire_reversed: &[u8],
+            pcurve_reversed: &[u8],
+            wire_sizes: &[u32],
+            poles: &[f64],
+            pole_counts: &[u32],
+            knots: &[f64],
+            knot_counts: &[u32],
+            degree: i32,
+            tolerance: f64,
+        ) -> Result<UniquePtr<TopoDS_Face>>;
 
         // Geom2d_BezierCurve
         pub fn cast_geom2d_curve_to_bezier(

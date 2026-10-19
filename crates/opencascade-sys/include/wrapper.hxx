@@ -13,6 +13,7 @@
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepAlgoAPI_Section.hxx>
+#include <BRepAlgoAPI_Splitter.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Copy.hxx>
 #include <BRepBuilderAPI_GTransform.hxx>
@@ -21,6 +22,13 @@
 #include <BRepBuilderAPI_MakeShapeOnMesh.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
+#include <Geom_Plane.hxx>
+#include <ShapeFix_Edge.hxx>
+#include <ShapeFix_Face.hxx>
+#include <ShapeFix_Shell.hxx>
+#include <ShapeFix_Solid.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
+#include <gp_Ax3.hxx>
 #include <ShapeFix_Shape.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
@@ -124,6 +132,7 @@
 #include <gp_Vec.hxx>
 
 #include <Standard_Failure.hxx>
+#include "periodic_lattice.hxx"
 #include <exception>
 
 // Make `Result`-returning cxx bindings catch OpenCASCADE exceptions.
@@ -238,6 +247,32 @@ inline void shape_list_append_shape(TopTools_ListOfShape &list, const TopoDS_Sha
 // 1 = cut, 2 = common. The inputs are left untouched (non-destructive mode).
 // Throws when the algorithm reports errors; `warnings` receives its warning
 // report (empty when clean).
+// Split `arguments` by the sub-shapes of `tools` (BRepAlgoAPI_Splitter): the
+// tools are not part of the result, which keeps the arguments' material as a
+// compound of pieces whose shared faces are genuinely shared.
+inline std::unique_ptr<TopoDS_Shape> split_shape(const TopTools_ListOfShape &arguments,
+                                                 const TopTools_ListOfShape &tools, double fuzzy_value,
+                                                 bool run_parallel, rust::String &warnings) {
+  BRepAlgoAPI_Splitter algo;
+  algo.SetArguments(arguments);
+  algo.SetTools(tools);
+  algo.SetFuzzyValue(fuzzy_value);
+  algo.SetRunParallel(run_parallel);
+  algo.SetNonDestructive(true);
+  algo.Build();
+  if (algo.HasErrors()) {
+    std::ostringstream report;
+    algo.DumpErrors(report);
+    throw std::runtime_error(report.str());
+  }
+  if (algo.HasWarnings()) {
+    std::ostringstream report;
+    algo.DumpWarnings(report);
+    warnings = rust::String(report.str());
+  }
+  return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(algo.Shape()));
+}
+
 inline std::unique_ptr<TopoDS_Shape> boolean_operation(const TopTools_ListOfShape &arguments,
                                                        const TopTools_ListOfShape &tools, int operation,
                                                        double fuzzy_value, bool run_parallel,
@@ -1572,6 +1607,169 @@ inline std::unique_ptr<HandleGeom2d_Curve> bspline2d_curve_to_geom2d_curve(const
 // BRepLib::SameParameter - ensure edge consistency after PCurve construction
 inline void BRepLib_SameParameter(const TopoDS_Edge &edge, double tolerance) {
   BRepLib::SameParameter(edge, tolerance);
+}
+
+// Edge on `curve` between two existing vertices (shared topology); `v1` and
+// `v2` may be the same vertex for a closed curve.
+inline std::unique_ptr<TopoDS_Edge> make_edge_on_curve(const HandleGeomCurve &curve, const TopoDS_Vertex &v1,
+                                                       const TopoDS_Vertex &v2) {
+  // One vertex at both ends: the curve must come back to it and the edge
+  // spans the whole curve.
+  if (v1.IsSame(v2)) {
+    const double f = curve->FirstParameter(), l = curve->LastParameter();
+    const double gap = curve->Value(f).Distance(curve->Value(l));
+    if (gap > 1e-6) {
+      std::ostringstream msg;
+      msg << "make_edge_on_curve: one vertex, open curve (ends " << gap << " apart)";
+      throw std::runtime_error(msg.str());
+    }
+    BRepBuilderAPI_MakeEdge maker(curve, v1, v2, f, l);
+    if (!maker.IsDone()) {
+      throw std::runtime_error("make_edge_on_curve: closed edge construction failed");
+    }
+    TopoDS_Edge edge = maker.Edge();
+    double ef, el;
+    BRep_Tool::Range(edge, ef, el);
+    if (BRep_Tool::Degenerated(edge) || el - ef < 1e-9) {
+      std::ostringstream msg;
+      msg << "make_edge_on_curve: closed edge came out degenerate (range " << ef << " to " << el << ")";
+      throw std::runtime_error(msg.str());
+    }
+    return std::unique_ptr<TopoDS_Edge>(new TopoDS_Edge(edge));
+  }
+  BRepBuilderAPI_MakeEdge maker(curve, v1, v2);
+  if (!maker.IsDone()) {
+    throw std::runtime_error("make_edge_on_curve: edge construction failed");
+  }
+  TopoDS_Edge edge = maker.Edge();
+  double f, l;
+  BRep_Tool::Range(edge, f, l);
+  if (BRep_Tool::Degenerated(edge) || l - f < 1e-9) {
+    std::ostringstream msg;
+    msg << "make_edge_on_curve: degenerate edge (range " << f << " to " << l << ")";
+    throw std::runtime_error(msg.str());
+  }
+  return std::unique_ptr<TopoDS_Edge>(new TopoDS_Edge(edge));
+}
+
+// Face of `surface` bounded by wires of `edges` (consecutive groups of
+// `wire_sizes`, head to tail). Each edge gets its pcurve as a clamped B-spline
+// of `degree` from flattened 2D `poles` and full `knots`; `wire_reversed`
+// orients the edge in its wire and `pcurve_reversed` turns the pcurve to the
+// edge's own direction. The edges are updated in place and stay shared.
+inline std::unique_ptr<TopoDS_Face> make_face_with_pcurves(
+    const HandleGeomSurface &surface, const TopTools_ListOfShape &edges,
+    rust::Slice<const uint8_t> wire_reversed, rust::Slice<const uint8_t> pcurve_reversed,
+    rust::Slice<const uint32_t> wire_sizes, rust::Slice<const double> poles,
+    rust::Slice<const uint32_t> pole_counts, rust::Slice<const double> knots,
+    rust::Slice<const uint32_t> knot_counts, int32_t degree, double tolerance) {
+  BRep_Builder builder;
+  TopoDS_Face face;
+  builder.MakeFace(face, surface, tolerance);
+  TopTools_ListIteratorOfListOfShape it(edges);
+  size_t e = 0, pole_at = 0, knot_at = 0;
+  for (size_t w = 0; w < wire_sizes.size(); ++w) {
+    TopoDS_Wire wire;
+    builder.MakeWire(wire);
+    for (uint32_t k = 0; k < wire_sizes[w]; ++k, ++e, it.Next()) {
+      if (!it.More()) {
+        throw std::runtime_error("make_face_with_pcurves: fewer edges than wire sizes");
+      }
+      const TopoDS_Edge &edge = TopoDS::Edge(it.Value());
+      const uint32_t np = pole_counts[e];
+      const uint32_t nk = knot_counts[e];
+      TColgp_Array1OfPnt2d p(1, np);
+      for (uint32_t i = 0; i < np; ++i) {
+        p.SetValue(i + 1, gp_Pnt2d(poles[pole_at + 2 * i], poles[pole_at + 2 * i + 1]));
+      }
+      std::vector<double> distinct;
+      std::vector<int> mults;
+      for (uint32_t i = 0; i < nk; ++i) {
+        const double v = knots[knot_at + i];
+        if (!distinct.empty() && std::abs(v - distinct.back()) < 1e-12) {
+          ++mults.back();
+        } else {
+          distinct.push_back(v);
+          mults.push_back(1);
+        }
+      }
+      TColStd_Array1OfReal ka(1, static_cast<int>(distinct.size()));
+      TColStd_Array1OfInteger ma(1, static_cast<int>(mults.size()));
+      for (size_t i = 0; i < distinct.size(); ++i) {
+        ka.SetValue(static_cast<int>(i) + 1, distinct[i]);
+        ma.SetValue(static_cast<int>(i) + 1, mults[i]);
+      }
+      Handle(Geom2d_Curve) c2d = new Geom2d_BSplineCurve(p, ka, ma, degree);
+      if (pcurve_reversed[e]) {
+        c2d = c2d->Reversed();
+      }
+      // The edge keeps a tight tolerance here; SameParameter below raises
+      // it to the deviation it measures, up to `tolerance`.
+      builder.UpdateEdge(edge, c2d, face, Precision::Confusion());
+      builder.Add(wire, wire_reversed[e] ? TopoDS::Edge(edge.Reversed()) : edge);
+      pole_at += 2 * np;
+      knot_at += nk;
+    }
+    wire.Closed(BRep_Tool::IsClosed(wire));
+    builder.Add(face, wire);
+  }
+  for (TopExp_Explorer ex(face, TopAbs_EDGE); ex.More(); ex.Next()) {
+    BRepLib::SameParameter(TopoDS::Edge(ex.Current()), tolerance, Standard_True);
+  }
+  return std::unique_ptr<TopoDS_Face>(new TopoDS_Face(face));
+}
+
+// Plane through `origin` with the given normal and u direction.
+inline std::unique_ptr<HandleGeomSurface> make_plane_surface(const gp_Pnt &origin, const gp_Dir &normal,
+                                                             const gp_Dir &x_dir) {
+  Handle(Geom_Surface) surface = new Geom_Plane(gp_Ax3(origin, normal, x_dir));
+  return std::unique_ptr<HandleGeomSurface>(new HandleGeomSurface(surface));
+}
+
+// Closed shell of `faces` (one connected component) with consistent face
+// orientations.
+inline std::unique_ptr<TopoDS_Shell> make_shell_from_faces(const TopTools_ListOfShape &faces) {
+  BRep_Builder builder;
+  TopoDS_Shell shell;
+  builder.MakeShell(shell);
+  for (const TopoDS_Shape &f : faces) {
+    builder.Add(shell, f);
+  }
+  shell.Closed(Standard_True);
+  Handle(ShapeFix_Shell) fixer = new ShapeFix_Shell(shell);
+  fixer->FixFaceOrientation(shell);
+  return std::unique_ptr<TopoDS_Shell>(new TopoDS_Shell(fixer->Shell()));
+}
+
+// Solid bounded by `outer` with the `cavities` (shells inside it) removed;
+// shell orientations are fixed so that material lies between them.
+inline std::unique_ptr<TopoDS_Shape> make_solid_from_shells(const TopoDS_Shell &outer,
+                                                            const TopTools_ListOfShape &cavities) {
+  // Orientation only: the shells are already sound, and ShapeFix_Solid's
+  // full pass would rewrite small edges as degenerated ones.
+  BRep_Builder builder;
+  auto outward = [&](const TopoDS_Shape &shell) {
+    TopoDS_Solid probe;
+    builder.MakeSolid(probe);
+    builder.Add(probe, shell);
+    BRepLib::OrientClosedSolid(probe);
+    TopoDS_Iterator it(probe);
+    return it.Value();
+  };
+  TopoDS_Solid solid;
+  builder.MakeSolid(solid);
+  builder.Add(solid, outward(outer));
+  for (const TopoDS_Shape &c : cavities) {
+    builder.Add(solid, outward(c).Reversed());
+  }
+  return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(solid));
+}
+
+// Whether the point lies inside the solid.
+inline bool point_in_solid(const TopoDS_Shape &solid, const gp_Pnt &point, double tolerance) {
+  BRepClass3d_SolidClassifier classifier(solid);
+  classifier.Perform(point, tolerance);
+  return classifier.State() == TopAbs_IN;
 }
 
 // Return a reversed copy of a wire (flips its orientation). Used to turn a hole
