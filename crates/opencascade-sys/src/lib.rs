@@ -1614,12 +1614,17 @@ pub mod ffi {
         // pcurves.
         pub fn heal_vertex_tolerances(shape: &TopoDS_Shape);
 
+        // `reps` / `offsets` receive, per face of the result (explorer
+        // order), the index of the earlier face it is a translated copy of
+        // (-1 if none) and that translation (3 values per face).
         pub fn assemble_periodic_cells(
             cell: &TopoDS_Shape,
             bounds: &[f64],
             cells: &[i32],
             tolerance: f64,
             report: &mut String,
+            reps: &mut Vec<i32>,
+            offsets: &mut Vec<f64>,
         ) -> Result<UniquePtr<TopoDS_Shape>>;
 
         // As `assemble_periodic_cells`, keeping only the material inside
@@ -1634,6 +1639,8 @@ pub mod ffi {
             keep_outside: bool,
             tolerance: f64,
             report: &mut String,
+            reps: &mut Vec<i32>,
+            offsets: &mut Vec<f64>,
         ) -> Result<UniquePtr<TopoDS_Shape>>;
 
         // A point strictly inside `solid` (grid scan classified by

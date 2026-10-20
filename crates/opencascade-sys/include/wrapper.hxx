@@ -1665,7 +1665,7 @@ inline std::unique_ptr<TopoDS_Face> make_face_with_pcurves(
     rust::Slice<const uint32_t> knot_counts, int32_t degree, double tolerance) {
   BRep_Builder builder;
   TopoDS_Face face;
-  builder.MakeFace(face, surface, tolerance);
+  builder.MakeFace(face, surface, Precision::Confusion());
   TopTools_ListIteratorOfListOfShape it(edges);
   size_t e = 0, pole_at = 0, knot_at = 0;
   for (size_t w = 0; w < wire_sizes.size(); ++w) {
@@ -1713,9 +1713,15 @@ inline std::unique_ptr<TopoDS_Face> make_face_with_pcurves(
     wire.Closed(BRep_Tool::IsClosed(wire));
     builder.Add(face, wire);
   }
+  // The face tolerance follows the deviation its edges actually measure;
+  // a face given `tolerance` outright passes that slack on to every edge a
+  // boolean later cuts into it.
+  double face_tolerance = Precision::Confusion();
   for (TopExp_Explorer ex(face, TopAbs_EDGE); ex.More(); ex.Next()) {
     BRepLib::SameParameter(TopoDS::Edge(ex.Current()), tolerance, Standard_True);
+    face_tolerance = (std::max)(face_tolerance, BRep_Tool::Tolerance(TopoDS::Edge(ex.Current())));
   }
+  builder.UpdateFace(face, face_tolerance);
   return std::unique_ptr<TopoDS_Face>(new TopoDS_Face(face));
 }
 

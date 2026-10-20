@@ -10,11 +10,14 @@
 // caps: they are emitted only on sides without a neighbour cell.
 //
 // Clipping against a body runs one boolean per cell the body surface touches
-// (cells fully inside / outside are kept whole or dropped). The per-cell
-// results are stitched exactly through the booleans' history: splits and
-// generated sub-shapes of a shared original (interface face, edge, vertex)
-// are matched between neighbours and substituted with BRepTools_ReShape, so
-// the clipped cells share their interface topology like the unclipped ones.
+// (cells fully inside / outside are kept whole or dropped). The topology the
+// clipped cells share (their interface faces with edges and vertices) is
+// split by the body once beforehand, so every cell's boolean starts from the
+// same split pieces and keeps them; the per-cell results are then stitched
+// through the booleans' history: splits and generated sub-shapes of a shared
+// original are matched between neighbours and substituted with
+// BRepTools_ReShape, so the clipped cells share their interface topology
+// like the unclipped ones.
 #pragma once
 
 #include "rust/cxx.h"
@@ -25,6 +28,7 @@
 #include <GProp_GProps.hxx>
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
+#include <BRepAlgoAPI_Splitter.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepCheck.hxx>
 #include <BRepCheck_Analyzer.hxx>
@@ -102,6 +106,7 @@
 #include <vector>
 
 inline std::unique_ptr<gp_Pnt> point_inside_solid(const TopoDS_Shape &solid, double tolerance);
+inline rust::String brep_check_report(const TopoDS_Shape &shape);
 
 namespace periodic_lattice {
 
@@ -256,6 +261,14 @@ struct Boundary {
   bool degenerated = false; // edge: no 3D curve, never shared
 };
 
+inline int count_shells(const TopoDS_Shape &shape) {
+  int n = 0;
+  for (TopExp_Explorer ex(shape, TopAbs_SHELL); ex.More(); ex.Next()) {
+    ++n;
+  }
+  return n;
+}
+
 inline int32_t count_free_edges_of(const TopoDS_Shape &shape) {
   TopTools_IndexedDataMapOfShapeListOfShape map;
   TopExp::MapShapesAndAncestors(shape, TopAbs_EDGE, TopAbs_FACE, map);
@@ -312,24 +325,51 @@ public:
           solids.emplace_back(c, cell_solid(c));
         }
       }
+      // Kept cells next to clipped ones are built now too, so that the
+      // pre-split copies their pcurves along with the clipped cells'.
+      for (const Cell &c : cells) {
+        if (classes_[pack_cell(c.i, c.j, c.k)] == Class::Keep && touches_clip(c)) {
+          std::vector<TopoDS_Face> &faces = kept_faces_[pack_cell(c.i, c.j, c.k)];
+          for (int fi = 1; fi <= faces_.Extent(); ++fi) {
+            if (cap_side_[fi - 1] < 0) {
+              faces.push_back(instantiate_face(fi, c));
+            }
+          }
+          for (int side = 0; side < 6; ++side) {
+            side_faces(c, side);
+          }
+        }
+      }
+      presplit_interfaces(*body);
+      for (auto &s : solids) {
+        s.second = presplit_.Apply(s.second);
+      }
       watch.lap("solids");
       // Booleans run in parallel over chunks (non-destructive: the inputs are
       // only read); their histories are then recorded in cell order.
       const size_t chunk = (std::max)(16, 4 * OSD_Parallel::NbLogicalProcessors());
       for (size_t start = 0; start < solids.size(); start += chunk) {
         const size_t end = (std::min)(solids.size(), start + chunk);
-        std::vector<std::unique_ptr<BRepAlgoAPI_BooleanOperation>> algos(end - start);
+        std::vector<CellBoolean> algos(end - start);
         std::vector<std::string> errors(end - start);
-        OSD_Parallel::For(0, int(end - start), [&](int i) {
-          try {
-            algos[i] = run_boolean(solids[start + i].second, *body, keep_outside);
-          } catch (const Standard_Failure &e) {
-            errors[i] = e.GetMessageString() ? e.GetMessageString() : "OCCT failure";
-          } catch (const std::exception &e) {
-            errors[i] = e.what();
-          }
-        });
+        const bool serial = std::getenv("NODI_TPMS_SERIAL") != nullptr;
+        const auto booleans_started = std::chrono::steady_clock::now();
+        OSD_Parallel::For(
+            0, int(end - start),
+            [&](int i) {
+              try {
+                algos[i] = run_boolean(solids[start + i].second, *body, keep_outside);
+              } catch (const Standard_Failure &e) {
+                errors[i] = e.GetMessageString() ? e.GetMessageString() : "OCCT failure";
+              } catch (const std::exception &e) {
+                errors[i] = e.what();
+              }
+            },
+            serial);
         watch.lap("booleans");
+        if (std::getenv("NODI_TPMS_DEBUG") != nullptr) {
+          report_booleans(algos, serial, booleans_started);
+        }
         for (size_t i = start; i < end; ++i) {
           const Cell &c = solids[i].first;
           if (!errors[i - start].empty()) {
@@ -338,7 +378,7 @@ public:
             throw std::runtime_error(msg.str());
           }
           Class &cls = classes_[pack_cell(c.i, c.j, c.k)];
-          TopoDS_Shape result = record_cell(c, solids[i].second, *algos[i - start], warned);
+          TopoDS_Shape result = record_cell(c, solids[i].second, algos[i - start], warned);
           if (!TopExp_Explorer(result, TopAbs_FACE).More()) {
             cls = Class::Drop;
             continue;
@@ -359,12 +399,18 @@ public:
       if (cls != Class::Keep) {
         continue;
       }
+      auto built = kept_faces_.find(pack_cell(c.i, c.j, c.k));
+      int k = 0;
       for (int fi = 1; fi <= faces_.Extent(); ++fi) {
         if (cap_side_[fi - 1] < 0) {
-          out_faces_.push_back(instantiate_face(fi, c));
-          out_origin_.emplace_back(pack_cell(c.i, c.j, c.k), face_solid_[fi - 1]);
-          out_cavity_.push_back(face_cavity_[fi - 1]);
-          out_cap_.push_back(false);
+          const TopoDS_Face face = built == kept_faces_.end() ? instantiate_face(fi, c) : built->second[k++];
+          for (const TopoDS_Face &f : presplit_faces(face)) {
+            out_faces_.push_back(f);
+            out_template_.emplace_back(fi, c);
+            out_origin_.emplace_back(pack_cell(c.i, c.j, c.k), face_solid_[fi - 1]);
+            out_cavity_.push_back(face_cavity_[fi - 1]);
+            out_cap_.push_back(false);
+          }
         }
       }
       for (int side = 0; side < 6; ++side) {
@@ -372,12 +418,15 @@ public:
         if (ncls == Class::Keep) {
           continue;
         }
-        for (const TopoDS_Face &f : side_faces(c, side)) {
-          if (ncls == Class::Drop || !interface_closed(f)) {
-            out_faces_.push_back(f);
-            out_origin_.emplace_back(pack_cell(c.i, c.j, c.k), -1);
-            out_cavity_.push_back(false);
-            out_cap_.push_back(true);
+        for (const SideFace &sf : side_faces(c, side)) {
+          if (ncls == Class::Drop || !interface_closed(sf.face)) {
+            for (const TopoDS_Face &f : presplit_faces(sf.face)) {
+              out_faces_.push_back(f);
+              out_template_.emplace_back(sf.index, sf.owner);
+              out_origin_.emplace_back(pack_cell(c.i, c.j, c.k), -1);
+              out_cavity_.push_back(false);
+              out_cap_.push_back(true);
+            }
           }
         }
       }
@@ -390,11 +439,25 @@ public:
         builder_.Add(all, s);
       }
       const TopoDS_Shape stitched = reshape_.Apply(all);
+      // Material kept inside a body whose outside is one connected region
+      // reaches that region through every piece of the body's surface, so
+      // a shell holding such a piece is an outer shell, like one with a cap.
+      std::unordered_set<const Geom_Surface *> body_surfaces;
+      if (!keep_outside && count_shells(*body) == 1) {
+        for (TopExp_Explorer ex(*body, TopAbs_FACE); ex.More(); ex.Next()) {
+          TopLoc_Location loc;
+          body_surfaces.insert(BRep_Tool::Surface(TopoDS::Face(ex.Current()), loc).get());
+        }
+      }
       for (TopExp_Explorer ex(stitched, TopAbs_FACE); ex.More(); ex.Next()) {
-        out_faces_.push_back(TopoDS::Face(ex.Current()));
+        const TopoDS_Face &f = TopoDS::Face(ex.Current());
+        TopLoc_Location loc;
+        const bool on_body = body_surfaces.count(BRep_Tool::Surface(f, loc).get()) > 0;
+        out_faces_.push_back(f);
+        out_template_.emplace_back(-1, Cell{0, 0, 0});
         out_origin_.emplace_back(0, -1);
         out_cavity_.push_back(false);
-        out_cap_.push_back(false);
+        out_cap_.push_back(on_body);
       }
     }
     watch.lap("faces");
@@ -402,13 +465,14 @@ public:
     std::ostringstream rep;
     rep << "cells kept=" << kept << " clipped=" << cut << " dropped=" << dropped
         << " boolean_warnings=" << warned << " benign_warnings=" << benign_ << " mismatches=" << mismatches_
-        << " reparam=" << reparam_ << " ";
+        << " reparam=" << reparam_ << " twins=" << twins_ << " reconciled=" << reconciled_ << " ";
     report = rep.str();
     if (!reparam_sample_.empty()) {
       report += "| " + reparam_sample_ + " | ";
     }
     if (!warning_sample_.empty() || mismatches_ > 0) {
-      report += " | warnings: " + warning_sample_ + " | mismatches:" + mismatch_log_.str() + " | ";
+      report += " | warnings: " + warning_sample_ + " | mismatch cells:" + mismatch_cell_summary() +
+                " | mismatches:" + mismatch_log_.str() + " | ";
     }
     if (!benign_sample_.empty()) {
       report += " | benign: " + benign_sample_ + " | ";
@@ -442,13 +506,89 @@ private:
     }
   };
 
+  struct CellBoolean {
+    std::unique_ptr<BRepAlgoAPI_BooleanOperation> algo;
+    bool sound = false; // warned, but checked out (kept without a retry)
+    int attempts = 0;   // fuzzy values tried
+    int misplaced = 0;  // placement faults of the result (see placement_faults)
+    double seconds = 0.0;
+  };
+
+  // Vertices that put a clipped cell's result in doubt: result vertices
+  // clearly on the side of the body the operation removes, and vertices of
+  // the cell solid clearly on the kept side that the result lost (neither
+  // themselves nor a copy at the same place). A boolean that kept or dropped
+  // a whole region by mistake shows up here even when its result checks out.
+  static int placement_faults(const TopoDS_Shape &solid, const TopoDS_Shape &result, const TopoDS_Shape &body,
+                              bool keep_outside, double tolerance) {
+    BRepClass3d_SolidClassifier classifier(body);
+    const TopAbs_State kept = keep_outside ? TopAbs_OUT : TopAbs_IN;
+    const TopAbs_State removed = keep_outside ? TopAbs_IN : TopAbs_OUT;
+    TopTools_IndexedMapOfShape inputs, outputs;
+    TopExp::MapShapes(solid, TopAbs_VERTEX, inputs);
+    TopExp::MapShapes(result, TopAbs_VERTEX, outputs);
+    int faults = 0;
+    std::vector<gp_Pnt> points;
+    for (int i = 1; i <= outputs.Extent(); ++i) {
+      const TopoDS_Vertex &v = TopoDS::Vertex(outputs(i));
+      const gp_Pnt p = BRep_Tool::Pnt(v);
+      points.push_back(p);
+      classifier.Perform(p, (std::max)(tolerance, BRep_Tool::Tolerance(v)));
+      faults += classifier.State() == removed;
+    }
+    for (int i = 1; i <= inputs.Extent(); ++i) {
+      const TopoDS_Vertex &v = TopoDS::Vertex(inputs(i));
+      if (outputs.Contains(v)) {
+        continue;
+      }
+      const gp_Pnt p = BRep_Tool::Pnt(v);
+      const double tol = (std::max)(tolerance, BRep_Tool::Tolerance(v));
+      classifier.Perform(p, tol);
+      if (classifier.State() != kept) {
+        continue;
+      }
+      const bool survived = std::any_of(points.begin(), points.end(),
+                                        [&](const gp_Pnt &q) { return p.SquareDistance(q) <= tol * tol; });
+      faults += !survived;
+    }
+    return faults;
+  }
+
+  // A warned boolean whose result still holds: only alerts about removed
+  // slivers, unsplittable edges or orientation guesses, no free edge, and a
+  // valid shape. The builder alerts mean faces were lost.
+  static bool harmless_result(BRepAlgoAPI_BooleanOperation &algo, const TopoDS_Shape &result) {
+    std::ostringstream alerts;
+    algo.DumpWarnings(alerts);
+    return only_harmless_alerts(alerts.str()) && count_free_edges_of(result) == 0 &&
+           BRepCheck_Analyzer(result).IsValid();
+  }
+
+  static void report_booleans(const std::vector<CellBoolean> &algos, bool serial,
+                              std::chrono::steady_clock::time_point started) {
+    double sum = 0.0, longest = 0.0;
+    int retried = 0;
+    for (const CellBoolean &b : algos) {
+      sum += b.seconds;
+      longest = (std::max)(longest, b.seconds);
+      retried += b.attempts > 1;
+    }
+    const double wall = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
+    std::cerr << "periodic clip: " << algos.size() << " booleans" << (serial ? " (serial)" : "") << " wall " << wall
+              << "s cpu " << sum << "s longest " << longest << "s retried " << retried << std::endl;
+  }
+
   struct Pool {
     TopoDS_Shape original;               // kept alive: the map is keyed by its TShape pointer
     std::vector<TopoDS_Shape> pieces;    // first cell's splits (or the original itself)
     std::vector<TopoDS_Shape> generated; // canonical generated sub-shapes
     bool shared = false;                 // seen from a second cell
     bool complete = true;                // every later cell matched the pieces 1:1
+    Cell first{0, 0, 0};                 // the cell that made the pool
+    bool deleted = false;                // the first cell's boolean deleted the original
   };
+  Cell current_cell_{0, 0, 0};
+  bool current_deleted_ = false;
 
   const TopoDS_Shape &cell_;
   double tol_;
@@ -462,8 +602,9 @@ private:
   // Per output face: (cell, template solid) when instanced from a kept cell
   // (-1 solid otherwise) and whether it came from a cavity shell.
   std::vector<std::pair<int64_t, int>> out_origin_;
+  std::vector<std::pair<int, Cell>> out_template_; // (template face, cell) when instanced, else (-1, _)
   std::vector<bool> out_cavity_;
-  std::vector<bool> out_cap_;
+  std::vector<bool> out_cap_; // on the block boundary: a cap, or a piece of the body
 
   BRep_Builder builder_;
   std::unordered_map<InstanceKey, TopoDS_Vertex, InstanceKeyHash> vertex_instances_;
@@ -474,6 +615,40 @@ private:
 
   std::unordered_map<int64_t, Class> classes_;
   std::unordered_map<const TopoDS_TShape *, Pool> pools_;
+  // The shared interface faces split by the body before the cell booleans:
+  // each face's pieces, and the substitution of faces / edges / vertices.
+  std::unordered_map<const TopoDS_TShape *, std::vector<TopoDS_Shape>> face_splits_;
+  BRepTools_ReShape presplit_;
+  // Regular faces of the kept cells built before the pre-split.
+  std::unordered_map<int64_t, std::vector<TopoDS_Face>> kept_faces_;
+
+  bool touches_clip(const Cell &c) const {
+    for (int di = -1; di <= 1; ++di) {
+      for (int dj = -1; dj <= 1; ++dj) {
+        for (int dk = -1; dk <= 1; ++dk) {
+          if (class_of(Cell{c.i + di, c.j + dj, c.k + dk}) == Class::Clip) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  // `face` with the pre-split substitutions applied: itself when untouched,
+  // else the rebuilt face, or the pieces of a face the body split.
+  std::vector<TopoDS_Face> presplit_faces(const TopoDS_Face &face) {
+    std::vector<TopoDS_Face> out;
+    const TopoDS_Shape applied = presplit_.Apply(face);
+    if (applied.ShapeType() == TopAbs_FACE) {
+      out.push_back(TopoDS::Face(applied));
+    } else {
+      for (TopExp_Explorer ex(applied, TopAbs_FACE); ex.More(); ex.Next()) {
+        out.push_back(TopoDS::Face(ex.Current()));
+      }
+    }
+    return out;
+  }
   std::vector<std::pair<TopoDS_Shape, Bnd_Box>> body_edges_;
   BRepTools_ReShape reshape_;
   std::unordered_set<const TopoDS_TShape *> closed_interfaces_;
@@ -483,16 +658,39 @@ private:
   std::ostringstream mismatch_log_;
   int benign_ = 0;
   int reparam_ = 0;
+  int twins_ = 0;      // copies recovered from the results by geometry
+  int reconciled_ = 0; // section edges re-split to match the neighbour's
+  int warned_logged_ = 0;
   std::string reparam_sample_;
 
+  std::map<int64_t, int> mismatch_cells_;
+
+  std::string mismatch_cell_summary() const {
+    std::vector<std::pair<int, int64_t>> order;
+    for (const auto &kv : mismatch_cells_) {
+      order.emplace_back(kv.second, kv.first);
+    }
+    std::sort(order.rbegin(), order.rend());
+    std::ostringstream out;
+    for (size_t i = 0; i < order.size() && i < 6; ++i) {
+      const Cell c = unpack_cell(order[i].second);
+      out << " (" << c.i << "," << c.j << "," << c.k << ")x" << order[i].first;
+    }
+    return out.str();
+  }
+
   void log_mismatch(const TopoDS_Shape &original, const char *kind, const std::vector<TopoDS_Shape> &mine,
-                    const std::vector<TopoDS_Shape> &pool) {
+                    const std::vector<TopoDS_Shape> &pool, const Pool &record) {
     ++mismatches_;
+    ++mismatch_cells_[pack_cell(current_cell_.i, current_cell_.j, current_cell_.k)];
+    ++mismatch_cells_[pack_cell(record.first.i, record.first.j, record.first.k)];
     if (mismatches_ > 12) {
       return;
     }
     mismatch_log_ << " [" << TopAbs::ShapeTypeToString(original.ShapeType()) << " " << kind << " "
-                  << mine.size() << " vs " << pool.size();
+                  << mine.size() << " vs " << pool.size() << " (cell " << current_cell_.i << "," << current_cell_.j
+                  << "," << current_cell_.k << " vs " << record.first.i << "," << record.first.j << ","
+                  << record.first.k << (record.deleted ? " deleted" : "") << ")";
     auto describe = [&](const TopoDS_Shape &sh) {
       mismatch_log_ << " " << TopAbs::ShapeTypeToString(sh.ShapeType());
       if (sh.ShapeType() == TopAbs_EDGE && !BRep_Tool::Degenerated(TopoDS::Edge(sh))) {
@@ -654,12 +852,18 @@ private:
   // Faces of `cell` on `side` (axis*2 + max). A min side reuses the max-side
   // faces of the neighbour below, reversed, so the two cells meeting at an
   // interface hold the same face instance.
-  std::vector<TopoDS_Face> side_faces(const Cell &cell, int side) {
+  struct SideFace {
+    TopoDS_Face face;
+    int index; // template face
+    Cell owner;
+  };
+
+  std::vector<SideFace> side_faces(const Cell &cell, int side) {
     const int axis = side / 2;
     const bool max_side = (side % 2) == 1;
     const Cell owner = max_side ? cell : neighbour(cell, side);
     const int64_t packed = pack_cell(owner.i, owner.j, owner.k);
-    std::vector<TopoDS_Face> out;
+    std::vector<SideFace> out;
     for (int fi = 1; fi <= faces_.Extent(); ++fi) {
       if (cap_side_[fi - 1] != axis * 2 + 1) {
         continue;
@@ -669,7 +873,7 @@ private:
       if (it == face_instances_.end()) {
         it = face_instances_.emplace(key, instantiate_face(fi, owner)).first;
       }
-      out.push_back(max_side ? it->second : TopoDS::Face(it->second.Reversed()));
+      out.push_back({max_side ? it->second : TopoDS::Face(it->second.Reversed()), fi, owner});
     }
     return out;
   }
@@ -682,8 +886,8 @@ private:
       }
     }
     for (int side = 0; side < 6; ++side) {
-      for (const TopoDS_Face &f : side_faces(c, side)) {
-        faces.push_back(f);
+      for (const SideFace &sf : side_faces(c, side)) {
+        faces.push_back(sf.face);
       }
     }
     // Shells: faces connected through shared edges; cavities nested.
@@ -749,65 +953,81 @@ private:
   // ---- clipping ------------------------------------------------------------
 
   // Boolean of one cell solid with the body, escalating the fuzzy value while
-  // the algorithm warns. Throws on errors. Safe to call from several threads.
-  std::unique_ptr<BRepAlgoAPI_BooleanOperation> run_boolean(const TopoDS_Shape &solid, const TopoDS_Shape &body,
-                                                            bool keep_outside) const {
+  // the result is unsound. Throws on errors. Safe to call from several threads.
+  //
+  // A warning on a result that still checks out (no free edge, BRepCheck
+  // valid) is a degenerate contact such as a pole of the body touching a cap
+  // plane, not lost material; that result is kept as it is, since a larger
+  // fuzzy value would only move its vertices away from the neighbours'.
+  CellBoolean run_boolean(const TopoDS_Shape &solid, const TopoDS_Shape &body, bool keep_outside) const {
+    const auto started = std::chrono::steady_clock::now();
     TopTools_ListOfShape args, tools;
     args.Append(solid);
     tools.Append(body);
     const double diag = std::sqrt(period_[0] * period_[0] + period_[1] * period_[1] + period_[2] * period_[2]);
-    const double fuzzy[3] = {0.0, 1e-6 * diag, 1e-5 * diag};
-    std::unique_ptr<BRepAlgoAPI_BooleanOperation> algo;
+    // Escalated only while the result is unsound; the last levels approach
+    // the template's own tolerances.
+    const double fuzzy[5] = {0.0, 1e-6 * diag, 1e-5 * diag, 1e-4 * diag, 1e-3 * diag};
+    CellBoolean out;
     for (double f : fuzzy) {
+      ++out.attempts;
       if (keep_outside) {
-        algo.reset(new BRepAlgoAPI_Cut());
+        out.algo.reset(new BRepAlgoAPI_Cut());
       } else {
-        algo.reset(new BRepAlgoAPI_Common());
+        out.algo.reset(new BRepAlgoAPI_Common());
       }
-      algo->SetArguments(args);
-      algo->SetTools(tools);
-      algo->SetFuzzyValue(f);
-      algo->SetRunParallel(Standard_False);
-      algo->SetNonDestructive(Standard_True);
-      algo->Build();
-      if (algo->HasErrors()) {
+      out.algo->SetArguments(args);
+      out.algo->SetTools(tools);
+      out.algo->SetFuzzyValue(f);
+      out.algo->SetRunParallel(Standard_False);
+      out.algo->SetNonDestructive(Standard_True);
+      out.algo->Build();
+      if (out.algo->HasErrors()) {
         std::ostringstream msg;
-        algo->DumpErrors(msg);
+        out.algo->DumpErrors(msg);
         throw std::runtime_error(msg.str());
       }
-      if (!algo->HasWarnings()) {
+      const TopoDS_Shape result = out.algo->Shape();
+      out.misplaced = placement_faults(solid, result, body, keep_outside, 1e-3 * diag);
+      out.sound = out.misplaced == 0 && (!out.algo->HasWarnings() || harmless_result(*out.algo, result));
+      if (out.sound) {
         break;
       }
     }
-    return algo;
+    out.seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
+    return out;
   }
 
-  TopoDS_Shape record_cell(const Cell &c, const TopoDS_Shape &solid, BRepAlgoAPI_BooleanOperation &algo,
-                           int &warned) {
+  TopoDS_Shape record_cell(const Cell &c, const TopoDS_Shape &solid, CellBoolean &cell_boolean, int &warned) {
+    BRepAlgoAPI_BooleanOperation &algo = *cell_boolean.algo;
     const TopoDS_Shape result = algo.Shape();
-    // A warning on a result that still checks out is a degenerate contact
-    // (a pole of the body touching a cap plane, say), not lost material.
-    if (algo.HasWarnings()) {
-      const bool sound = count_free_edges_of(result) == 0 && BRepCheck_Analyzer(result).IsValid();
-      if (sound) {
+    if (algo.HasWarnings() || cell_boolean.misplaced > 0) {
+      std::ostringstream msg;
+      msg << "cell (" << c.i << ", " << c.j << ", " << c.k << ") ";
+      if (cell_boolean.misplaced > 0) {
+        msg << cell_boolean.misplaced << " vertices misplaced ";
+      }
+      algo.DumpWarnings(msg);
+      std::string text = msg.str();
+      std::replace(text.begin(), text.end(), '\n', ' ');
+      if (std::getenv("NODI_TPMS_DEBUG") != nullptr && ++warned_logged_ <= 60) {
+        std::cerr << "periodic clip: " << text << "(attempts " << cell_boolean.attempts
+                  << (cell_boolean.sound ? ", sound)" : ", unsound)") << std::endl;
+      }
+      if (cell_boolean.sound) {
         ++benign_;
         if (benign_sample_.empty()) {
-          std::ostringstream msg;
-          msg << "cell (" << c.i << ", " << c.j << ", " << c.k << ") ";
-          algo.DumpWarnings(msg);
-          benign_sample_ = msg.str();
+          benign_sample_ = text;
         }
       } else {
         ++warned;
         if (warning_sample_.empty()) {
-          std::ostringstream msg;
-          msg << "cell (" << c.i << ", " << c.j << ", " << c.k << ") ";
-          algo.DumpWarnings(msg);
-          warning_sample_ = msg.str();
+          warning_sample_ = text;
         }
       }
     }
     if (TopExp_Explorer(result, TopAbs_FACE).More()) {
+      current_cell_ = c;
       record_history(solid, algo, result);
     }
     return result;
@@ -829,16 +1049,38 @@ private:
       }
     };
 
-    // Vertices and edges: splits from the history, vertices generated on edges.
+    // Vertices and edges: splits from the history, vertices generated on
+    // edges. A copy the boolean made for a tolerance update is missing from
+    // the history: an original neither modified nor in the result is looked
+    // up in the result by its geometry.
     std::unordered_set<const TopoDS_TShape *> known;
     const TopAbs_ShapeEnum types[2] = {TopAbs_VERTEX, TopAbs_EDGE};
     for (TopAbs_ShapeEnum t : types) {
-      TopTools_IndexedMapOfShape originals;
+      TopTools_IndexedMapOfShape originals, candidates;
       TopExp::MapShapes(solid, t, originals);
+      TopExp::MapShapes(result, t, candidates);
+      std::vector<Bnd_Box> boxes(candidates.Extent());
+      for (int i = 1; i <= candidates.Extent(); ++i) {
+        BRepBndLib::Add(candidates(i), boxes[i - 1], Standard_False);
+      }
       for (int i = 1; i <= originals.Extent(); ++i) {
         const TopoDS_Shape &s = originals(i);
         std::vector<TopoDS_Shape> pieces, generated;
         images_of(s, pieces);
+        current_deleted_ = algo.IsDeleted(s);
+        if (pieces.empty() && !in_result.Contains(s)) {
+          Bnd_Box box;
+          BRepBndLib::Add(s, box, Standard_False);
+          for (int j = 1; j <= candidates.Extent(); ++j) {
+            bool flip = false;
+            if (!box.IsOut(boxes[j - 1]) && !known.count(candidates(j).TShape().get()) &&
+                same_shape(candidates(j), s, flip)) {
+              pieces.push_back(candidates(j));
+              ++twins_;
+              break;
+            }
+          }
+        }
         if (t == TopAbs_EDGE) {
           for (const TopoDS_Shape &g : algo.Generated(s)) {
             generated.push_back(g);
@@ -913,6 +1155,8 @@ private:
       p.original = original;
       p.pieces = pieces;
       p.generated = generated;
+      p.first = current_cell_;
+      p.deleted = current_deleted_;
       pools_.emplace(key, std::move(p));
       return;
     }
@@ -924,10 +1168,12 @@ private:
       const TopoDS_Shape *match = find_match(pool.generated, g, flip);
       if (match) {
         substitute(g, *match, flip);
+      } else if (strict && g.ShapeType() == TopAbs_EDGE && reconcile_split(pool, TopoDS::Edge(g), generated)) {
+        ++reconciled_;
       } else {
         if (strict) {
           pool.complete = false;
-          log_mismatch(original, "generated", generated, pool.generated);
+          log_mismatch(original, "generated", generated, pool.generated, pool);
         }
         pool.generated.push_back(g);
       }
@@ -951,7 +1197,7 @@ private:
       if (original.ShapeType() == TopAbs_VERTEX && (pieces.empty() || pool.pieces.empty())) {
         ++benign_;
       } else {
-        log_mismatch(original, "pieces", pieces, pool.pieces);
+        log_mismatch(original, "pieces", pieces, pool.pieces, pool);
       }
     }
     // Face pieces are swapped only as a whole: a partial swap would leave the
@@ -1081,6 +1327,45 @@ private:
     return true;
   }
 
+  static bool only_harmless_alerts(const std::string &dump) {
+    std::istringstream lines(dump);
+    std::string line;
+    while (std::getline(lines, line)) {
+      while (!line.empty() && line.back() <= ' ') {
+        line.pop_back();
+      }
+      if (line.empty()) {
+        continue;
+      }
+      // An edge the boolean could not split stays whole in a result that
+      // still closes; a fuzzy retry does not change that.
+      if (line != "BOPAlgo_AlertTooSmallEdge" && line != "BOPAlgo_AlertUnableToOrientTheShape" &&
+          line != "BOPAlgo_AlertNotSplittableEdge") {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // `piece`, a split of `edge`, oriented to run the way `edge` runs forward.
+  static TopoDS_Shape oriented_like(const TopoDS_Edge &edge, const TopoDS_Edge &piece) {
+    double f, l, pf, pl;
+    Handle(Geom_Curve) c = BRep_Tool::Curve(edge, f, l);
+    Handle(Geom_Curve) pc = BRep_Tool::Curve(piece, pf, pl);
+    if (c.IsNull() || pc.IsNull()) {
+      return piece.Oriented(TopAbs_FORWARD);
+    }
+    gp_Pnt p;
+    gp_Vec tangent, piece_tangent;
+    pc->D1(0.5 * (pf + pl), p, piece_tangent);
+    GeomAPI_ProjectPointOnCurve projection(p, c, f, l);
+    if (projection.NbPoints() == 0) {
+      return piece.Oriented(TopAbs_FORWARD);
+    }
+    c->D1(projection.LowerDistanceParameter(), p, tangent);
+    return piece.Oriented(tangent.Dot(piece_tangent) < 0.0 ? TopAbs_REVERSED : TopAbs_FORWARD);
+  }
+
   static void sample_interior(const TopoDS_Edge &e, gp_Pnt out[3]) {
     double f, l;
     Handle(Geom_Curve) c = BRep_Tool::Curve(e, f, l);
@@ -1096,10 +1381,238 @@ private:
   std::vector<const TopoDS_TShape *> canonical_edges(const TopoDS_Shape &face) const {
     std::vector<const TopoDS_TShape *> ids;
     for (TopExp_Explorer ex(face, TopAbs_EDGE); ex.More(); ex.Next()) {
-      ids.push_back(reshape_.Value(ex.Current()).TShape().get());
+      const TopoDS_Shape value = reshape_.Value(ex.Current());
+      if (value.ShapeType() == TopAbs_EDGE) {
+        ids.push_back(value.TShape().get());
+      } else {
+        // An edge substituted by its split.
+        for (TopExp_Explorer sx(value, TopAbs_EDGE); sx.More(); sx.Next()) {
+          ids.push_back(sx.Current().TShape().get());
+        }
+      }
     }
     std::sort(ids.begin(), ids.end());
     return ids;
+  }
+
+  // Whether `part` runs along `whole` within its range: both ends and three
+  // interior points of `part` lie on the curve of `whole`.
+  bool covered_by(const TopoDS_Edge &part, const TopoDS_Edge &whole, double &from, double &to) const {
+    if (BRep_Tool::Degenerated(part) || BRep_Tool::Degenerated(whole)) {
+      return false;
+    }
+    const double tol = (std::max)({tol_, BRep_Tool::Tolerance(part), BRep_Tool::Tolerance(whole)});
+    double f, l, pf, pl;
+    Handle(Geom_Curve) curve = BRep_Tool::Curve(whole, f, l);
+    Handle(Geom_Curve) pc = BRep_Tool::Curve(part, pf, pl);
+    if (curve.IsNull() || pc.IsNull()) {
+      return false;
+    }
+    const double slack = 0.5 * (l - f);
+    double params[5];
+    for (int i = 0; i < 5; ++i) {
+      const gp_Pnt q = pc->Value(pf + (pl - pf) * i / 4.0);
+      GeomAPI_ProjectPointOnCurve projection(q, curve, f - slack, l + slack);
+      const double vertex_tol = i == 0 || i == 4 ? 4.0 * tol : tol;
+      if (projection.NbPoints() == 0 || projection.LowerDistance() > vertex_tol) {
+        return false;
+      }
+      params[i] = projection.LowerDistanceParameter();
+    }
+    from = (std::min)(params[0], params[4]);
+    to = (std::max)(params[0], params[4]);
+    // Inside the range, up to a vertex tolerance in parameter.
+    gp_Pnt a, b;
+    gp_Vec d;
+    curve->D1(f, a, d);
+    const double eps = 4.0 * tol / (std::max)(d.Magnitude(), 1e-12);
+    return from >= f - eps && to <= l + eps;
+  }
+
+  // The edges of `parts` that together run along `whole` end to end, in
+  // order and each oriented like `whole`; empty when they do not cover it.
+  std::vector<TopoDS_Shape> chain_covering(const TopoDS_Edge &whole, const std::vector<TopoDS_Shape> &parts) const {
+    std::vector<std::pair<double, TopoDS_Shape>> covering;
+    double f, l;
+    Handle(Geom_Curve) curve = BRep_Tool::Curve(whole, f, l);
+    if (curve.IsNull()) {
+      return {};
+    }
+    std::vector<std::pair<double, double>> ranges;
+    for (const TopoDS_Shape &p : parts) {
+      if (p.ShapeType() != TopAbs_EDGE) {
+        continue;
+      }
+      double from, to;
+      if (covered_by(TopoDS::Edge(p), whole, from, to)) {
+        covering.emplace_back(from, oriented_like(whole, TopoDS::Edge(p)));
+        ranges.emplace_back(from, to);
+      }
+    }
+    if (covering.size() < 2) {
+      return {};
+    }
+    std::vector<size_t> order(covering.size());
+    for (size_t i = 0; i < order.size(); ++i) {
+      order[i] = i;
+    }
+    std::sort(order.begin(), order.end(), [&](size_t a, size_t b) { return covering[a].first < covering[b].first; });
+    gp_Pnt a;
+    gp_Vec d;
+    curve->D1(f, a, d);
+    const double eps = 4.0 * (std::max)(tol_, BRep_Tool::Tolerance(whole)) / (std::max)(d.Magnitude(), 1e-12);
+    double reached = f;
+    for (size_t i : order) {
+      if (std::fabs(ranges[i].first - reached) > eps) {
+        return {};
+      }
+      reached = ranges[i].second;
+    }
+    if (std::fabs(reached - l) > eps) {
+      return {};
+    }
+    std::vector<TopoDS_Shape> out;
+    for (size_t i : order) {
+      out.push_back(covering[i].second);
+    }
+    return out;
+  }
+
+  // A section edge the two cells split differently: when one side's edge is
+  // the other side's edges end to end, the coarser one is replaced by the
+  // finer ones, so both cells end up with the same edges.
+  bool reconcile_split(Pool &pool, const TopoDS_Edge &mine, const std::vector<TopoDS_Shape> &generated) {
+    // Mine is coarser: the pool's edges cover it.
+    std::vector<TopoDS_Shape> finer = chain_covering(mine, pool.generated);
+    if (!finer.empty()) {
+      TopoDS_Compound compound;
+      builder_.MakeCompound(compound);
+      for (const TopoDS_Shape &e : finer) {
+        builder_.Add(compound, e);
+      }
+      reshape_.Replace(mine.Oriented(TopAbs_FORWARD), compound);
+      return true;
+    }
+    // Mine is finer: it and its siblings cover one of the pool's edges.
+    for (size_t i = 0; i < pool.generated.size(); ++i) {
+      if (pool.generated[i].ShapeType() != TopAbs_EDGE) {
+        continue;
+      }
+      const TopoDS_Edge coarse = TopoDS::Edge(pool.generated[i]);
+      double from, to;
+      if (!covered_by(mine, coarse, from, to)) {
+        continue;
+      }
+      std::vector<TopoDS_Shape> cover = chain_covering(coarse, generated);
+      if (cover.empty()) {
+        return false;
+      }
+      TopoDS_Compound compound;
+      builder_.MakeCompound(compound);
+      for (const TopoDS_Shape &e : cover) {
+        builder_.Add(compound, e);
+      }
+      reshape_.Replace(coarse.Oriented(TopAbs_FORWARD), compound);
+      // The finer edges become the canonical ones.
+      pool.generated.erase(pool.generated.begin() + i);
+      for (const TopoDS_Shape &e : cover) {
+        pool.generated.push_back(e.Oriented(TopAbs_FORWARD));
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // Split the interface faces instantiated so far (those of the clipped
+  // cells) by the body in one operation. Two booleans run independently
+  // split a shared face differently where the body grazes a vertex or an
+  // edge within its tolerance; started from one split, both keep its pieces.
+  void presplit_interfaces(const TopoDS_Shape &body) {
+    TopTools_ListOfShape args, tools;
+    TopoDS_Compound skeleton;
+    builder_.MakeCompound(skeleton);
+    std::unordered_set<const TopoDS_TShape *> seen;
+    for (const auto &kv : face_instances_) {
+      if (seen.insert(kv.second.TShape().get()).second) {
+        args.Append(kv.second);
+        builder_.Add(skeleton, kv.second);
+      }
+    }
+    if (args.IsEmpty()) {
+      return;
+    }
+    tools.Append(body);
+    const auto started = std::chrono::steady_clock::now();
+    BRepAlgoAPI_Splitter splitter;
+    splitter.SetArguments(args);
+    splitter.SetTools(tools);
+    // Destructive on purpose: tolerance updates land on the shared sub-shapes
+    // themselves instead of copies the kept cells would not see.
+    splitter.SetNonDestructive(Standard_False);
+    splitter.SetRunParallel(Standard_True);
+    splitter.Build();
+    if (splitter.HasErrors()) {
+      if (std::getenv("NODI_TPMS_DEBUG") != nullptr) {
+        std::ostringstream msg;
+        splitter.DumpErrors(msg);
+        std::cerr << "periodic clip: interface pre-split failed, cells split independently: " << msg.str()
+                  << std::endl;
+      }
+      return;
+    }
+    // Only the edges and vertices take the split: a face handed to a boolean
+    // with edges already lying on the body makes the boolean lose faces
+    // (unused edges in its face builder). Each cell splits the interface
+    // face itself, from the shared split edges, so the sections agree.
+    int split_edges = 0;
+    const TopAbs_ShapeEnum types[2] = {TopAbs_EDGE, TopAbs_VERTEX};
+    for (TopAbs_ShapeEnum t : types) {
+      TopTools_IndexedMapOfShape originals;
+      TopExp::MapShapes(skeleton, t, originals);
+      for (int i = 1; i <= originals.Extent(); ++i) {
+        const TopoDS_Shape &s = originals(i);
+        const TopTools_ListOfShape &modified = splitter.Modified(s);
+        if (modified.IsEmpty()) {
+          continue;
+        }
+        TopoDS_Compound pieces;
+        builder_.MakeCompound(pieces);
+        for (const TopoDS_Shape &m : modified) {
+          // Split edges come in either direction; a piece must stand in for
+          // the original taken forward.
+          builder_.Add(pieces, t == TopAbs_EDGE ? oriented_like(TopoDS::Edge(s), TopoDS::Edge(m))
+                                                : m.Oriented(TopAbs_FORWARD));
+        }
+        presplit_.Replace(s.Oriented(TopAbs_FORWARD), pieces);
+        split_edges += t == TopAbs_EDGE;
+      }
+    }
+    // The interface faces rebuilt on the split edges, once, so that both
+    // cells of an interface hold the same face.
+    int rebuilt = 0;
+    for (const auto &kv : face_instances_) {
+      const TopoDS_Face &f = kv.second;
+      if (face_splits_.count(f.TShape().get())) {
+        continue;
+      }
+      const TopoDS_Shape applied = presplit_.Apply(f.Oriented(TopAbs_FORWARD));
+      if (applied.IsSame(f)) {
+        continue;
+      }
+      presplit_.Replace(f.Oriented(TopAbs_FORWARD), applied.Oriented(TopAbs_FORWARD));
+      face_splits_.emplace(f.TShape().get(), std::vector<TopoDS_Shape>{applied.Oriented(TopAbs_FORWARD)});
+      ++rebuilt;
+    }
+    if (std::getenv("NODI_TPMS_DEBUG") != nullptr) {
+      const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
+      std::cerr << "periodic clip: pre-split " << args.Extent() << " interface faces in " << seconds << "s: "
+                << split_edges << " edges split, " << rebuilt << " faces rebuilt";
+      if (splitter.HasWarnings()) {
+        std::cerr << "; warnings: ";
+        splitter.DumpWarnings(std::cerr);
+      }
+      std::cerr << std::endl;
+    }
   }
 
   // Interface faces whose pieces both cells agree on are internal: drop them
@@ -1107,27 +1620,44 @@ private:
   void resolve_interfaces() {
     for (const auto &kv : face_instances_) {
       const TopoDS_Face &f = kv.second;
-      auto pit = pools_.find(f.TShape().get());
-      if (pit == pools_.end()) {
-        continue;
-      }
       const int fi = kv.first.canon;
       const int axis = cap_side_[fi - 1] / 2;
       const Cell owner = unpack_cell(kv.first.cell);
       const Class a = class_of(owner);
       const Class b = class_of(neighbour(owner, axis * 2 + 1));
-      const Pool &pool = pit->second;
-      bool internal = false;
-      if (a == Class::Clip && b == Class::Clip) {
-        internal = pool.shared && pool.complete;
-      } else if (a == Class::Keep || b == Class::Keep) {
-        internal = pool.pieces.size() == 1 && pool.pieces.front().IsSame(f);
+      // The face itself, or the pieces the pre-split made of it.
+      std::vector<TopoDS_Shape> parts;
+      auto split = face_splits_.find(f.TShape().get());
+      if (split == face_splits_.end()) {
+        parts.push_back(f);
+      } else {
+        parts = split->second;
+      }
+      bool internal = true;
+      std::vector<const Pool *> pools;
+      for (const TopoDS_Shape &part : parts) {
+        auto pit = pools_.find(part.TShape().get());
+        if (pit == pools_.end()) {
+          internal = false;
+          break;
+        }
+        const Pool &pool = pit->second;
+        if (a == Class::Clip && b == Class::Clip) {
+          internal &= pool.shared && pool.complete;
+        } else if (a == Class::Keep || b == Class::Keep) {
+          internal &= pool.pieces.size() == 1 && pool.pieces.front().IsSame(part);
+        } else {
+          internal = false;
+        }
+        pools.push_back(&pool);
       }
       if (!internal) {
         continue;
       }
-      for (const TopoDS_Shape &p : pool.pieces) {
-        reshape_.Remove(p);
+      for (const Pool *pool : pools) {
+        for (const TopoDS_Shape &p : pool->pieces) {
+          reshape_.Remove(p);
+        }
       }
       closed_interfaces_.insert(f.TShape().get());
     }
@@ -1993,6 +2523,56 @@ private:
     return std::unique_ptr<TopoDS_Shape>(new TopoDS_Shape(comp));
   }
 
+public:
+  // For every face of `result` (explorer order): the index of the earlier
+  // face it is a translated copy of, or -1, and that translation. Only the
+  // faces of kept cells whose 26 neighbours are kept are copies: everything
+  // they share (down to the vertices on the cell corners) is template
+  // topology, so a mesh of the copy stitches to its neighbours' like the
+  // representative's does.
+  void instancing(const TopoDS_Shape &result, std::vector<int32_t> &reps, std::vector<double> &offsets) const {
+    std::unordered_map<const TopoDS_TShape *, size_t> index;
+    for (size_t i = 0; i < out_faces_.size(); ++i) {
+      index.emplace(out_faces_[i].TShape().get(), i);
+    }
+    auto interior = [&](const Cell &c) {
+      for (int di = -1; di <= 1; ++di) {
+        for (int dj = -1; dj <= 1; ++dj) {
+          for (int dk = -1; dk <= 1; ++dk) {
+            if (class_of(Cell{c.i + di, c.j + dj, c.k + dk}) != Class::Keep) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    };
+    std::unordered_map<int, std::pair<int32_t, Cell>> first; // template face -> (result index, cell)
+    int32_t at = 0;
+    for (TopExp_Explorer ex(result, TopAbs_FACE); ex.More(); ex.Next(), ++at) {
+      int32_t rep = -1;
+      double d[3] = {0.0, 0.0, 0.0};
+      auto it = index.find(ex.Current().TShape().get());
+      if (it != index.end() && out_template_[it->second].first >= 0 && interior(out_template_[it->second].second)) {
+        const int fi = out_template_[it->second].first;
+        const Cell &c = out_template_[it->second].second;
+        auto seen = first.find(fi);
+        if (seen == first.end()) {
+          first.emplace(fi, std::make_pair(at, c));
+        } else {
+          rep = seen->second.first;
+          const Cell &r = seen->second.second;
+          d[0] = (c.i - r.i) * period_[0];
+          d[1] = (c.j - r.j) * period_[1];
+          d[2] = (c.k - r.k) * period_[2];
+        }
+      }
+      reps.push_back(rep);
+      offsets.insert(offsets.end(), d, d + 3);
+    }
+  }
+
+private:
   TopoDS_Shape find_edge(size_t face_index, const TopoDS_TShape *tshape) const {
     for (TopExp_Explorer ex(out_faces_[face_index], TopAbs_EDGE); ex.More(); ex.Next()) {
       if (ex.Current().TShape().get() == tshape) {
@@ -2026,7 +2606,10 @@ inline std::vector<periodic_lattice::Cell> parse_cells(rust::Slice<const double>
 // tolerance, not exactly) leave the shape valid.
 inline void heal_vertex_tolerances(const TopoDS_Shape &shape) {
   BRep_Builder builder;
+  double worst_curve = 0.0, worst_pcurve = 0.0;
+  double *worst = &worst_curve;
   auto widen = [&](const TopoDS_Vertex &vertex, double gap) {
+    *worst = (std::max)(*worst, gap);
     if (gap > BRep_Tool::Tolerance(vertex)) {
       builder.UpdateVertex(vertex, 1.01 * gap);
     }
@@ -2048,6 +2631,7 @@ inline void heal_vertex_tolerances(const TopoDS_Shape &shape) {
     }
   }
   // The pcurve ends on each face as well.
+  worst = &worst_pcurve;
   for (TopExp_Explorer fx(shape, TopAbs_FACE); fx.More(); fx.Next()) {
     const TopoDS_Face face = TopoDS::Face(fx.Current());
     Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
@@ -2071,21 +2655,48 @@ inline void heal_vertex_tolerances(const TopoDS_Shape &shape) {
       }
     }
   }
+  if (std::getenv("NODI_TPMS_DEBUG") != nullptr) {
+    double edge = 0.0, vertex = 0.0;
+    for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next()) {
+      edge = (std::max)(edge, BRep_Tool::Tolerance(TopoDS::Edge(ex.Current())));
+    }
+    for (TopExp_Explorer ex(shape, TopAbs_VERTEX); ex.More(); ex.Next()) {
+      vertex = (std::max)(vertex, BRep_Tool::Tolerance(TopoDS::Vertex(ex.Current())));
+    }
+    std::cerr << "heal_vertex_tolerances: worst gap to curve ends " << worst_curve << ", to pcurve ends "
+              << worst_pcurve << "; max edge tolerance " << edge << ", max vertex tolerance " << vertex
+              << std::endl;
+  }
 }
 
 // `bounds` = [min_x, min_y, min_z, max_x, max_y, max_z] of the template cell,
 // `cells` = flat (i, j, k) triples relative to the template (cell (0,0,0) is
 // the template itself). Throws on a non-periodic template; `report` receives
 // face / solid / free-edge counts.
+inline void export_instancing(const periodic_lattice::Assembler &assembler, const TopoDS_Shape &shape,
+                              rust::Vec<int32_t> &reps, rust::Vec<double> &offsets) {
+  std::vector<int32_t> r;
+  std::vector<double> o;
+  assembler.instancing(shape, r, o);
+  for (int32_t v : r) {
+    reps.push_back(v);
+  }
+  for (double v : o) {
+    offsets.push_back(v);
+  }
+}
+
 inline std::unique_ptr<TopoDS_Shape> assemble_periodic_cells(const TopoDS_Shape &cell,
                                                              rust::Slice<const double> bounds,
                                                              rust::Slice<const int32_t> cells,
-                                                             double tolerance, rust::String &report) {
+                                                             double tolerance, rust::String &report,
+                                                             rust::Vec<int32_t> &reps, rust::Vec<double> &offsets) {
   const auto list = parse_cells(bounds, cells);
   periodic_lattice::Assembler assembler(cell, bounds.data(), tolerance);
   std::string rep;
   auto shape = assembler.assemble(list, nullptr, false, rep);
   heal_vertex_tolerances(*shape);
+  export_instancing(assembler, *shape, reps, offsets);
   report = rust::String(rep);
   return shape;
 }
@@ -2097,12 +2708,14 @@ inline std::unique_ptr<TopoDS_Shape> clip_periodic_cells(const TopoDS_Shape &cel
                                                          rust::Slice<const double> bounds,
                                                          rust::Slice<const int32_t> cells,
                                                          const TopoDS_Shape &body, bool keep_outside,
-                                                         double tolerance, rust::String &report) {
+                                                         double tolerance, rust::String &report,
+                                                         rust::Vec<int32_t> &reps, rust::Vec<double> &offsets) {
   const auto list = parse_cells(bounds, cells);
   periodic_lattice::Assembler assembler(cell, bounds.data(), tolerance);
   std::string rep;
   auto shape = assembler.assemble(list, &body, keep_outside, rep);
   heal_vertex_tolerances(*shape);
+  export_instancing(assembler, *shape, reps, offsets);
   report = rust::String(rep);
   return shape;
 }
