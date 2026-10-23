@@ -87,6 +87,7 @@ fn main() {
         .define("_USE_MATH_DEFINES", "TRUE")
         .include(occt_config.include_dir)
         .include("include")
+        .file("src/periodic_lattice.cpp")
         .compile("wrapper");
 
     println!("cargo:rustc-link-lib=static=wrapper");
@@ -94,6 +95,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=include/wrapper.hxx");
     println!("cargo:rerun-if-changed=include/periodic_lattice.hxx");
+    println!("cargo:rerun-if-changed=src/periodic_lattice.cpp");
 }
 
 struct OcctConfig {

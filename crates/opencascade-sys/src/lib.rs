@@ -1643,6 +1643,54 @@ pub mod ffi {
             offsets: &mut Vec<f64>,
         ) -> Result<UniquePtr<TopoDS_Shape>>;
 
+        // As `assemble_periodic_cells`, with every cell's geometry moved by
+        // caller-supplied callbacks (`displace_fn`, `deviation_fn` are
+        // `extern "C"` function pointers taking `ctx` first; see the
+        // `Displacement` struct in periodic_lattice.hxx). Nothing is instanced.
+        #[allow(clippy::too_many_arguments)]
+        pub fn assemble_periodic_cells_displaced(
+            cell: &TopoDS_Shape,
+            bounds: &[f64],
+            cells: &[i32],
+            tolerance: f64,
+            displace_fn: usize,
+            deviation_fn: usize,
+            trace_fn: usize,
+            ctx: usize,
+            report: &mut String,
+            reps: &mut Vec<i32>,
+            offsets: &mut Vec<f64>,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
+
+        // As `clip_periodic_cells`, with the displacement callbacks.
+        #[allow(clippy::too_many_arguments)]
+        pub fn clip_periodic_cells_displaced(
+            cell: &TopoDS_Shape,
+            bounds: &[f64],
+            cells: &[i32],
+            body: &TopoDS_Shape,
+            keep_outside: bool,
+            tolerance: f64,
+            displace_fn: usize,
+            deviation_fn: usize,
+            trace_fn: usize,
+            ctx: usize,
+            report: &mut String,
+            reps: &mut Vec<i32>,
+            offsets: &mut Vec<f64>,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
+
+        // The solid bounded by a closed shell, reversed when asked.
+        pub fn solid_from_closed_shell(shell: &TopoDS_Shape, reverse: bool) -> Result<UniquePtr<TopoDS_Shape>>;
+
+        // The solid bounded by `outer` with `cavities` as holes, every shell
+        // kept as oriented (all reversed when asked).
+        pub fn solid_with_cavities(
+            outer: &TopoDS_Shape,
+            cavities: &TopTools_ListOfShape,
+            reverse: bool,
+        ) -> Result<UniquePtr<TopoDS_Shape>>;
+
         // A point strictly inside `solid` (grid scan classified by
         // BRepClass3d); errors when none is found.
         pub fn point_inside_solid(solid: &TopoDS_Shape, tolerance: f64) -> Result<UniquePtr<gp_Pnt>>;
@@ -2142,6 +2190,12 @@ pub mod ffi {
         pub fn BRepGProp_LinearProperties(shape: &TopoDS_Shape, props: Pin<&mut GProp_GProps>);
         pub fn BRepGProp_SurfaceProperties(shape: &TopoDS_Shape, props: Pin<&mut GProp_GProps>);
         pub fn BRepGProp_VolumeProperties(shape: &TopoDS_Shape, props: Pin<&mut GProp_GProps>);
+        pub fn BRepGProp_VolumePropertiesWithin(
+            shape: &TopoDS_Shape,
+            props: Pin<&mut GProp_GProps>,
+            eps: f64,
+            only_closed: bool,
+        ) -> f64;
 
         type BRepGProp_Face;
 

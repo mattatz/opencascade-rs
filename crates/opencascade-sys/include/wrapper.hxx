@@ -1289,6 +1289,13 @@ inline void BRepGProp_VolumeProperties(const TopoDS_Shape &shape, GProp_GProps &
   BRepGProp::VolumeProperties(shape, props);
 }
 
+// Volume by adaptive integration to the relative error `eps`; returns the
+// error reached. Far cheaper than the exact integration on trimmed splines.
+inline double BRepGProp_VolumePropertiesWithin(const TopoDS_Shape &shape, GProp_GProps &props, double eps,
+                                               bool only_closed) {
+  return BRepGProp::VolumeProperties(shape, props, eps, only_closed);
+}
+
 // Fillets
 inline std::unique_ptr<TopoDS_Edge> BRepFilletAPI_MakeFillet2d_add_fillet(BRepFilletAPI_MakeFillet2d &make_fillet,
                                                                           const TopoDS_Vertex &vertex,
