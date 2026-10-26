@@ -204,7 +204,7 @@ inline std::vector<TopoDS_Shape> nest_shells(const std::vector<TopoDS_Shell> &sh
     for (size_t j : candidates) {
       auto it = classifiers.find(j);
       if (it == classifiers.end()) {
-        it = classifiers.emplace(j, std::make_unique<BRepClass3d_SolidClassifier>(plain[j])).first;
+        it = classifiers.emplace(j, std::unique_ptr<BRepClass3d_SolidClassifier>(new BRepClass3d_SolidClassifier(plain[j]))).first;
       }
       it->second->Perform(probe, tolerance);
       ++classified;
